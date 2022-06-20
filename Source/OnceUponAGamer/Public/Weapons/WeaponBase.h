@@ -4,10 +4,12 @@
 
 #include "CoreMinimal.h"
 #include "GameFramework/Actor.h"
+#include "Interface/PickupWeaponInterface.h"
+#include "Enum/EnumWeaponName.h"
 #include "WeaponBase.generated.h"
 
 UCLASS()
-class ONCEUPONAGAMER_API AWeaponBase : public AActor
+class ONCEUPONAGAMER_API AWeaponBase : public AActor,public IPickupWeaponInterface
 {
 	GENERATED_BODY()
 	
@@ -20,12 +22,20 @@ public:
 	virtual void Reload();
 	virtual void ReloadEffect();
 	virtual void DrawWeapon();
-	virtual TSubclassOf<class APickupWeaponBase> GetPickupWeapon();
+	virtual TSubclassOf<AWeaponBase> GetPickupWeapon();
 	virtual float DoMeleeAttack();
+	virtual void PickupWeapon() override;
+	virtual void SetPickupWeaponName() override;
+	virtual bool IsPickupGun() override;
+	void DropGun();
+
+
 protected:
 	// Called when the game starts or when spawned
 	virtual void BeginPlay() override;
 	virtual void Recoil();
+	void PickupWeaponSetup(EWeaponName LWeaponName, TSubclassOf<AWeaponBase> LWeaponClass, int LTotalAmmo,int LMaxAmmo, int LMagSize,int LCurrentMagAmmo,float LFireRate);
+
 
 private:
 	UFUNCTION()
@@ -77,9 +87,11 @@ protected:
 	
 	UPROPERTY(EditAnywhere)
 	TSubclassOf<AWeaponBase> WeaponBP;
-
+	
 	UPROPERTY(EditAnywhere)
-	TSubclassOf<class APickupWeaponBase>  PickupWeapon;
+	EWeaponName WeaponName;
+	// UPROPERTY(EditAnywhere)
+	// TSubclassOf<class APickupWeaponBase>  PickupWeapon;
 	
 	float ReloadTime;
 	bool bIsReloading;
@@ -107,7 +119,7 @@ public:
 	UPROPERTY(EditAnywhere,BlueprintReadOnly)
 	int MagSize;
 
-	UPROPERTY(VisibleAnywhere,BlueprintReadOnly)
+	UPROPERTY(EditAnywhere,BlueprintReadOnly)
 	int CurrentMagAmmo;
 
 	UPROPERTY(EditAnywhere)
@@ -123,6 +135,8 @@ public:
 	bool bIsWeaponShootable;
 
 	bool bIsPrimaryWeapon;
+
+	bool bIsPlayerHoldingTheWeapon;
 
 
 };

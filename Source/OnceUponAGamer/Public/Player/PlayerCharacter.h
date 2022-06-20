@@ -273,6 +273,7 @@ private:
 	UPROPERTY(EditAnywhere,Category = "Throwable")
 	float ThrowSpeed;
 	bool bCanPredictPath;
+	AActor* PickupHitWeapon;
 
 public:
 	UPROPERTY(VisibleAnywhere,BlueprintReadOnly,Category = "Weapon")

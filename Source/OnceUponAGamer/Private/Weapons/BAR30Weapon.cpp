@@ -13,3 +13,8 @@ void ABAR30Weapon::BeginPlay()
 {
     Super::BeginPlay();
 }
+void ABAR30Weapon::PickupWeapon() 
+{
+    PickupWeaponSetup(WeaponName, WeaponBP, TotalAmmo, MaxAmmo, MagSize, CurrentMagAmmo, FireRate);
+    UE_LOG(LogTemp,Warning,TEXT("Pickup weapon"));
+}
