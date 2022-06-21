@@ -263,6 +263,8 @@ private:
 	UPROPERTY(EditAnywhere)
 	class USplineComponent* PredictionSpline;
 	TArray<class USplineMeshComponent*> PredictionSplineMesh;
+	UPROPERTY(EditAnywhere)
+	UStaticMesh* SplineMesh;
 	FVector ThrowVelocity;
 	AThrowableBase* PrimaryThrowable;
 	AThrowableBase* SecondaryThrowable;
@@ -270,7 +272,7 @@ private:
 	uint32 ThrowableMaxCount;
 	UPROPERTY(EditAnywhere,Category = "Throwable")
 	TSubclassOf<AThrowableBase> BPThrowable;
-	UPROPERTY(EditAnywhere,Category = "Throwable")
+	UPROPERTY(EditAnywhere,BlueprintReadOnly,Category = "Throwable",meta = (AllowPrivateAccess = "true"))
 	float ThrowSpeed;
 	bool bCanPredictPath;
 	AActor* PickupHitWeapon;

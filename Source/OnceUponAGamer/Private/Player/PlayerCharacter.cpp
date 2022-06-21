@@ -1208,6 +1208,7 @@ void APlayerCharacter::SwitchThrowable()
 
 void APlayerCharacter::PrimaryThrowStart()
 {
+	
 	if (ThrowableEquippedSlot == 0 && PrimaryThrowableData.Count > 0)
 	{
 		PrimaryThrowableData.Count--;
@@ -1238,6 +1239,7 @@ AThrowableBase *APlayerCharacter::StartThrow(TSubclassOf<AThrowableBase> Throwab
 	if (Throwable)
 	{
 		SpawnedThrowable = GetWorld()->SpawnActor<AThrowableBase>(Throwable, PlayerMesh->GetSocketLocation(FName("WeaponSocket_r")), FRotator::ZeroRotator);
+		SpawnedThrowable->AttachToComponent(PlayerMesh,FAttachmentTransformRules::SnapToTargetNotIncludingScale,FName("WeaponSocket_r"));
 		SpawnedThrowable->Initiate();
 		bCanPredictPath = true;
 	}
@@ -1249,6 +1251,7 @@ void APlayerCharacter::EndThrow(AThrowableBase *CurrentThrowable)
 	bCanPredictPath = false;
 	if (CurrentThrowable)
 	{
+		CurrentThrowable->DetachFromActor(FDetachmentTransformRules::KeepWorldTransform);
 		CurrentThrowable->Throw(ThrowVelocity);
 	}
 }
@@ -1270,11 +1273,20 @@ void APlayerCharacter::ThrowPredection()
 	// ProjectilePathParams.bTraceWithCollision = true;
 	// ProjectilePathParams.TraceChannel = ECollisionChannel::ECC_WorldStatic;
 	// ProjectilePathParams.ActorsToIgnore.Add(this);
+	// ProjectilePathParams.ActorsToIgnore.Add(PrimaryThrowable);
+	// ProjectilePathParams.ActorsToIgnore.Add(SecondaryThrowable);
 	// ProjectilePathParams.DrawDebugType = EDrawDebugTrace::ForOneFrame;
 	// ProjectilePathParams.SimFrequency = 30;
 	// FPredictProjectilePathResult ProjectilePathResult;
 	// bool bIsHit = UGameplayStatics::PredictProjectilePath(this,ProjectilePathParams,ProjectilePathResult);
-
+	
+	// for(int32 i = 0 ;i<ProjectilePathResult.PathData.Num();i++)
+	// {
+	// 	PredictionSpline->AddSplinePointAtIndex(ProjectilePathResult.PathData[i].Location,i,ESplineCoordinateSpace::World);
+	// 	// PredectionSplineMesh.Add(NewObject<USplineMeshComponent>(this,USplineMeshComponent::StaticClass));
+	// 	// PredectionSplineMesh[i]->M
+	// }
+	// // PredictionSpline->AddSplinePointAtIndex()
 	// if(bIsHit)
 	// {
 	// 	//show the end point

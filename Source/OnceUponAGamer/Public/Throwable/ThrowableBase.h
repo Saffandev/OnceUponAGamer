@@ -55,4 +55,5 @@ private:
 	
 	uint32 HitCount;
 	FTimerHandle ThrowTimer;
+	TArray<TEnumAsByte<EObjectTypeQuery>> OverlapActorObjectType;
 };

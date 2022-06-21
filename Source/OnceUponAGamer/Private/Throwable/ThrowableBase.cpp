@@ -5,6 +5,8 @@
 #include "Kismet/GameplayStatics.h"
 #include "Kismet/KismetSystemLibrary.h"
 #include "Player/PlayerCharacter.h"
+#include "AI/NPC/Basic/BasicNPCAI.h"
+#include "DrawDebugHelpers.h"
 
 // Sets default values
 AThrowableBase::AThrowableBase()
@@ -21,6 +23,9 @@ void AThrowableBase::BeginPlay()
 	Super::BeginPlay();
 	ThrowableMesh->OnComponentHit.AddDynamic(this,&AThrowableBase::OnHit);
 	PlayerCharacter = Cast<APlayerCharacter>(UGameplayStatics::GetPlayerCharacter(this,0));
+	OverlapActorObjectType.Add(UEngineTypes::ConvertToObjectType(ECollisionChannel::ECC_Pawn));
+	OverlapActorObjectType.Add(UEngineTypes::ConvertToObjectType(ECollisionChannel::ECC_WorldDynamic));
+	OverlapActorObjectType.Add(UEngineTypes::ConvertToObjectType(ECollisionChannel::ECC_PhysicsBody));
 }
 
 // Called every frame
@@ -116,21 +121,28 @@ void AThrowableBase::Explode()
 		UGameplayStatics::PlaySoundAtLocation(this,ExplodeSound,GetActorLocation());
 	}
 	TArray<AActor*> ActorsToIgnore;
+	ActorsToIgnore.Add(this);
 	TArray<AActor*> OverlappedActors;
-	TArray<TEnumAsByte<EObjectTypeQuery>> OverlapActorObjectType;
+	
+	UClass* SeekClass = nullptr;
+	DrawDebugSphere(GetWorld(),GetActorLocation(),DamageRadius,12,FColor::Red,true,5.f);
 	UKismetSystemLibrary::SphereOverlapActors(this,
 											  GetActorLocation(),
 											  DamageRadius,
 											  OverlapActorObjectType,
-											  UClass::StaticClass(),
+											  SeekClass,
 											  ActorsToIgnore,
 											  OverlappedActors);
+	UE_LOG(LogTemp,Warning,TEXT("%i"),OverlappedActors.Num());
+	UE_LOG(LogTemp,Warning,TEXT("Overlap object type count %i"),OverlapActorObjectType.Num());
 
 	for(AActor* HitActor:OverlappedActors)
 	{	
-		if(HitActor && HitActor->CanBeDamaged())
+		if(HitActor )
 		{
+			UE_LOG(LogTemp,Warning,TEXT("%s"),*(HitActor->GetName()));			
 			UGameplayStatics::ApplyRadialDamage(this,Damage,GetActorLocation(),DamageRadius,ExplosionDamageType,ActorsToIgnore);
+			UE_LOG(LogTemp,Warning,TEXT("Radial Damage applied"));
 		}
 	}
 	Destroy();

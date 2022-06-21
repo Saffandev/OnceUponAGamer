@@ -29,6 +29,7 @@ void ABasicNPCAI::BeginPlay()
 	TouchSenseCapsule->OnComponentBeginOverlap.AddDynamic(this,&ABasicNPCAI::OnOverlap);
 	AIController = UAIBlueprintHelperLibrary::GetAIController(this);
 	this->OnTakePointDamage.AddDynamic(this,&ABasicNPCAI::TakePointDamage);
+	this->OnTakeRadialDamage.AddDynamic(this,&ABasicNPCAI::TakeRadialDamage);
 
 	if(PatrolPointObj != nullptr)
 	{
@@ -80,6 +81,21 @@ void ABasicNPCAI::StopShooting()
 		bIsShooting = false;
 		Gun->StopShooting();
 	}
+}
+
+void ABasicNPCAI::SetReload(bool IsReloading)
+{
+	StopShooting();
+	this->bIsReloading = IsReloading;
+}
+
+bool ABasicNPCAI::GetIsReloading()
+{
+	if(Gun)
+	{
+		return Gun->GetIsReloading();
+	}
+	return false;
 }
 
 float ABasicNPCAI::MeleeAttack()
@@ -181,17 +197,7 @@ void ABasicNPCAI::TakePointDamage(AActor* DamagedActor,float Damage,AController*
 	}
 }
 
-void ABasicNPCAI::SetReload(bool IsReloading)
+void ABasicNPCAI::TakeRadialDamage(AActor* DamagedActor,float Damage,const UDamageType* DamageType,FVector Origin,FHitResult Hit,AController* InstigatedBy,AActor* DamageCauser)
 {
-	StopShooting();
-	this->bIsReloading = IsReloading;
-}
-
-bool ABasicNPCAI::GetIsReloading()
-{
-	if(Gun)
-	{
-		return Gun->GetIsReloading();
-	}
-	return false;
+	UE_LOG(LogTemp,Warning,TEXT("Radial Damage %f "),Damage);
 }
