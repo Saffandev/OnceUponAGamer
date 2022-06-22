@@ -170,7 +170,6 @@ void ABasicNPCAI::TakeRadialDamage(AActor* DamagedActor,float Damage,const UDama
 	Health -= Damage;
 	if(Health <= 0)
 	{
-	
 		GetMesh()->SetSimulatePhysics(true);
 		DeathRituals(true);
 	}
@@ -181,7 +180,7 @@ void ABasicNPCAI::DeathRituals(bool bIsExplosionDeath)
 	Health = 0;
 	bIsDead = true;
 	StopShooting();
-	int timer = GetVelocity().Size() > 10? 0:1;
+	int timer = GetVelocity().Size() > 10 || bIsExplosionDeath? 0:1;
 	FTimerHandle DeathTimer;
 	GetWorld()->GetTimerManager().SetTimer(DeathTimer,[&](){GetMesh()->SetSimulatePhysics(true);},0.01,false,timer);
 	GetCharacterMovement()->StopMovementImmediately();
@@ -205,7 +204,7 @@ void ABasicNPCAI::DeathRituals(bool bIsExplosionDeath)
 	TouchSenseCapsule->DestroyComponent();
 	DetachFromControllerPendingDestroy();
 	SetCanBeDamaged(false);
-	GetCapsuleComponent()->SetCollisionEnabled(ECollisionEnabled::NoCollision);
+	GetCapsuleComponent()->SetCollisionEnabled(ECollisionEnabled::PhysicsOnly);
 	// GetMesh()->SetCollisionEnabled(ECollisionEnabled::PhysicsOnly);
 
 }

@@ -15,6 +15,11 @@ private:
 	UFUNCTION()
 	void BeginOverlap(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult &SweepResult);
 	FVector ThrowForceCalc();
+	UFUNCTION()
+	void TakePointDamage(AActor* DamagedActor,float Damage,AController* InstigatedBy, FVector HitLocation,UPrimitiveComponent* HitComp,FName BoneName,FVector ShotDirection,const UDamageType* DamageType,AActor* DamageCauser);
+	UFUNCTION()
+	void TakeRadialDamage(AActor* DamagedActor,float Damage,const UDamageType* DamageType,FVector Origin,FHitResult Hit,AController* InstigatedBy,AActor* DamageCauser);
+	void DeathRituals(bool bIsExplosionDeath);
 
 public:
 	// Sets default values for this character's properties
@@ -43,6 +48,14 @@ private:
 	float PredectionDistance;
 	UPROPERTY(EditAnywhere)
 	float ThrowForce;
+	UPROPERTY(EditAnywhere,BlueprintReadOnly,meta = (AllowPrivateAccess = "true"))
+	bool bIsDead;
+	UPROPERTY(EditAnywhere,Category = "Animation")
+	UAnimationAsset* DeathAnim_1;
+	UPROPERTY(EditAnywhere)
+	float Health;
+	
+
 
 public:
 	UPROPERTY(EditAnywhere,BlueprintReadWrite)

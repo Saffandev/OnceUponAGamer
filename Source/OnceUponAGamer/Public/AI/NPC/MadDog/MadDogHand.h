@@ -20,7 +20,7 @@ public:
 private:
 	UFUNCTION()
 	virtual void BeginOverlap(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult &SweepResult);
-
+	
 protected:
 	// Called when the game starts or when spawned
 	virtual void BeginPlay() override;
@@ -28,6 +28,7 @@ protected:
 public:
 	UPROPERTY(EditAnywhere,BlueprintReadOnly,meta = (ExposeOnSpawn = "true"))
 	FVector ThrowForce;
+	
 private:
 	UPROPERTY(VisibleAnywhere)
 	UStaticMeshComponent* HandMesh;
@@ -37,5 +38,7 @@ private:
 	USceneComponent* Point2;
 	class AMadDogNPCAI* OwnerAI;
 	FTimerHandle HandRecallTimerHandle;
+	
+
 
 };

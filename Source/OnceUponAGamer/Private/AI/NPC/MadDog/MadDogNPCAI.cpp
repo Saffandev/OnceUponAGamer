@@ -6,9 +6,15 @@
 #include "AI/NPC/MadDog/MadDogHand.h"
 #include "Components/StaticMeshComponent.h"
 #include "Components/ArrowComponent.h"
+#include "Components/CapsuleComponent.h"
 #include "Kismet/GameplayStatics.h"
 #include "Kismet/KismetMathLibrary.h"
 #include "BehaviorTree/BlackboardComponent.h"
+#include "GameframeWork/CharacterMovementComponent.h"
+#include "Blueprint/AIBlueprintHelperLibrary.h"
+#include "AIController.h"
+#include "BrainComponent.h"
+
 // Sets default values
 AMadDogNPCAI::AMadDogNPCAI()
 {
@@ -28,6 +34,9 @@ void AMadDogNPCAI::BeginPlay()
 {
 	Super::BeginPlay();
 	AIController = Cast<AMadDogController>(GetInstigatorController());
+	this->OnTakePointDamage.AddDynamic(this,&AMadDogNPCAI::TakePointDamage);
+	this->OnTakeRadialDamage.AddDynamic(this,&AMadDogNPCAI::TakeRadialDamage);
+
 	ActivateForBattle();
 	if(HandMesh)
 	{
@@ -75,7 +84,7 @@ void AMadDogNPCAI::BeginOverlap(UPrimitiveComponent* OverlappedComponent, AActor
 	{
 		if(bCanHandDamage && OtherActor->CanBeDamaged())
 		{
-			UE_LOG(LogTemp,Warning,TEXT("Player Hitted With the Hand"));
+			// UE_LOG(LogTemp,Warning,TEXT("Player Hitted With the Hand"));
 			bCanHandDamage = false;
 			UGameplayStatics::ApplyDamage(OtherActor,0.1,AIController,this,UDamageType::StaticClass());
 		}
@@ -122,7 +131,7 @@ FVector AMadDogNPCAI::ThrowForceCalc()
 
 void AMadDogNPCAI::RecallHand()
 {
-	UE_LOG(LogTemp,Warning,TEXT("Recall hand inside the pawn"));
+	// UE_LOG(LogTemp,Warning,TEXT("Recall hand inside the pawn"));
 	if(HandToThrow)
 	{	
 		bIsRecallingHand = true;
@@ -136,4 +145,46 @@ void AMadDogNPCAI::HandRecallDone()
 	AIController->GetBlackboardComponent()->SetValueAsBool("bIsHoldingHand",true);
 	HandMesh->SetVisibility(true);
 
+}
+
+void AMadDogNPCAI::TakePointDamage(AActor* DamagedActor,float Damage,AController* InstigatedBy, FVector HitLocation,UPrimitiveComponent* HitComp,FName BoneName,FVector ShotDirection,const UDamageType* DamageType,AActor* DamageCauser)
+{
+	Health -= Damage;
+	UE_LOG(LogTemp,Error,TEXT("Health = %f"),Health);
+	//Shield Damage visuals
+	// body hit visuals
+	//
+	if(Health <= 0 && !bIsDead)
+	{
+		if(GetVelocity().Size() < 10.f )
+		{
+			if(DeathAnim_1)
+			{
+				GetMesh()->PlayAnimation(DeathAnim_1,false);
+			}
+		}
+		DeathRituals(false);
+	}
+}
+void AMadDogNPCAI::TakeRadialDamage(AActor* DamagedActor,float Damage,const UDamageType* DamageType,FVector Origin,FHitResult Hit,AController* InstigatedBy,AActor* DamageCauser)
+{
+	Health -= Damage;
+	if(Health <= 0 && !bIsDead)
+	{
+		GetMesh()->SetSimulatePhysics(true);
+		DeathRituals(true);
+	}
+}
+void AMadDogNPCAI::DeathRituals(bool bIsExplosionDeath)
+{
+	Health = 0;
+	bIsDead = true;
+	SetCanBeDamaged(false);
+	int timer = GetVelocity().Size() > 10 || bIsExplosionDeath? 0:1;
+	FTimerHandle DeathTimer;
+	GetWorld()->GetTimerManager().SetTimer(DeathTimer,[&](){GetMesh()->SetSimulatePhysics(true);},0.01,false,timer);
+	GetCharacterMovement()->StopMovementImmediately();
+	UAIBlueprintHelperLibrary::GetAIController(this)->GetBrainComponent()->StopLogic(FString("Dead"));
+	DetachFromControllerPendingDestroy();
+	GetCapsuleComponent()->SetCollisionEnabled(ECollisionEnabled::PhysicsOnly);
 }
