@@ -59,8 +59,9 @@ private:
 	UPROPERTY(EditAnywhere)
 	TSubclassOf<class AAIGun> GunBp;
 	AAIGun* Gun;
+	
 	UPROPERTY(EditAnywhere)
-	TSubclassOf<class APickupWeaponBase> DropGun;
+	TSubclassOf<class AWeaponBase> GunDrop
 	UPROPERTY(EditAnywhere)
 	UAnimMontage* MeleeAttackMontage;
 	UPROPERTY(EditAnywhere)
@@ -75,5 +76,10 @@ private:
 	bool bIsDead;
 	FTimerHandle MeleeTimerHandle;
 	class AAIController* AIController;
+	UPROPERTY(EditAnywhere)
+	USkeletalMesh* HeadlessMesh;
+	UPROPERTY(EditAnywhere)
+	TSubclassOf<AActor> Head;
+	FName LastHitBoneName;
 
 };

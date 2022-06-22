@@ -37,6 +37,7 @@ void AWeaponBase::BeginPlay()
 	bCanShoot = true;
 	bIsReloading = false;
 	bIsWeaponShootable = true;
+	GunMesh->SetSimulatePhysics(true);
 }
 
 // Called every frame
@@ -319,8 +320,8 @@ void AWeaponBase::PickupWeaponSetup(EWeaponName LWeaponName, TSubclassOf<AWeapon
 		return;
 	}
 	bIsPlayerHoldingTheWeapon = true;
-	GunMesh->SetCollisionEnabled(ECollisionEnabled::NoCollision);
 	GunMesh->SetSimulatePhysics(false);
+	GunMesh->SetCollisionEnabled(ECollisionEnabled::NoCollision);
 	if (PlayerCharacter->PrimaryWeapon.WeaponClass->IsChildOf(AKnifeWeapon::StaticClass()))
 	{
 		PlayerCharacter->WeaponEquippedSlot = 0;

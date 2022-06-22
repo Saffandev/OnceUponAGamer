@@ -187,4 +187,6 @@ void AMadDogNPCAI::DeathRituals(bool bIsExplosionDeath)
 	UAIBlueprintHelperLibrary::GetAIController(this)->GetBrainComponent()->StopLogic(FString("Dead"));
 	DetachFromControllerPendingDestroy();
 	GetCapsuleComponent()->SetCollisionEnabled(ECollisionEnabled::PhysicsOnly);
+	SetActorTickEnabled(false);
+	HandMesh->DetachFromParent();
 }

@@ -11,7 +11,7 @@
 #include "Blueprint/AIBlueprintHelperLibrary.h"
 #include "AIController.h"
 #include "Components/CapsuleComponent.h"
-#include "Weapons/PickupWeaponBase.h"
+#include "Weapons/WeaponBase.h"
 #include "BrainComponent.h"
 // Sets default values
 ABasicNPCAI::ABasicNPCAI()
@@ -133,7 +133,18 @@ void ABasicNPCAI::TakePointDamage(AActor* DamagedActor,float Damage,AController*
 	if(Health <= 0 && bIsDead == false)
 	{
 		//death;
-		Health = 0;	
+		LastHitBoneName = BoneName;	
+		if(LastHitBoneName == "neck_01")
+	{	
+		UMaterialInterface* MeshMat = GetMesh()->GetMaterial(0);
+		GetMesh()->SetSkeletalMesh(HeadlessMesh,true);
+		GetMesh()->SetMaterial(0,MeshMat);
+		if(Head)
+		{
+			AActor* SpawnedHead = GetWorld()->SpawnActor<AActor>(Head,GetMesh()->GetSocketLocation(FName("neck_01")),GetMesh()->GetSocketRotation(FName("neck_01")));
+		}
+		
+	}
 		if(GetVelocity() == FVector::ZeroVector)
 		{
 			switch(UKismetMathLibrary::RandomIntegerInRange(0,2))
@@ -166,11 +177,10 @@ void ABasicNPCAI::TakePointDamage(AActor* DamagedActor,float Damage,AController*
 
 void ABasicNPCAI::TakeRadialDamage(AActor* DamagedActor,float Damage,const UDamageType* DamageType,FVector Origin,FHitResult Hit,AController* InstigatedBy,AActor* DamageCauser)
 {
-	UE_LOG(LogTemp,Warning,TEXT("Radial Damage %f "),Damage);
 	Health -= Damage;
 	if(Health <= 0)
 	{
-		GetMesh()->SetSimulatePhysics(true);
+		LastHitBoneName = Hit.BoneName;	
 		DeathRituals(true);
 	}
 }
@@ -180,9 +190,16 @@ void ABasicNPCAI::DeathRituals(bool bIsExplosionDeath)
 	Health = 0;
 	bIsDead = true;
 	StopShooting();
-	int timer = GetVelocity().Size() > 10 || bIsExplosionDeath? 0:1;
 	FTimerHandle DeathTimer;
-	GetWorld()->GetTimerManager().SetTimer(DeathTimer,[&](){GetMesh()->SetSimulatePhysics(true);},0.01,false,timer);
+	
+	if(bIsExplosionDeath)
+	{
+		GetMesh()->SetSimulatePhysics(true);
+	}
+	else
+	{
+		GetWorld()->GetTimerManager().SetTimer(DeathTimer,[&](){GetMesh()->SetSimulatePhysics(true);},0.01,false,1.f);
+	}
 	GetCharacterMovement()->StopMovementImmediately();
 	AIController->GetBrainComponent()->StopLogic(FString("Dead"));
 	
@@ -192,11 +209,10 @@ void ABasicNPCAI::DeathRituals(bool bIsExplosionDeath)
 		Gun->Destroy();
 	}
 	//spawn drop gun
-	if(DropGun)
+	if(GunDrop)
 	{
-		GetWorld()->SpawnActor<APickupWeaponBase>(DropGun,GetMesh()->GetSocketLocation(FName("Weapon")),GetMesh()->GetSocketRotation(FName("Weapon")));
+		GetWorld()->SpawnActor<AWeaponBase>(GunDrop,GetMesh()->GetSocketLocation(FName("Weapon")),GetMesh()->GetSocketRotation(FName()));
 	}
-
 	if(ActiveCover)
 	{
 		ActiveCover->bIsAcquired = false;
