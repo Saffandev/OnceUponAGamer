@@ -134,8 +134,6 @@ void ABasicNPCAI::TakePointDamage(AActor* DamagedActor,float Damage,AController*
 	{
 		//death;
 		Health = 0;	
-		bIsDead = true;
-		StopShooting();
 		if(GetVelocity() == FVector::ZeroVector)
 		{
 			switch(UKismetMathLibrary::RandomIntegerInRange(0,2))
@@ -162,42 +160,52 @@ void ABasicNPCAI::TakePointDamage(AActor* DamagedActor,float Damage,AController*
 					UE_LOG(LogTemp,Warning,TEXT("Default case"));
 			}
 		}
-		else
-		{
-			GetMesh()->SetSimulatePhysics(true);
-			UE_LOG(LogTemp,Warning,TEXT("Death not played"));
-		}
-		
-		GetCharacterMovement()->StopMovementImmediately();
-		AIController->GetBrainComponent()->StopLogic(FString("Dead"));
-		// AIController->SetActorTickEnabled(false);
-		// SetActorTickEnabled(false);
-		// AIController->UnPossess();
-		if(Gun)
-		{
-			Gun->DetachFromActor(FDetachmentTransformRules::KeepRelativeTransform);
-			Gun->Destroy();
-		}
-		//spawn drop gun
-		if(DropGun)
-		{
-			GetWorld()->SpawnActor<APickupWeaponBase>(DropGun,GetMesh()->GetSocketLocation(FName("Weapon")),GetMesh()->GetSocketRotation(FName("Weapon")));
-		}
-
-		if(ActiveCover)
-		{
-			ActiveCover->bIsAcquired = false;
-		}
-		TouchSenseCapsule->DestroyComponent();
-		DetachFromControllerPendingDestroy();
-		SetCanBeDamaged(false);
-		GetCapsuleComponent()->SetCollisionEnabled(ECollisionEnabled::NoCollision);
-		// GetMesh()->SetCollisionEnabled(ECollisionEnabled::PhysicsOnly);
-
+		DeathRituals(false);
 	}
 }
 
 void ABasicNPCAI::TakeRadialDamage(AActor* DamagedActor,float Damage,const UDamageType* DamageType,FVector Origin,FHitResult Hit,AController* InstigatedBy,AActor* DamageCauser)
 {
 	UE_LOG(LogTemp,Warning,TEXT("Radial Damage %f "),Damage);
+	Health -= Damage;
+	if(Health <= 0)
+	{
+	
+		GetMesh()->SetSimulatePhysics(true);
+		DeathRituals(true);
+	}
+}
+
+void ABasicNPCAI::DeathRituals(bool bIsExplosionDeath)
+{
+	Health = 0;
+	bIsDead = true;
+	StopShooting();
+	int timer = GetVelocity().Size() > 10? 0:1;
+	FTimerHandle DeathTimer;
+	GetWorld()->GetTimerManager().SetTimer(DeathTimer,[&](){GetMesh()->SetSimulatePhysics(true);},0.01,false,timer);
+	GetCharacterMovement()->StopMovementImmediately();
+	AIController->GetBrainComponent()->StopLogic(FString("Dead"));
+	
+	if(Gun)
+	{
+		Gun->DetachFromActor(FDetachmentTransformRules::KeepRelativeTransform);
+		Gun->Destroy();
+	}
+	//spawn drop gun
+	if(DropGun)
+	{
+		GetWorld()->SpawnActor<APickupWeaponBase>(DropGun,GetMesh()->GetSocketLocation(FName("Weapon")),GetMesh()->GetSocketRotation(FName("Weapon")));
+	}
+
+	if(ActiveCover)
+	{
+		ActiveCover->bIsAcquired = false;
+	}
+	TouchSenseCapsule->DestroyComponent();
+	DetachFromControllerPendingDestroy();
+	SetCanBeDamaged(false);
+	GetCapsuleComponent()->SetCollisionEnabled(ECollisionEnabled::NoCollision);
+	// GetMesh()->SetCollisionEnabled(ECollisionEnabled::PhysicsOnly);
+
 }
