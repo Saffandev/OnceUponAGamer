@@ -107,7 +107,7 @@ void AWeaponBase::ShootingInAction()
 												  UEngineTypes::ConvertToTraceType(ECollisionChannel::ECC_Visibility),
 												  false,
 												  ActorsToIgnore,
-												  EDrawDebugTrace::None,
+												  EDrawDebugTrace::ForDuration,
 												  GunShotHitResult,
 												  true);
 

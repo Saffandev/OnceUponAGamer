@@ -25,12 +25,8 @@ public:
 	bool GetIsReloading();
 
 protected:
-	// Called when the game starts or when spawned
 	virtual void BeginPlay() override;
-
-private:
-	void ShootingInAction();
-	void Reload();
+	// virtual void Reload();
 	UFUNCTION()
 	void TakePointDamage(AActor* DamagedActor,float Damage,AController* InstigatedBy, FVector HitLocation,UPrimitiveComponent* HitComp,FName BoneName,FVector ShotDirection,const UDamageType* DamageType,AActor* DamageCauser);
 	UFUNCTION()
@@ -51,17 +47,17 @@ public:
 	bool bIsReloading;
 	class ACover* ActiveCover;
 
-private:
+
+protected:
 	UPROPERTY(VisibleAnywhere)
 	class UCapsuleComponent* TouchSenseCapsule;
-	UPROPERTY(VisibleAnywhere,BlueprintReadOnly,meta = (AllowPrivateAccess = "true"))
-	bool bCanCrouch;
+	
 	UPROPERTY(EditAnywhere)
 	TSubclassOf<class AAIGun> GunBp;
 	AAIGun* Gun;
 	
 	UPROPERTY(EditAnywhere)
-	TSubclassOf<class AWeaponBase> GunDrop
+	TSubclassOf<class AWeaponBase> GunDrop;
 	UPROPERTY(EditAnywhere)
 	UAnimMontage* MeleeAttackMontage;
 	UPROPERTY(EditAnywhere)
@@ -81,5 +77,7 @@ private:
 	UPROPERTY(EditAnywhere)
 	TSubclassOf<AActor> Head;
 	FName LastHitBoneName;
+	UPROPERTY(VisibleAnywhere,BlueprintReadOnly,meta = (AllowPrivateAccess = "true"))
+	bool bCanCrouch;//	
 
 };

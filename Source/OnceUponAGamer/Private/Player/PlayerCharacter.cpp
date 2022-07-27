@@ -211,7 +211,10 @@ void APlayerCharacter::SetupPlayerInputComponent(UInputComponent *PlayerInputCom
 void APlayerCharacter::OnHit(UPrimitiveComponent *HitComponent, AActor *OtherActor, UPrimitiveComponent *OtherComp, FVector NormalizeImpulse, const FHitResult &Hit)
 {
 	LedgeGrab(Hit.ImpactPoint);
-	WallRun(Hit.GetActor(), Hit.ImpactNormal);
+	if(Hit.GetActor())
+	{
+		WallRun(Hit.GetActor(), Hit.ImpactNormal);
+	}
 }
 
 //==========================================================================Ledge Grab===============================//

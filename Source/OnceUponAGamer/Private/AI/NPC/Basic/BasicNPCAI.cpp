@@ -28,7 +28,7 @@ void ABasicNPCAI::BeginPlay()
 	Super::BeginPlay();
 	TouchSenseCapsule->OnComponentBeginOverlap.AddDynamic(this,&ABasicNPCAI::OnOverlap);
 	AIController = UAIBlueprintHelperLibrary::GetAIController(this);
-	this->OnTakePointDamage.AddDynamic(this,&ABasicNPCAI::TakePointDamage);
+	OnTakePointDamage.AddDynamic(this,&ABasicNPCAI::TakePointDamage);
 	this->OnTakeRadialDamage.AddDynamic(this,&ABasicNPCAI::TakeRadialDamage);
 
 	if(PatrolPointObj != nullptr)
@@ -128,24 +128,23 @@ void ABasicNPCAI::CanTakeCover(bool bCanTakeCover)
 
 void ABasicNPCAI::TakePointDamage(AActor* DamagedActor,float Damage,AController* InstigatedBy, FVector HitLocation,UPrimitiveComponent* HitComp,FName BoneName,FVector ShotDirection,const UDamageType* DamageType,AActor* DamageCauser)
 {
-	// UE_LOG(LogTemp,Warning,TEXT("Damage Taken %f"),Damage);
+	UE_LOG(LogTemp,Warning,TEXT("Damage Taken %f"),Damage);
 	Health -= Damage;
 	if(Health <= 0 && bIsDead == false)
 	{
 		//death;
 		LastHitBoneName = BoneName;	
 		if(LastHitBoneName == "neck_01")
-	{	
+		{	
 		UMaterialInterface* MeshMat = GetMesh()->GetMaterial(0);
 		GetMesh()->SetSkeletalMesh(HeadlessMesh,true);
 		GetMesh()->SetMaterial(0,MeshMat);
-		if(Head)
-		{
-			AActor* SpawnedHead = GetWorld()->SpawnActor<AActor>(Head,GetMesh()->GetSocketLocation(FName("neck_01")),GetMesh()->GetSocketRotation(FName("neck_01")));
+			if(Head)
+			{
+				AActor* SpawnedHead = GetWorld()->SpawnActor<AActor>(Head,GetMesh()->GetSocketLocation(FName("neck_01")),GetMesh()->GetSocketRotation(FName("neck_01")));
+			}
 		}
-		
-	}
-		if(GetVelocity() == FVector::ZeroVector)
+		if(GetVelocity().Size() < 10.f)
 		{
 			switch(UKismetMathLibrary::RandomIntegerInRange(0,2))
 			{
@@ -170,6 +169,10 @@ void ABasicNPCAI::TakePointDamage(AActor* DamagedActor,float Damage,AController*
 				default:
 					UE_LOG(LogTemp,Warning,TEXT("Default case"));
 			}
+		}
+		else
+		{
+			GetMesh()->SetSimulatePhysics(true);
 		}
 		DeathRituals(false);
 	}
@@ -224,3 +227,4 @@ void ABasicNPCAI::DeathRituals(bool bIsExplosionDeath)
 	// GetMesh()->SetCollisionEnabled(ECollisionEnabled::PhysicsOnly);
 
 }
+

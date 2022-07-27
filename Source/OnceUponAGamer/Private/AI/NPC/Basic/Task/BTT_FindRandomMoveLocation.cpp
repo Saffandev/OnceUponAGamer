@@ -17,25 +17,25 @@ EBTNodeResult::Type UBTT_FindRandomMoveLocation::ExecuteTask(UBehaviorTreeCompon
 {
     FVector RandomPoint;
     ABasicNPCAIController* OwnerController = Cast<ABasicNPCAIController>(OwnerComp.GetOwner());
-
+    AAIController* AIController = OwnerComp.GetAIOwner();
     FVector Origin;
     if(bShouldFindRandomMovePointsBehind)
     {
-        Origin = OwnerController->GetPawn()->GetActorLocation() + 
-                (OwnerController->GetPawn()->GetActorForwardVector() * -1 * SearchOriginRangeBehind);
+        Origin = AIController->GetPawn()->GetActorLocation() + 
+                (AIController->GetPawn()->GetActorForwardVector() * -1 * SearchOriginRangeBehind);
     }
     else
     {
-        Origin = OwnerController->GetPawn()->GetActorLocation();
+        Origin = AIController->GetPawn()->GetActorLocation();
     }
 
     // UNavigationSystemV1::GetRandomPointInNavigableRadius(OwnerController,Origin,UKismetMathLibrary::RandomFloatInRange(SearchRadiusForPoints,SearchRadiusForPoints - 100));
-    RandomPoint = UNavigationSystemV1::GetCurrent(GetWorld())->GetRandomPointInNavigableRadius(OwnerController,Origin,UKismetMathLibrary::RandomFloatInRange(SearchRadiusForPoints,SearchRadiusForPoints - RandomDeviation));
+    RandomPoint = UNavigationSystemV1::GetCurrent(GetWorld())->GetRandomPointInNavigableRadius(AIController,Origin,UKismetMathLibrary::RandomFloatInRange(SearchRadiusForPoints,SearchRadiusForPoints - RandomDeviation));
     if(RandomPoint == FVector::ZeroVector)
     {
-        OwnerController->GetBlackboardComponent()->SetValueAsVector(BB_RandomMoveLocation.SelectedKeyName,OwnerController->GetPawn()->GetActorLocation());
+        AIController->GetBlackboardComponent()->SetValueAsVector(BB_RandomMoveLocation.SelectedKeyName,AIController->GetPawn()->GetActorLocation());
         return EBTNodeResult::Succeeded;
     }
-    OwnerController->GetBlackboardComponent()->SetValueAsVector(BB_RandomMoveLocation.SelectedKeyName,RandomPoint);
+    AIController->GetBlackboardComponent()->SetValueAsVector(BB_RandomMoveLocation.SelectedKeyName,RandomPoint);
     return EBTNodeResult::Succeeded;
 }

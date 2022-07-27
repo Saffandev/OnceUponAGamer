@@ -15,9 +15,10 @@ public:
 	// Sets default values for this actor's properties
 	AAIGun();
 	virtual void Tick(float DeltaTime) override;
-	void StartShooting();
-	void StopShooting();
-	bool GetIsReloading()
+	virtual void StartShooting();
+	virtual void StopShooting();
+	virtual void ReleaseAbility() ;
+	virtual bool GetIsReloading()
 	{
 		return bIsReloading;
 	}
@@ -26,12 +27,10 @@ protected:
 	// Called when the game starts or when spawned
 	virtual void BeginPlay() override;
 
-private:	
-	void ShootingInAction();
-	void Reload();
+protected:	
+	virtual void ShootingInAction();
+	virtual void Reload();
 	void ReloadAfterEffect();
-
-private:
 	UPROPERTY(VisibleAnywhere)
 	USkeletalMeshComponent* GunMesh;
 	UPROPERTY(VisibleAnywhere)

@@ -71,7 +71,7 @@ void AAIGun::ShootingInAction()
 
 		if(OwnerMesh && CharacterShootMontage)
 		{
-			UE_LOG(LogTemp,Warning,TEXT("Inside the owner shooting condition"));
+			// UE_LOG(LogTemp,Warning,TEXT("Inside the owner shooting condition"));
 			OwnerMesh->GetAnimInstance()->Montage_Play(CharacterShootMontage);
 		}
 
@@ -81,7 +81,7 @@ void AAIGun::ShootingInAction()
 			if(HitActor->CanBeDamaged())
 			{
 				UGameplayStatics::ApplyPointDamage(HitActor,Damage,GunTraceHit.TraceStart,GunTraceHit,GetOwner()->GetInstigatorController(),this,UDamageType::StaticClass());
-				UE_LOG(LogTemp,Warning,TEXT("Damaged"));
+				// UE_LOG(LogTemp,Warning,TEXT("Damaged"));
 			}
 		}
 		CurrentAmmo--;
@@ -101,6 +101,11 @@ void AAIGun::StopShooting()
 	{
 		GetWorld()->GetTimerManager().ClearTimer(ShootingTimerHandle);
 	}
+}
+
+void AAIGun::ReleaseAbility()
+{
+	
 }
 
 void AAIGun::Reload()

@@ -4,6 +4,7 @@
 #include "AI/NPC/Basic/Task/BTT_UpdatePatrolIndex.h"
 #include "AI/NPC/Basic/BasicNPCAI.h"
 #include "AI/NPC/Basic/BasicNPCAIController.h"
+#include "AI/PatrolPoint.h"
 #include "BehaviorTree/BlackboardComponent.h"
 
 UBTT_UpdatePatrolIndex::UBTT_UpdatePatrolIndex()
@@ -14,9 +15,14 @@ UBTT_UpdatePatrolIndex::UBTT_UpdatePatrolIndex()
 EBTNodeResult::Type UBTT_UpdatePatrolIndex::ExecuteTask(UBehaviorTreeComponent &OwnerComp,uint8* NodeMemory)
 {
     ABasicNPCAIController* OwnerController = Cast<ABasicNPCAIController>(OwnerComp.GetOwner());
+    APatrolPoint* PatrolPointObj = Cast<APatrolPoint>(OwnerComp.GetAIOwner()->GetBlackboardComponent()->GetValueAsObject(PatrolPointObject.SelectedKeyName));
+    // if(PatrolPointObj == nullptr)
+    // {
+    //     return EBTNodeResult::Aborted;
+    // }
     uint32 IndexLength = OwnerController->GetControlledPawn()->PatrolPoint.Num();
-    uint32 Direction = OwnerController->GetBlackboardComponent()->GetValueAsInt(PatrolDirection.SelectedKeyName);
-    uint32 Index = OwnerController->GetBlackboardComponent()->GetValueAsInt(PatrolIndex.SelectedKeyName);
+    uint32 Direction = OwnerComp.GetAIOwner()->GetBlackboardComponent()->GetValueAsInt(PatrolDirection.SelectedKeyName);
+    uint32 Index = OwnerComp.GetAIOwner()->GetBlackboardComponent()->GetValueAsInt(PatrolIndex.SelectedKeyName);
     if(Direction == 1)
     {
         Index++;
@@ -33,8 +39,8 @@ EBTNodeResult::Type UBTT_UpdatePatrolIndex::ExecuteTask(UBehaviorTreeComponent &
             Direction = 1;
         }
     }
-    OwnerController->GetBlackboardComponent()->SetValueAsInt(PatrolDirection.SelectedKeyName,Direction);
-    OwnerController->GetBlackboardComponent()->SetValueAsInt(PatrolIndex.SelectedKeyName,Index);
+    OwnerComp.GetAIOwner()->GetBlackboardComponent()->SetValueAsInt(PatrolDirection.SelectedKeyName,Direction);
+    OwnerComp.GetAIOwner()->GetBlackboardComponent()->SetValueAsInt(PatrolIndex.SelectedKeyName,Index);
 
     return EBTNodeResult::Succeeded;
 }

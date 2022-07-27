@@ -27,4 +27,6 @@ public:
 	FBlackboardKeySelector PatrolPointIndex;
 	UPROPERTY(EditAnywhere)
 	FBlackboardKeySelector PatrolPointLocation;
+	UPROPERTY(EditAnywhere)
+	FBlackboardKeySelector PatrolPointObject;
 };

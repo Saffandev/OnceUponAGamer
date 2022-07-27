@@ -16,20 +16,20 @@ EBTNodeResult::Type UBTT_Shooting::ExecuteTask(UBehaviorTreeComponent &OwnerComp
     Super::ExecuteTask(OwnerComp,NodeMemory);
     ABasicNPCAIController* OwnerController = Cast<ABasicNPCAIController>(OwnerComp.GetOwner());
 
-    INPCAI_Action* ActionInterface = Cast<INPCAI_Action>(OwnerController->GetPawn());
+    INPCAI_Action* ActionInterface = Cast<INPCAI_Action>(OwnerComp.GetAIOwner()->GetPawn());
     if(ActionInterface != nullptr)
     {
         if(bCanShoot)
         {
             ActionInterface->StartShooting();
-            OwnerController->SetFocus(UGameplayStatics::GetPlayerPawn(this,0));
+            OwnerComp.GetAIOwner()->SetFocus(UGameplayStatics::GetPlayerPawn(this,0));
         }
         else if(bCanMeleeAttack)
         {
             // OwnerController->StopMovement();
             ActionInterface->StopShooting();
             AttackTime = ActionInterface->MeleeAttack();
-            OwnerController->SetFocus(UGameplayStatics::GetPlayerPawn(this,0));
+            OwnerComp.GetAIOwner()->SetFocus(UGameplayStatics::GetPlayerPawn(this,0));
             bIsDoingMeleeAttack = true;
             bNotifyTick = true;
             UE_LOG(LogTemp,Display,TEXT("Melee Attacking"));
@@ -37,7 +37,7 @@ EBTNodeResult::Type UBTT_Shooting::ExecuteTask(UBehaviorTreeComponent &OwnerComp
         }
         else
         {
-            OwnerController->ClearFocus(EAIFocusPriority::Default);
+            OwnerComp.GetAIOwner()->ClearFocus(EAIFocusPriority::Default);
             ActionInterface->StopShooting();
         }
     }

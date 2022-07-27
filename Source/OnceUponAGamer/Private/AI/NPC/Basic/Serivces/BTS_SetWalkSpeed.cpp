@@ -20,6 +20,7 @@ void UBTS_SetWalkSpeed::TickNode(UBehaviorTreeComponent &OwnerComp,uint8* NodeMe
         if(OwnerCharacter->GetCharacterMovement())
         {
             OwnerCharacter->GetCharacterMovement()->MaxWalkSpeed = MovementSpeed;
+            UE_LOG(LogTemp,Warning,TEXT("Set movement speed"));
         }
     }
 }

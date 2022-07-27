@@ -22,8 +22,6 @@ public:
 
 protected:
 	virtual void BeginPlay() override;
-
-private:
 	UFUNCTION()
 	void OnPerceptionUpdated(TArray<AActor*>const& SensedActors);
 	void CheckPlayerVisibility();
@@ -32,7 +30,7 @@ public:
 	class AEncounterSpace* MyEncounterSpace;
 	bool bIsOwnerAlive;
 
-private:
+protected:
 	UPROPERTY(VisibleAnywhere)
 	UAIPerceptionComponent* AIPerceptionComponent;
 	class UAISenseConfig_Sight* SightSense;

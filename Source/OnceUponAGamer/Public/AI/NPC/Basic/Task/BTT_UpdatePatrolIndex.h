@@ -25,4 +25,6 @@ private:
 	FBlackboardKeySelector PatrolDirection;
 	UPROPERTY(EditAnywhere)
 	FBlackboardKeySelector PatrolIndex;
+	UPROPERTY(EditAnywhere)
+	FBlackboardKeySelector PatrolPointObject;
 };

@@ -5,6 +5,7 @@
 #include "AI/EncounterSpace.h"
 #include "AI/NPC/Basic/BasicNPCAI.h"
 #include "AI/Cover.h"
+#include "AI/PatrolPoint.h"
 #include "Perception/AIPerceptionComponent.h"
 #include "Perception/AISenseConfig_Sight.h"
 #include "Perception/AISenseConfig_Damage.h"
@@ -64,6 +65,11 @@ void ABasicNPCAIController::BeginPlay()
     OwnerAI = Cast<ABasicNPCAI>(GetPawn());
     PlayerCharacter = Cast<APlayerCharacter>(UGameplayStatics::GetPlayerCharacter(this,0));
     bIsOwnerAlive = true;
+
+    // if(Blackboard && OwnerAI)
+    // {
+    //     Blackboard->SetValueAsObject(FName("PatrolObject"),OwnerAI->PatrolPointObj);
+    // }
 }
 
 ABasicNPCAI* ABasicNPCAIController::GetControlledPawn()
@@ -101,23 +107,25 @@ void ABasicNPCAIController::OnPerceptionUpdated(TArray<AActor*>const& SensedActo
                                     UE_LOG(LogTemp,Error,TEXT("No Sight Sense"));
                                     SightSense->GetSenseImplementation();
                                 }
-                                // if(UKismetMathLibrary::EqualEqual_ObjectObject(SensedClass,SightSense->GetSenseImplementation()))
-                                // {
-                                //     Blackboard->SetValueAsBool(FName("bCanSeePlayer"),true);
-                                //     UE_LOG(LogTemp,Warning,TEXT("PlayerSpotted"));
-                                //     Blackboard->SetValueAsVector(FName("PlayerLocation"),EnemyTarget->GetActorLocation());
-                                //     Blackboard->SetValueAsVector(FName("PlayerLastKnownLocation"),EnemyTarget->GetActorLocation());   
-                                // }
-                                // //damage sense
-                                // else if(UKismetMathLibrary::EqualEqual_ObjectObject(SensedClass,DamageSense->GetSenseImplementation()) ||
-                                // UKismetMathLibrary::EqualEqual_ObjectObject(SensedClass,HearingSense->GetSenseImplementation()))
-                                // {
-                                //     if(!Blackboard->GetValueAsBool(FName("bCanSeePlayer")) && MyEncounterSpace != nullptr && MyEncounterSpace->IsOverlappingActor(PlayerCharacter))
-                                //     {
-                                //         MyEncounterSpace->AssingInvestigation(AIStimulus.StimulusLocation);
-                                //         Blackboard->SetValueAsVector(FName("PlayerLastKnownLocation"),AIStimulus.StimulusLocation);
-                                //     }
-                                // }
+                                if(UKismetMathLibrary::EqualEqual_ObjectObject(SensedClass,SightSense->GetSenseImplementation()))
+                                {
+                                    Blackboard->SetValueAsBool(FName("bCanSeePlayer"),true);
+                                    UE_LOG(LogTemp,Warning,TEXT("PlayerSpotted"));
+                                    Blackboard->SetValueAsVector(FName("PlayerLocation"),EnemyTarget->GetActorLocation());
+                                    Blackboard->SetValueAsVector(FName("PlayerLastKnownLocation"),EnemyTarget->GetActorLocation());   
+                                }
+                                //damage sense
+                                else if(UKismetMathLibrary::EqualEqual_ObjectObject(SensedClass,DamageSense->GetSenseImplementation()) ||
+                                UKismetMathLibrary::EqualEqual_ObjectObject(SensedClass,HearingSense->GetSenseImplementation()))
+                                {
+                                    SetFocalPoint(AIStimulus.StimulusLocation);
+                                    if(!Blackboard->GetValueAsBool(FName("bCanSeePlayer")) && MyEncounterSpace != nullptr && MyEncounterSpace->IsOverlappingActor(PlayerCharacter))
+                                    {
+
+                                        MyEncounterSpace->AssingInvestigation(AIStimulus.StimulusLocation);
+                                        Blackboard->SetValueAsVector(FName("PlayerLastKnownLocation"),AIStimulus.StimulusLocation);
+                                    }
+                                }
 
                                 else
                                 {
@@ -218,7 +226,6 @@ void ABasicNPCAIController::CheckPlayerVisibility()
 
         // DrawDebugLine(GetWorld(),OwnerAI->GetActorLocation(),PlayerCharacter->GetActorLocation(),FColor::Red,false,0.1);
         // DrawDebugLine(GetWorld(),OwnerAI->GetActorLocation(),OwnerAI->GetActorForwardVector() * 200 + OwnerAI->GetActorLocation() ,FColor::Green,false,0.1);
-
         // UE_LOG(LogTemp,Warning,TEXT("%f   %i"),Angle,bIsPlayerInLineOfSight);
         Blackboard->SetValueAsBool(FName("bIsPlayerVisible"),bIsPlayerVisible);
         if(bIsPlayerVisible)
