@@ -103,6 +103,7 @@ void AThrowableBase::Throw(FVector ThrowVelocity)
 	UE_LOG(LogTemp,Warning,TEXT("ThrowVelocity = %s"),*ThrowVelocity.ToString());
 	ThrowableMesh->SetSimulatePhysics(true);
 	ThrowableMesh->AddImpulse(ThrowVelocity,NAME_None,true);
+	ThrowableMesh->SetCollisionEnabled(ECollisionEnabled::PhysicsOnly);
 }
 
 void AThrowableBase::Initiate()

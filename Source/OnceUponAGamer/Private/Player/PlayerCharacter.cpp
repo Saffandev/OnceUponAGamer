@@ -93,7 +93,8 @@ void APlayerCharacter::BeginPlay()
 	PlayerController = GetController();
 	// Binding Section
 	Capsule->OnComponentHit.AddDynamic(this, &APlayerCharacter::OnHit);
-
+	OnTakePointDamage.AddDynamic(this,&APlayerCharacter::TakePointDamage);
+	OnTakeRadialDamage.AddDynamic(this,&APlayerCharacter::TakeRadialDamage);
 	CurrentWeapon = GetWorld()->SpawnActor<AWeaponBase>(InitialWeapon);
 	CurrentWeapon->AttachToComponent(PlayerMesh, FAttachmentTransformRules::SnapToTargetNotIncludingScale, FName("WeaponSocket_r"));
 
@@ -108,6 +109,9 @@ void APlayerCharacter::BeginPlay()
 
 	DefaultFOV = Camera->FieldOfView;
 	WeaponEquippedSlot = 0;
+
+	CurrentHealth = MaxHealth;
+	CurrentShield = MaxShield;
 
 	//=========================================================================timeline setup==========================================//
 
@@ -217,6 +221,79 @@ void APlayerCharacter::OnHit(UPrimitiveComponent *HitComponent, AActor *OtherAct
 	}
 }
 
+void APlayerCharacter::TakePointDamage(AActor* DamagedActor,float Damage,AController* InstigatedBy, FVector HitLocation,UPrimitiveComponent* HitComp,FName BoneName,FVector ShotDirection,const UDamageType* DamageType,AActor* DamageCauser)
+{
+	UE_LOG(LogTemp,Warning,TEXT("Point Damage"));
+	TakeDamage(Damage);
+	
+}
+
+void APlayerCharacter::TakeRadialDamage(AActor* DamagedActor,float Damage,const UDamageType* DamageType,FVector Origin,FHitResult Hit,AController* InstigatedBy,AActor* DamageCauser)
+{
+	UE_LOG(LogTemp,Warning,TEXT("Radial Damage"));
+	TakeDamage(Damage);
+
+
+}
+
+void APlayerCharacter::TakeDamage(float Damage)
+{
+	if(CurrentShield <= 0)
+		{
+			CurrentShield = 0;
+			CurrentHealth -= Damage;
+			if(ShieldRechargeTimer.IsValid())
+			{
+				GetWorld()->GetTimerManager().ClearTimer(ShieldRechargeTimer);
+			}
+			if(CurrentHealth <= 0)
+			{
+				CurrentHealth = 0;
+				DisablePlayerInput();	
+			}
+		}
+		else
+		{
+			CurrentShield -= Damage;
+			if(ShieldRechargeTimer.IsValid())
+			{
+				GetWorld()->GetTimerManager().ClearTimer(ShieldRechargeTimer);
+				UE_LOG(LogTemp,Warning,TEXT("Inside the shield clear timer"));
+			}
+			GetWorld()->GetTimerManager().SetTimer(ShieldRechargeTimer,this,&APlayerCharacter::RegainShield,0.1f,true,TimeForShieldRecharge);
+		}
+}
+
+
+void APlayerCharacter::Heal(float Health)
+{
+
+	CurrentHealth += Health;
+	if(CurrentHealth > MaxHealth)
+	{
+		CurrentHealth = MaxHealth;
+	}
+}
+
+void APlayerCharacter::HealShield(float ShieldHealth)
+{
+	CurrentShield = ShieldHealth;
+	if(CurrentShield > MaxShield)
+	{
+		CurrentShield = MaxShield;
+	}
+}
+
+void APlayerCharacter::RegainShield()
+{
+	CurrentShield = UKismetMathLibrary::FInterpTo_Constant(CurrentShield,MaxShield,UGameplayStatics::GetWorldDeltaSeconds(this),ShieldRechargeRate);
+	UE_LOG(LogTemp,Warning,TEXT("Inside the recharge shield"));
+
+	if(CurrentShield >=100)
+	{
+		GetWorld()->GetTimerManager().ClearTimer(ShieldRechargeTimer);
+	}
+}
 //==========================================================================Ledge Grab===============================//
 
 void APlayerCharacter::LedgeGrab(FVector ImpactPoint)

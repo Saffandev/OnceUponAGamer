@@ -63,7 +63,8 @@ USTRUCT(BlueprintType)
 	{
 		GENERATED_BODY()
 		TSubclassOf<AThrowableBase> BP_Throwable;
-		uint32 Count;
+		UPROPERTY(VisibleAnywhere,BlueprintReadOnly)
+		int32 Count;
 		//throwable name;
 	};
 
@@ -95,6 +96,11 @@ public:
 	{
 		return bIsWallRunning;
 	}
+	UFUNCTION(BlueprintCallable)
+	void Heal(float Health);
+	UFUNCTION(BlueprintCallable)
+	void HealShield(float ShieldHeal);
+	void RegainShield();
 
 protected:
 	virtual void BeginPlay() override;
@@ -159,6 +165,13 @@ private:
 
 	UFUNCTION()
 	void ADSOffInAction();
+	
+	UFUNCTION()
+	void TakePointDamage(AActor* DamagedActor,float Damage,AController* InstigatedBy, FVector HitLocation,UPrimitiveComponent* HitComp,FName BoneName,FVector ShotDirection,const UDamageType* DamageType,AActor* DamageCauser);
+
+	UFUNCTION()
+	void TakeRadialDamage(AActor* DamagedActor,float Damage,const UDamageType* DamageType,FVector Origin,FHitResult Hit,AController* InstigatedBy,AActor* DamageCauser);
+	void TakeDamage(float Damage);
 	void LedgeGrab(FVector ImpactPoint);
 	bool CanLedgeGrab(FVector ImpactPoint);
 	void WallRun(AActor* HitActor, FVector HitImpactNormal);
@@ -269,13 +282,27 @@ private:
 	AThrowableBase* PrimaryThrowable;
 	AThrowableBase* SecondaryThrowable;
 	UPROPERTY(EditAnywhere,Category = "Throwable")
-	uint32 ThrowableMaxCount;
+	int32 ThrowableMaxCount;
 	UPROPERTY(EditAnywhere,Category = "Throwable")
 	TSubclassOf<AThrowableBase> BPThrowable;
 	UPROPERTY(EditAnywhere,BlueprintReadOnly,Category = "Throwable",meta = (AllowPrivateAccess = "true"))
 	float ThrowSpeed;
 	bool bCanPredictPath;
 	AActor* PickupHitWeapon;
+	UPROPERTY(EditAnywhere)
+	float MaxHealth;
+	UPROPERTY(VisibleAnywhere,BlueprintReadOnly,meta = (AllowPrivateAccess = "true"))
+	float CurrentHealth;
+	UPROPERTY(EditAnywhere)
+	float MaxShield;
+	UPROPERTY(VisibleAnywhere,BlueprintReadOnly,meta = (AllowPrivateAccess = "true"))
+	float CurrentShield;
+	UPROPERTY(EditAnywhere)
+	float TimeForShieldRecharge;
+	UPROPERTY(EditAnywhere)
+	float ShieldRechargeRate;
+	FTimerHandle ShieldRechargeTimer;
+
 
 public:
 	UPROPERTY(VisibleAnywhere,BlueprintReadOnly,Category = "Weapon")
