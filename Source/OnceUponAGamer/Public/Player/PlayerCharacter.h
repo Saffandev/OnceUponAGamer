@@ -261,6 +261,14 @@ private:
 	float WallRunSpeed;
 	UPROPERTY(EditAnywhere,Category = "Movement")
 	int32 MaxJumps = 2;;
+	UPROPERTY(EditAnywhere,Category = "Movement")
+	float TurnInterpSpeed;
+	UPROPERTY(EditAnywhere,Category = "Movement")
+	float TurnInterpSpeedADS;
+	UPROPERTY(EditAnywhere,Category = "Movement")
+	float LookInterpSpeed;
+	UPROPERTY(EditAnywhere,Category = "Movement")
+	float LookInterpSpeedADS;
 	int32 JumpsLeft;
 	UPROPERTY(VisibleAnywhere,BlueprintReadOnly,Category = "Movement",meta = (AllowPrivateAccess = "true"))
 	EMovementType CurrentMovementType;

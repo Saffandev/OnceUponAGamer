@@ -556,14 +556,14 @@ void APlayerCharacter::Turn(float AxisValue)
 	AddControllerYawInput(SmoothHorizontalLook);
 
 	// weapon sway for more visual smoothness
-	float TurnInterpSpeed;
+	float LTurnInterpSpeed;
 	if (bIsADS)
 	{
-		TurnInterpSpeed = 60;
+		LTurnInterpSpeed = TurnInterpSpeed;
 	}
 	else
 	{
-		TurnInterpSpeed = 50;
+		LTurnInterpSpeed = TurnInterpSpeedADS;
 	}
 	PlayerMesh->SetRelativeRotation(FRotator(PlayerMesh->GetRelativeRotation().Pitch,
 											 PlayerMesh->GetRelativeRotation().Yaw - AxisValue,
@@ -576,7 +576,7 @@ void APlayerCharacter::Turn(float AxisValue)
 	PlayerMesh->SetRelativeRotation(FMath::RInterpTo(PlayerMesh->GetRelativeRotation(),
 													 NewRotation,
 													 UGameplayStatics::GetWorldDeltaSeconds(this),
-													 TurnInterpSpeed));
+													 LTurnInterpSpeed));
 }
 
 void APlayerCharacter::LookUp(float AxisValue)
@@ -585,14 +585,14 @@ void APlayerCharacter::LookUp(float AxisValue)
 	AddControllerPitchInput(SmoothVerticalLook);
 
 	// weapon sway for more visual smoothness
-	float LookupInterpSpeed;
+	float LLookupInterpSpeed;
 	if (bIsADS)
 	{
-		LookupInterpSpeed = 60;
+		LLookupInterpSpeed = LookInterpSpeed;
 	}
 	else
 	{
-		LookupInterpSpeed = 50;
+		LLookupInterpSpeed = LookInterpSpeed;
 	}
 	PlayerMesh->SetRelativeRotation(FRotator(PlayerMesh->GetRelativeRotation().Pitch - AxisValue,
 											 PlayerMesh->GetRelativeRotation().Yaw,
@@ -605,7 +605,7 @@ void APlayerCharacter::LookUp(float AxisValue)
 	PlayerMesh->SetRelativeRotation(FMath::RInterpTo(PlayerMesh->GetRelativeRotation(),
 													 NewRotation,
 													 UGameplayStatics::GetWorldDeltaSeconds(this),
-													 LookupInterpSpeed));
+													 LLookupInterpSpeed));
 }
 //===========================================================Input Axis Section End==========================================//
 
