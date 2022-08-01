@@ -31,8 +31,7 @@ protected:
 	virtual void ShootingInAction();
 	virtual void Reload();
 	void ReloadAfterEffect();
-	UPROPERTY(VisibleAnywhere)
-	USkeletalMeshComponent* GunMesh;
+	
 	UPROPERTY(VisibleAnywhere)
 	USceneComponent* Muzzel;
 	UPROPERTY(EditAnywhere)
@@ -55,5 +54,7 @@ protected:
 
 public:
 	USkeletalMeshComponent* OwnerMesh;
+	UPROPERTY(VisibleAnywhere,BlueprintReadOnly)
+	USkeletalMeshComponent* GunMesh;
 
 };

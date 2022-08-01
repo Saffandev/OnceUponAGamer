@@ -23,6 +23,8 @@ public:
 	void CanTakeCover(bool bCanTakeCover);
 	UFUNCTION(BlueprintPure)
 	bool GetIsReloading();
+	UFUNCTION(BlueprintPure)
+	USkeletalMeshComponent* GunMesh();
 
 protected:
 	virtual void BeginPlay() override;
@@ -54,8 +56,8 @@ protected:
 	
 	UPROPERTY(EditAnywhere)
 	TSubclassOf<class AAIGun> GunBp;
+	UPROPERTY(VisibleAnywhere,BlueprintReadOnly,meta = (AllowPrivateAccess = "true"))
 	AAIGun* Gun;
-	
 	UPROPERTY(EditAnywhere)
 	TSubclassOf<class AWeaponBase> GunDrop;
 	UPROPERTY(EditAnywhere)

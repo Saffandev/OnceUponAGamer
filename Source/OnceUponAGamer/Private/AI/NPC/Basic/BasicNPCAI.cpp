@@ -60,6 +60,7 @@ void ABasicNPCAI::OnOverlap(UPrimitiveComponent* OverlappedComp,AActor* OtherAct
 {
 	if(OtherActor == UGameplayStatics::GetPlayerPawn(this,0))
 	{
+		Gun->GunMesh;
 		// SetActorRotation(UKismetMathLibrary::FindLookAtRotation(GetActorLocation(),OtherActor->GetActorLocation()));
 		AIController->SetFocalPoint(OtherActor->GetActorLocation());
 	}
@@ -228,3 +229,12 @@ void ABasicNPCAI::DeathRituals(bool bIsExplosionDeath)
 
 }
 
+USkeletalMeshComponent* ABasicNPCAI::GunMesh()
+{
+	if(Gun)
+	{
+		return Gun->GunMesh;
+	}
+	return nullptr;
+	
+}
