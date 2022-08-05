@@ -18,7 +18,7 @@ public:
 	bool IsPlayerVisibleToAnyone();
 	void AssingInvestigation(FVector SuspectLocation);
 	void MoveBackToPatrol();
-
+	void AddAI(class ABasicNPCAI* AI);
 protected:
 	// Called when the game starts or when spawned
 	virtual void BeginPlay() override;
@@ -28,13 +28,13 @@ private:
 
 public:
 	TArray<AActor*> OverlappedCovers;
+	TArray<AActor*> OverlappedAI;
 
 private:
 	UPROPERTY(VisibleAnywhere,BlueprintReadOnly,meta = (AllowPrivateAccess = "true"))
 	class UBoxComponent* Box;
 	UPROPERTY(EditAnywhere)
 	TSubclassOf<class ACover> CoverBp;
-	TArray<AActor*> OverlappedAI;
 	UPROPERTY(EditAnywhere)
 	TSubclassOf<class ABasicNPCAI> AIBp;
 };

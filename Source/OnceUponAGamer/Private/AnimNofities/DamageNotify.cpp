@@ -34,13 +34,21 @@ void UDamageNotify::NotifyTick(USkeletalMeshComponent* MeshComp,UAnimSequenceBas
         {   
             if(HitActor->CanBeDamaged() && HitActor == UGameplayStatics::GetPlayerPawn(MeshComp->GetOwner(),0))
             {
+                
                 // UE_LOG(LogTemp,Warning,TEXT("Player Hitted"))
-                UGameplayStatics::ApplyDamage(HitActor,
-                                            Damage,
-                                            MeshComp->GetOwner()->GetInstigatorController(),
-                                            MeshComp->GetOwner(),
-                                            UDamageType::StaticClass()
-                                            );
+                // UGameplayStatics::ApplyDamage(HitActor,
+                //                             Damage,
+                //                             MeshComp->GetOwner()->GetInstigatorController(),
+                //                             MeshComp->GetOwner(),
+                //                             UDamageType::StaticClass()
+                //                             );
+                UGameplayStatics::ApplyPointDamage(HitActor,
+                                                   Damage,
+                                                   TraceHit.TraceStart,
+                                                   TraceHit,
+                                                   MeshComp->GetOwner()->GetInstigatorController(),
+                                                   MeshComp->GetOwner(),
+                                                   UDamageType::StaticClass());
                 bCanApplyDamage = false;
             }
         }

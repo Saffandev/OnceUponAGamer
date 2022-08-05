@@ -62,6 +62,8 @@ void UBTT_AttackMadDog::TickTask(UBehaviorTreeComponent &OwnerComp,uint8 *NodeMe
         if(!GetWorld()->GetTimerManager().TimerExists(EndHandle))
         {
         GetWorld()->GetTimerManager().SetTimer(EndHandle,[&](){OwnerComp.GetBlackboardComponent()->SetValueAsBool(BB_bCanThrowHand.SelectedKeyName,!bIsThisThrowHandTask);
+            OwnerComp.GetAIOwner()->ClearFocus(EAIFocusPriority::Gameplay);
+                                                            
                                                             FinishLatentTask(OwnerComp,EBTNodeResult::Succeeded);}, 0.1f, false, AttackTime);
         }
         }

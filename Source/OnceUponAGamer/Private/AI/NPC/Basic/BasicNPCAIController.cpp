@@ -62,7 +62,11 @@ void ABasicNPCAIController::BeginPlay()
         FTimerHandle VisibilityTimerHandle;
         GetWorld()->GetTimerManager().SetTimer(VisibilityTimerHandle,this,&ABasicNPCAIController::CheckPlayerVisibility,0.5,true);
     }
-    OwnerAI = Cast<ABasicNPCAI>(GetPawn());
+    FTimerHandle OwnerAIHandle;
+    GetWorld()->GetTimerManager().SetTimer(OwnerAIHandle,[&](){
+                    OwnerAI = Cast<ABasicNPCAI>(GetPawn());},0.1,false);
+    if(!OwnerAI)
+        UE_LOG(LogTemp,Error,TEXT("No owner Ai "));
     PlayerCharacter = Cast<APlayerCharacter>(UGameplayStatics::GetPlayerCharacter(this,0));
     bIsOwnerAlive = true;
 
@@ -84,7 +88,10 @@ void ABasicNPCAIController::OnPerceptionUpdated(TArray<AActor*>const& SensedActo
 {
     if(AIPerceptionComponent)
     {
-        if(SensedActors[0])
+        UE_LOG(LogTemp,Warning,TEXT("%i"),SensedActors.Num());
+        for(AActor* SensedActor:SensedActors)
+        {
+        if(SensedActor)
         {
             FActorPerceptionBlueprintInfo Info;
             AIPerceptionComponent->GetActorsPerception(SensedActors[0],Info);
@@ -141,11 +148,12 @@ void ABasicNPCAIController::OnPerceptionUpdated(TArray<AActor*>const& SensedActo
             }
         }
     }
+    }
 }
 
 void ABasicNPCAIController::CoverRequest()
 {
-    if(MyEncounterSpace != nullptr)
+    if(MyEncounterSpace && OwnerAI)
     {
         TArray<AActor*> CoverActor = MyEncounterSpace->OverlappedCovers;
         float CoverDistance = 1000000;
@@ -154,26 +162,32 @@ void ABasicNPCAIController::CoverRequest()
         FNavLocation NavLocation;
         for(auto TempCoverActor : CoverActor)
         {
+            if(!TempCoverActor)
+            {
+                continue;
+            }
             ACover* TempCover = Cast<ACover>(TempCoverActor);
             if(TempCover == nullptr)
             {
+                UE_LOG(LogTemp,Warning,TEXT("No Temp Cover"));
                 continue;
             }
             else if(TempCover->bIsAcquired)
             {   
                 continue;
             }
-            else if(OwnerAI->GetDistanceTo(TempCover) < CoverDistance)
-            {
-                CoverPoints = TempCover->GiveCoverPoints();
-                if(!UNavigationSystemV1::GetCurrent(GetWorld())->ProjectPointToNavigation(CoverPoints,NavLocation))
-                {
-                    continue;
-                }
-                CoverDistance = OwnerAI->GetDistanceTo(TempCover);
-                MainCover = TempCover;
+            
+            // else if(OwnerAI->GetDistanceTo(TempCover) < CoverDistance)
+            // {
+            //     CoverPoints = TempCover->GiveCoverPoints();
+            //     if(!UNavigationSystemV1::GetCurrent(GetWorld())->ProjectPointToNavigation(CoverPoints,NavLocation))
+            //     {
+            //         continue;
+            //     }
+            //     CoverDistance = OwnerAI->GetDistanceTo(TempCover);
+            //     MainCover = TempCover;
 
-            }
+            // }
         }
         CoverDistance = 1000000;
         if(MainCover == nullptr)
@@ -182,7 +196,7 @@ void ABasicNPCAIController::CoverRequest()
             Blackboard->SetValueAsBool(FName("bIsStandingCover"),false);
             Blackboard->SetValueAsBool(FName("bIsCoverAvailable"),false);
             Blackboard->SetValueAsObject(FName("CoverObj"),nullptr);
-            OwnerAI->ActiveCover = nullptr;
+            // OwnerAI->ActiveCover = nullptr;
         }
 
         else
@@ -190,7 +204,7 @@ void ABasicNPCAIController::CoverRequest()
             MainCover->bIsAcquired = true;
             Blackboard->SetValueAsVector(FName("CoverLocation"),NavLocation.Location);
             Blackboard->SetValueAsVector(FName("PeakCoverLocation"),MainCover->GivePeakPoints(OwnerAI));
-            Blackboard->SetValueAsBool(FName("bIsStandingCover"),MainCover->GetActorScale().Z > 2.f);
+            Blackboard->SetValueAsBool(FName("bIsStandingCover"),MainCover->bIsPeekCover);
             Blackboard->SetValueAsBool(FName("bIsCoverAvailable"),true);
             Blackboard->SetValueAsObject(FName("CoverObj"),MainCover);
             OwnerAI->ActiveCover = MainCover;
@@ -210,6 +224,10 @@ void ABasicNPCAIController::CoverRequest()
     }
     else
     {
+        if(!OwnerAI)
+        {
+            UE_LOG(LogTemp,Warning,TEXT("No Owner"));
+        }
         UE_LOG(LogTemp,Error,TEXT("No Encounter space"));
 
     }
@@ -218,6 +236,10 @@ void ABasicNPCAIController::CoverRequest()
 
 void ABasicNPCAIController::CheckPlayerVisibility()
 {
+    if(!PlayerCharacter || !OwnerAI)
+    {
+        return ;
+    }
     if(Blackboard->GetValueAsBool(FName("bCanSeePlayer")))
     {
         float Angle = AngleBetweenActors::AngleBetween(OwnerAI,PlayerCharacter,true);

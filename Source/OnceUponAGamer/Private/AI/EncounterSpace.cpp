@@ -51,6 +51,21 @@ if(AIBp)
 	}
 }
 
+void AEncounterSpace::AddAI(ABasicNPCAI* AI)
+{
+	if(!AI)
+	{
+		return;
+	}
+	ABasicNPCAIController* TempController = Cast<ABasicNPCAIController>(AI->GetInstigatorController());
+	if(TempController)
+	{	
+		OverlappedAI.Add(AI);
+		TempController->MyEncounterSpace = this;
+		UE_LOG(LogTemp,Warning,TEXT("AI added"));
+	}
+}
+
 // Called every frame
 void AEncounterSpace::Tick(float DeltaTime)
 {

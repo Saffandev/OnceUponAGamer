@@ -38,7 +38,8 @@ private:
 	USceneComponent* Point2;
 	class AMadDogNPCAI* OwnerAI;
 	FTimerHandle HandRecallTimerHandle;
-	
+	UPROPERTY(EditAnywhere)
+	float Damage;
 
 
 };

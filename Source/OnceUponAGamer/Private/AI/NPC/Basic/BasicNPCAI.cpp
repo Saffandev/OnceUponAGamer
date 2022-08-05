@@ -5,6 +5,7 @@
 #include "AI/PatrolPoint.h"
 #include "AI/NPC/Basic/AIGun.h"
 #include "AI/Cover.h"
+#include "AI/EncounterSpace.h"
 #include "Kismet/KismetMathLibrary.h"
 #include "Kismet/GameplayStatics.h"
 #include "GameframeWork/CharacterMovementComponent.h"
@@ -26,7 +27,8 @@ ABasicNPCAI::ABasicNPCAI()
 void ABasicNPCAI::BeginPlay()
 {
 	Super::BeginPlay();
-	TouchSenseCapsule->OnComponentBeginOverlap.AddDynamic(this,&ABasicNPCAI::OnOverlap);
+	TouchSenseCapsule->OnComponentBeginOverlap.AddDynamic(this,&ABasicNPCAI::OnOverlapTouchSense);
+	GetCapsuleComponent()->OnComponentBeginOverlap.AddDynamic(this,&ABasicNPCAI::OnOverlap);
 	AIController = UAIBlueprintHelperLibrary::GetAIController(this);
 	OnTakePointDamage.AddDynamic(this,&ABasicNPCAI::TakePointDamage);
 	this->OnTakeRadialDamage.AddDynamic(this,&ABasicNPCAI::TakeRadialDamage);
@@ -56,16 +58,28 @@ void ABasicNPCAI::Tick(float DeltaTime)
 	Super::Tick(DeltaTime);
 }
 
-void ABasicNPCAI::OnOverlap(UPrimitiveComponent* OverlappedComp,AActor* OtherActor,UPrimitiveComponent* OtherComp,int32 OtherBodyIndex, bool bFromSweep ,const FHitResult &SweepResult)
+void ABasicNPCAI::OnOverlapTouchSense(UPrimitiveComponent* OverlappedComp,AActor* OtherActor,UPrimitiveComponent* OtherComp,int32 OtherBodyIndex, bool bFromSweep ,const FHitResult &SweepResult)
 {
+	if(OtherActor == nullptr)
+	{
+		return ;
+	}
 	if(OtherActor == UGameplayStatics::GetPlayerPawn(this,0))
 	{
-		Gun->GunMesh;
 		// SetActorRotation(UKismetMathLibrary::FindLookAtRotation(GetActorLocation(),OtherActor->GetActorLocation()));
 		AIController->SetFocalPoint(OtherActor->GetActorLocation());
 	}
 }
-
+void ABasicNPCAI::OnOverlap(UPrimitiveComponent* OverlappedComp,AActor* OtherActor,UPrimitiveComponent* OtherComp,int32 OtherBodyIndex, bool bFromSweep ,const FHitResult &SweepResult)
+{
+	AEncounterSpace* OverlappedEncounterSpace = Cast<AEncounterSpace>(OtherActor);
+	if(OverlappedEncounterSpace)
+	{
+		UE_LOG(LogTemp,Warning,TEXT("Encounterspace overlappaed"));
+		OverlappedEncounterSpace->AddAI(this);
+		
+	}
+}
 void ABasicNPCAI::StartShooting()
 {
 	if(Gun && !bIsDead)

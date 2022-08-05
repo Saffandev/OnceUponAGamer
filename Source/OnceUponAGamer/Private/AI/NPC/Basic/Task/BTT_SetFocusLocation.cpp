@@ -13,16 +13,27 @@ UBTT_SetFocusLocation::UBTT_SetFocusLocation()
 
 EBTNodeResult::Type UBTT_SetFocusLocation::ExecuteTask(UBehaviorTreeComponent &OwnerComp,uint8* NodeMemory)
 {
-    ABasicNPCAIController* OwnerController = Cast<ABasicNPCAIController>(OwnerComp.GetOwner());
-    if(bCanFocus)
+    if(OwnerComp.GetAIOwner())
     {
-        OwnerController->SetFocalPoint(OwnerController->GetBlackboardComponent()->GetValueAsVector(BB_FocusLocation.SelectedKeyName));
-        // DrawDebugSphere(GetWorld(),OwnerController->GetBlackboardComponent()->GetValueAsVector(BB_FocusLocation.SelectedKeyName),20,20,FColor::Blue,false,5);
+        if(bCanFocus && (OwnerComp.GetAIOwner()->GetBlackboardComponent()))
+        {
+            OwnerComp.GetAIOwner()->SetFocalPoint(OwnerComp.GetAIOwner()->GetBlackboardComponent()->GetValueAsVector(BB_FocusLocation.SelectedKeyName));
+        }
+        else
+        {
+            OwnerComp.GetAIOwner()->ClearFocus(EAIFocusPriority::Gameplay);
+        }
     }
-    else
-    {
-        OwnerController->ClearFocus(EAIFocusPriority::Default);
-    }
+    // ABasicNPCAIController* OwnerController = Cast<ABasicNPCAIController>(OwnerComp.GetOwner());
+    // if(bCanFocus)
+    // {
+    //     OwnerController->SetFocalPoint(OwnerController->GetBlackboardComponent()->GetValueAsVector(BB_FocusLocation.SelectedKeyName));
+    //     // DrawDebugSphere(GetWorld(),OwnerController->GetBlackboardComponent()->GetValueAsVector(BB_FocusLocation.SelectedKeyName),20,20,FColor::Blue,false,5);
+    // }
+    // else
+    // {
+    //     OwnerController->ClearFocus(EAIFocusPriority::Default);
+    // }
     
     return EBTNodeResult::Succeeded;
 }

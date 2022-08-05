@@ -63,6 +63,17 @@ void AMadDogHand::BeginOverlap(UPrimitiveComponent* OverlappedComponent, AActor*
 	if(OtherActor == UGameplayStatics::GetPlayerPawn(this,0))
 	{
 		UE_LOG(LogTemp,Warning,TEXT("Player Hitted"));
+		if(GetOwner())
+		{
+			UGameplayStatics::ApplyPointDamage(OtherActor,
+												Damage,
+												SweepResult.TraceStart,
+												SweepResult,
+												nullptr,
+												GetOwner(),
+												UDamageType::StaticClass()
+												);
+		}
 	}
 }
 

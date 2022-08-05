@@ -4,6 +4,7 @@
 
 #include "CoreMinimal.h"
 #include "GameFramework/Character.h"
+#include "Components/TimelineComponent.h"
 #include "MadDogNPCAI.generated.h"
 
 UCLASS()
@@ -20,6 +21,9 @@ private:
 	UFUNCTION()
 	void TakeRadialDamage(AActor* DamagedActor,float Damage,const UDamageType* DamageType,FVector Origin,FHitResult Hit,AController* InstigatedBy,AActor* DamageCauser);
 	void DeathRituals(bool bIsExplosionDeath);
+	void ShieldDamageTaken(float Damage,FVector HitLocation);
+	UFUNCTION()
+	void ShieldHitEffect();
 
 public:
 	// Sets default values for this character's properties
@@ -40,6 +44,8 @@ private:
 	UPROPERTY(EditAnywhere)
 	class UStaticMeshComponent* HandMesh;
 	UPROPERTY(EditAnywhere)
+	class UStaticMeshComponent* Shield;
+	UPROPERTY(EditAnywhere)
 	class UArrowComponent* ThrowArrow;
 	class AMadDogHand* HandToThrow;
 	UPROPERTY(EditAnywhere)
@@ -54,8 +60,18 @@ private:
 	UAnimationAsset* DeathAnim_1;
 	UPROPERTY(EditAnywhere)
 	float Health;
-	
-
+	UPROPERTY(EditAnywhere)
+	float ShieldHealth;
+	UPROPERTY(EditAnywhere)
+	float ShieldHitRadius;
+	UPROPERTY(EditAnywhere)
+	TSubclassOf<AActor> ShieldDebris;
+	FTimeline ShieldHitTimeline;
+	UPROPERTY(EditAnywhere)
+	UCurveFloat* ShieldHitCurve;
+	UPROPERTY(EditAnywhere)
+	UCurveLinearColor* ShieldHitColorCurve;
+	bool bIsShieldActive = true;
 
 public:
 	UPROPERTY(EditAnywhere,BlueprintReadWrite)

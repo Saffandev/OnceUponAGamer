@@ -7,6 +7,7 @@
 #include "Components/StaticMeshComponent.h"
 #include "Components/ArrowComponent.h"
 #include "Components/CapsuleComponent.h"
+#include "Curves/CurveLinearColor.h"
 #include "Kismet/GameplayStatics.h"
 #include "Kismet/KismetMathLibrary.h"
 #include "BehaviorTree/BlackboardComponent.h"
@@ -24,6 +25,8 @@ AMadDogNPCAI::AMadDogNPCAI()
 	HandMesh = CreateDefaultSubobject<UStaticMeshComponent>("HandMesh");
 	HandMesh->SetupAttachment(GetMesh(),FName("MeleeWeapon"));
 
+	Shield = CreateDefaultSubobject<UStaticMeshComponent>("Shield");
+	Shield->SetupAttachment(GetMesh());
 	ThrowArrow = CreateDefaultSubobject<UArrowComponent>("ThrowArrow");
 	// ThrowArrow->SetupAttachment(GetMesh(),FName("Weapon"));
 
@@ -47,6 +50,13 @@ void AMadDogNPCAI::BeginPlay()
 	{
 		ThrowArrow->AttachToComponent(GetMesh(),FAttachmentTransformRules::SnapToTargetNotIncludingScale,FName("MeleeWeapon"));
 	}
+
+	if(ShieldHitCurve)
+	{
+		FOnTimelineFloat TimelineCallback;
+		TimelineCallback.BindUFunction(this,FName("ShieldHitEffect"));
+		ShieldHitTimeline.AddInterpFloat(ShieldHitCurve,TimelineCallback);
+	}
 	
 }
 
@@ -59,6 +69,8 @@ void AMadDogNPCAI::Tick(float DeltaTime)
 	const FVector FinalArrowLoc = ArrowNewLoc + (ThrowArrow->GetForwardVector() * PredectionDistance); 
 	FRotator ArrowNewRot = UKismetMathLibrary::FindLookAtRotation(FinalArrowLoc,UGameplayStatics::GetPlayerCharacter(this,0)->GetMesh()->GetComponentLocation());
 	ThrowArrow->SetWorldRotation(ArrowNewRot);
+
+	ShieldHitTimeline.TickTimeline(DeltaTime);
 
 }
 
@@ -106,6 +118,7 @@ void AMadDogNPCAI::ThrowHand()
 		//this spawn is used to set the dinamic variables(setting variables before spawning the actor)
 		HandToThrow = GetWorld()->SpawnActorDeferred<AMadDogHand>(HandToThrowBP,HandTransform,this);
 		HandToThrow->ThrowForce = ThrowForceCalc();
+		HandToThrow->SetOwner(this);
 		HandToThrow->FinishSpawning(HandTransform);
 		HandMesh->SetVisibility(false);
 	}
@@ -149,31 +162,86 @@ void AMadDogNPCAI::HandRecallDone()
 
 void AMadDogNPCAI::TakePointDamage(AActor* DamagedActor,float Damage,AController* InstigatedBy, FVector HitLocation,UPrimitiveComponent* HitComp,FName BoneName,FVector ShotDirection,const UDamageType* DamageType,AActor* DamageCauser)
 {
-	Health -= Damage;
-	UE_LOG(LogTemp,Error,TEXT("Health = %f"),Health);
-	//Shield Damage visuals
-	// body hit visuals
-	//
-	if(Health <= 0 && !bIsDead)
+	if(bIsShieldActive)
 	{
-		if(GetVelocity().Size() < 10.f )
+		if(ShieldHealth > 0)
+			ShieldDamageTaken(Damage,HitLocation);
+		else if(ShieldHealth <= 0)
 		{
-			if(DeathAnim_1)
+			Shield->SetCollisionEnabled(ECollisionEnabled::NoCollision);
+			Shield->SetVisibility(false);
+			if(ShieldDebris)
 			{
-				GetMesh()->PlayAnimation(DeathAnim_1,false);
+				GetWorld()->SpawnActor<AActor>(ShieldDebris,Shield->GetComponentTransform());
 			}
+			bIsShieldActive = false;
 		}
-		DeathRituals(false);
+	}
+	
+	else
+	{
+		Health -= Damage;
+		UE_LOG(LogTemp,Error,TEXT("Health = %f"),Health);
+		//Shield Damage visuals
+		// body hit visuals
+		//
+		if(Health <= 0 && !bIsDead)
+		{
+			if(GetVelocity().Size() < 10.f )
+			{
+				if(DeathAnim_1)
+				{
+					GetMesh()->PlayAnimation(DeathAnim_1,false);
+				}
+			}
+			DeathRituals(false);
+		}
 	}
 }
 void AMadDogNPCAI::TakeRadialDamage(AActor* DamagedActor,float Damage,const UDamageType* DamageType,FVector Origin,FHitResult Hit,AController* InstigatedBy,AActor* DamageCauser)
 {
-	Health -= Damage;
-	if(Health <= 0 && !bIsDead)
+	if(bIsShieldActive)
 	{
-		GetMesh()->SetSimulatePhysics(true);
-		DeathRituals(true);
+		if(ShieldHealth > 0)
+			ShieldDamageTaken(Damage,Hit.Location);
+		else if(ShieldHealth <= 0)
+		{
+			Shield->SetCollisionEnabled(ECollisionEnabled::NoCollision);
+			Shield->SetVisibility(false);
+			if(ShieldDebris)
+			{
+				GetWorld()->SpawnActor<AActor>(ShieldDebris,Shield->GetComponentTransform());
+			}
+			bIsShieldActive = false;
+		}
 	}
+	else
+	{
+		Health -= Damage;
+		if(Health <= 0 && !bIsDead)
+		{
+			GetMesh()->SetSimulatePhysics(true);
+			DeathRituals(true);
+		}
+	}
+}
+
+void AMadDogNPCAI::ShieldDamageTaken(float Damage,FVector HitLocation)
+{
+	ShieldHealth -= Damage;
+	Shield->CreateDynamicMaterialInstance(0)->SetVectorParameterValue(FName("pos"),HitLocation);
+	if(ShieldHitColorCurve)
+	{
+		ShieldHitColorCurve->GetLinearColorValue(ShieldHealth/100);
+		Shield->CreateDynamicMaterialInstance(0)->SetVectorParameterValue(FName("MainColor"),ShieldHitColorCurve->GetLinearColorValue(1 - ShieldHealth/100));
+	}
+	ShieldHitTimeline.PlayFromStart();
+}
+
+void AMadDogNPCAI::ShieldHitEffect()
+{
+	float Alpha = ShieldHitCurve->GetFloatValue(ShieldHitTimeline.GetPlaybackPosition());
+	Shield->CreateDynamicMaterialInstance(0)->SetScalarParameterValue(FName("Radius"),Alpha * ShieldHitRadius);
 }
 void AMadDogNPCAI::DeathRituals(bool bIsExplosionDeath)
 {

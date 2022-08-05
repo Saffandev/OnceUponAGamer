@@ -25,7 +25,7 @@ public:
 	bool GetIsReloading();
 	UFUNCTION(BlueprintPure)
 	USkeletalMeshComponent* GunMesh();
-
+	
 protected:
 	virtual void BeginPlay() override;
 	// virtual void Reload();
@@ -34,7 +34,9 @@ protected:
 	UFUNCTION()
 	void TakeRadialDamage(AActor* DamagedActor,float Damage,const UDamageType* DamageType,FVector Origin,FHitResult Hit,AController* InstigatedBy,AActor* DamageCauser);
 	UFUNCTION()
-	void OnOverlap(UPrimitiveComponent* OverlappedComp,AActor* OtherActor,UPrimitiveComponent* OtherComp,int32 OtherBodyIndex, bool bFromSweep ,const FHitResult &SweepResult);
+	void OnOverlapTouchSense(UPrimitiveComponent* OverlappedComp,AActor* OtherActor,UPrimitiveComponent* OtherComp,int32 OtherBodyIndex, bool bFromSweep ,const FHitResult &SweepResult);
+	UFUNCTION()
+	void OnOverlap(UPrimitiveComponent* OverlappedComp,AActor* OtherActor,UPrimitiveComponent* OtherComp,int32 OtherBodyIndex, bool bFromSweep ,const FHitResult &SweepResult);	
 	void DeathRituals(bool bIsExplosionDeath);
 	
 public:

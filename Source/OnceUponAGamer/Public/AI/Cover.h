@@ -24,6 +24,7 @@ private:
 	FVector ClosestPointToActor(AActor* CompareActor,TArray<FVector> Points);
 
 private:
+	UPROPERTY(VisibleAnywhere)
 	class UBoxComponent* Box;
 	UPROPERTY(EditAnywhere,meta = (MakeEditWidget = "true"))
 	TArray<FVector> CoverPoints;
@@ -32,6 +33,8 @@ private:
 
 public:	
 	bool bIsAcquired;
+	UPROPERTY(EditAnywhere)
+	bool bIsPeekCover;
 
 
 
