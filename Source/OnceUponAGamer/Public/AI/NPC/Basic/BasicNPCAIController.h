@@ -19,17 +19,18 @@ public:
 	class ABasicNPCAI* GetControlledPawn();
 	void CoverRequest();
 	void ToggleSightSense();
-
+	// void Dead();
+	UFUNCTION(BlueprintCallable)
+	void Activate();
+	void InitOwner();
 protected:
 	virtual void BeginPlay() override;
 	UFUNCTION()
 	void OnPerceptionUpdated(TArray<AActor*>const& SensedActors);
 	void CheckPlayerVisibility();
-
 public:
 	class AEncounterSpace* MyEncounterSpace;
 	bool bIsOwnerAlive;
-
 protected:
 	UPROPERTY(VisibleAnywhere)
 	UAIPerceptionComponent* AIPerceptionComponent;
@@ -43,6 +44,6 @@ protected:
 	class UBlackboardComponent* Blackboard;
 	class ABasicNPCAI* OwnerAI;
     FTimerHandle CoverTimerHandle;
-
+	bool bIsUnpossed;
 	
 };

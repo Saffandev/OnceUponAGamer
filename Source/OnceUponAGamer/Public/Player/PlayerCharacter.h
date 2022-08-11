@@ -45,14 +45,17 @@ USTRUCT(BlueprintType)
 	struct FWeaponData
 	{
 		GENERATED_BODY()
+		UPROPERTY(VisibleAnywhere,BlueprintReadOnly)
 		EWeaponName WeaponName;
+		UPROPERTY(VisibleAnywhere,BlueprintReadOnly)
 		TSubclassOf<AWeaponBase> WeaponClass;
-		TSubclassOf<class APickupWeaponBase> PickupWeaponClass;
+		// TSubclassOf<class APickupWeaponBase> PickupWeaponClass;
 		int32 MaxAmmo;
 		UPROPERTY(VisibleAnywhere,BlueprintReadOnly)
 		int32 TotalAmmo;
 		UPROPERTY(VisibleAnywhere,BlueprintReadOnly)
 		int32 CurrentMagAmmo;
+		UPROPERTY(VisibleAnywhere,BlueprintReadOnly)
 		int32 MagSize;
 		float ReloadTime;
 		float Accuracy;
@@ -89,8 +92,8 @@ public:
 	void PlayCameraShake(TSubclassOf<UCameraShakeBase> ShakeClass,float Scale);
 	bool IsADSButtonDown();
 	void ADSON();
-	void DropWeapon();
-	void SwitchWeapon();
+	void DropWeapon(bool bIsPrimaryDrop);
+	void SwitchWeapon(bool bIsPickupWeapon);
 	void Reload();
 	bool GetWallRunning()
 	{
@@ -101,6 +104,10 @@ public:
 	UFUNCTION(BlueprintCallable)
 	void HealShield(float ShieldHeal);
 	void RegainShield();
+	UFUNCTION(BlueprintCallable)
+	FWeaponData GetWeaponData(bool bIsSecondaryWeapon);
+	UFUNCTION(BlueprintCallable)
+	void SetWeaponData(bool bIsSecondaryWeapon, FWeaponData WeaponData);
 
 protected:
 	virtual void BeginPlay() override;
@@ -134,7 +141,7 @@ private:
 	AThrowableBase* StartThrow(TSubclassOf<AThrowableBase> Throwable);
 	void EndThrow(AThrowableBase* CurrentThrowable);
 	void ThrowPredection();
-	void SetWeaponVars(FWeaponData NewWeaponData,bool bIsPrimaryWeapon);
+	void SetWeaponVars(FWeaponData NewWeaponData,bool bIsPrimaryWeapon,bool bIsPickupWeapon);
 	bool CanUncrouch(float CapsuleHeightAlpha = 0.f) const;
 	FVector FindLaunchVelocity() const;	
 
@@ -320,6 +327,8 @@ public:
 	UPROPERTY(VisibleAnywhere,BlueprintReadOnly,Category = "Weapon")
 	int32 WeaponEquippedSlot;
 	AWeaponBase* CurrentWeapon;
+	AWeaponBase* EqPrimaryWeapon;
+	AWeaponBase* EqSecondaryWeapon;
 	EWeaponName PickupWeaponName;
 	UPROPERTY(VisibleAnywhere,BlueprintReadOnly,Category = "Throwable")
 	FThrowableData PrimaryThrowableData;

@@ -324,8 +324,9 @@ void AWeaponBase::PickupWeaponSetup(EWeaponName LWeaponName, TSubclassOf<AWeapon
 	GunMesh->SetCollisionEnabled(ECollisionEnabled::NoCollision);
 	if (PlayerCharacter->PrimaryWeapon.WeaponClass->IsChildOf(AKnifeWeapon::StaticClass()))
 	{
+		UE_LOG(LogTemp,Warning,TEXT("Primary Weapon Pickup in empty slot"));
 		PlayerCharacter->WeaponEquippedSlot = 0;
-		PlayerCharacter->DropWeapon();
+		PlayerCharacter->DropWeapon(true);
 		PlayerCharacter->PrimaryWeapon.WeaponName = LWeaponName;
 		PlayerCharacter->PrimaryWeapon.WeaponClass = LWeaponClass;
 		PlayerCharacter->PrimaryWeapon.TotalAmmo = LTotalAmmo;
@@ -337,8 +338,9 @@ void AWeaponBase::PickupWeaponSetup(EWeaponName LWeaponName, TSubclassOf<AWeapon
 
 	else if (PlayerCharacter->SecondaryWeapon.WeaponClass->IsChildOf(AKnifeWeapon::StaticClass()))
 	{
+		UE_LOG(LogTemp,Warning,TEXT("Secondary Weapon Pickup in empty slot"));
 		PlayerCharacter->WeaponEquippedSlot = 1;
-		PlayerCharacter->DropWeapon();
+		PlayerCharacter->DropWeapon(false);
 		PlayerCharacter->SecondaryWeapon.WeaponClass = LWeaponClass;
 		PlayerCharacter->SecondaryWeapon.TotalAmmo = LTotalAmmo;
 		PlayerCharacter->SecondaryWeapon.MaxAmmo = LMaxAmmo;
@@ -351,7 +353,8 @@ void AWeaponBase::PickupWeaponSetup(EWeaponName LWeaponName, TSubclassOf<AWeapon
 	{
 		if (PlayerCharacter->WeaponEquippedSlot == 0)
 		{
-			PlayerCharacter->DropWeapon();
+			UE_LOG(LogTemp,Warning,TEXT("Primary Weapon Pickup"));
+			PlayerCharacter->DropWeapon(true);
 			PlayerCharacter->PrimaryWeapon.WeaponClass = LWeaponClass;
 			PlayerCharacter->PrimaryWeapon.TotalAmmo = LTotalAmmo;
 			PlayerCharacter->PrimaryWeapon.MaxAmmo = LMaxAmmo;
@@ -362,7 +365,8 @@ void AWeaponBase::PickupWeaponSetup(EWeaponName LWeaponName, TSubclassOf<AWeapon
 
 		else if (PlayerCharacter->WeaponEquippedSlot == 1)
 		{
-			PlayerCharacter->DropWeapon();
+			UE_LOG(LogTemp,Warning,TEXT("Secondary Weapon Pickup"));
+			PlayerCharacter->DropWeapon(false);
 			PlayerCharacter->SecondaryWeapon.WeaponClass = LWeaponClass;
 			PlayerCharacter->SecondaryWeapon.TotalAmmo = LTotalAmmo;
 			PlayerCharacter->SecondaryWeapon.MaxAmmo = LMaxAmmo;
@@ -372,7 +376,7 @@ void AWeaponBase::PickupWeaponSetup(EWeaponName LWeaponName, TSubclassOf<AWeapon
 		}
 	}
 
-	PlayerCharacter->SwitchWeapon();
+	PlayerCharacter->SwitchWeapon(true);
 }
 
 void AWeaponBase::SetPickupWeaponName()

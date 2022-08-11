@@ -31,8 +31,7 @@ void AEncounterSpace::BeginPlay()
 		Box->GetOverlappingActors(OverlappedCovers,CoverBp);
 	}
 	FTimerHandle TimerHandle;
-	GetWorld()->GetTimerManager().SetTimer(TimerHandle,this,&AEncounterSpace::SetupController,0.1,false,0.1);
-	
+	GetWorld()->GetTimerManager().SetTimer(TimerHandle,this,&AEncounterSpace::SetupController,0.1,false);
 }
 
 void AEncounterSpace::SetupController()
@@ -40,6 +39,7 @@ void AEncounterSpace::SetupController()
 if(AIBp)
 	{
 		Box->GetOverlappingActors(OverlappedAI,AIBp);
+		NoOfAiAlive = OverlappedAI.Num();
 		for(auto tempActor:OverlappedAI)
 		{
 			ABasicNPCAIController* TempController = Cast<ABasicNPCAIController>(tempActor->GetInstigatorController());
@@ -61,6 +61,7 @@ void AEncounterSpace::AddAI(ABasicNPCAI* AI)
 	if(TempController)
 	{	
 		OverlappedAI.Add(AI);
+		NoOfAiAlive++;
 		TempController->MyEncounterSpace = this;
 		UE_LOG(LogTemp,Warning,TEXT("AI added"));
 	}
@@ -155,5 +156,18 @@ void AEncounterSpace::MoveBackToPatrol()
 			UE_LOG(LogTemp,Error,TEXT("Move Back To Patrolling Called"));
 			TempController->ToggleSightSense();
 		}
+	}
+}
+
+void AEncounterSpace::IAMDead()
+{
+	NoOfAiAlive--;
+	// SomeoneIsDead();
+	UE_LOG(LogTemp,Warning,TEXT("Ai count = %i"),NoOfAiAlive);
+	if(NoOfAiAlive <= 0)
+	{
+		//open doors
+		TheratCleared();
+
 	}
 }

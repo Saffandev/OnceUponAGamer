@@ -26,9 +26,9 @@ void UBTS_ThrowHandCheck::TickNode(UBehaviorTreeComponent &OwnerComp, uint8 *Nod
         bool LineOfSight = OwnerComp.GetAIOwner()->LineOfSightTo(PlayerPawn);
         float Distance = OwnerPawn->GetDistanceTo(PlayerPawn);
 
-        bool bCanThrowHand = Distance > GroundThrowCheck || 
+        bool bCanThrowHand = (Distance > GroundThrowCheck || 
                             (Distance > AirThrowCheck && 
-                            PlayerPawn->GetCharacterMovement()->IsFalling()) && 
+                            PlayerPawn->GetCharacterMovement()->IsFalling())) && 
                             LineOfSight && 
                             AngleBetween < ThrowAngleCheck;
         OwnerComp.GetBlackboardComponent()->SetValueAsBool(BB_bCanThrowHand.SelectedKeyName,bCanThrowHand);

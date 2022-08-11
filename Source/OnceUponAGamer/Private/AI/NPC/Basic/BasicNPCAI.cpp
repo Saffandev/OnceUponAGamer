@@ -72,11 +72,11 @@ void ABasicNPCAI::OnOverlapTouchSense(UPrimitiveComponent* OverlappedComp,AActor
 }
 void ABasicNPCAI::OnOverlap(UPrimitiveComponent* OverlappedComp,AActor* OtherActor,UPrimitiveComponent* OtherComp,int32 OtherBodyIndex, bool bFromSweep ,const FHitResult &SweepResult)
 {
-	AEncounterSpace* OverlappedEncounterSpace = Cast<AEncounterSpace>(OtherActor);
-	if(OverlappedEncounterSpace)
+	MyEncounterSpace = Cast<AEncounterSpace>(OtherActor);
+	if(MyEncounterSpace)
 	{
 		UE_LOG(LogTemp,Warning,TEXT("Encounterspace overlappaed"));
-		OverlappedEncounterSpace->AddAI(this);
+		MyEncounterSpace->AddAI(this);
 		
 	}
 }
@@ -196,7 +196,7 @@ void ABasicNPCAI::TakePointDamage(AActor* DamagedActor,float Damage,AController*
 void ABasicNPCAI::TakeRadialDamage(AActor* DamagedActor,float Damage,const UDamageType* DamageType,FVector Origin,FHitResult Hit,AController* InstigatedBy,AActor* DamageCauser)
 {
 	Health -= Damage;
-	if(Health <= 0)
+	if(Health <= 0 && bIsDead == false)
 	{
 		LastHitBoneName = Hit.BoneName;	
 		DeathRituals(true);
@@ -206,10 +206,14 @@ void ABasicNPCAI::TakeRadialDamage(AActor* DamagedActor,float Damage,const UDama
 void ABasicNPCAI::DeathRituals(bool bIsExplosionDeath)
 {
 	Health = 0;
+	UE_LOG(LogTemp,Error,TEXT("I am deaddddddd"));
 	bIsDead = true;
 	StopShooting();
 	FTimerHandle DeathTimer;
-	
+	if(MyEncounterSpace)
+		MyEncounterSpace->IAMDead();
+	else
+		UE_LOG(LogTemp,Warning,TEXT("No Encounter Space"));
 	if(bIsExplosionDeath)
 	{
 		GetMesh()->SetSimulatePhysics(true);
@@ -220,6 +224,7 @@ void ABasicNPCAI::DeathRituals(bool bIsExplosionDeath)
 	}
 	GetCharacterMovement()->StopMovementImmediately();
 	AIController->GetBrainComponent()->StopLogic(FString("Dead"));
+	AIController->UnPossess();
 	
 	if(Gun)
 	{
@@ -239,6 +244,7 @@ void ABasicNPCAI::DeathRituals(bool bIsExplosionDeath)
 	DetachFromControllerPendingDestroy();
 	SetCanBeDamaged(false);
 	GetCapsuleComponent()->SetCollisionEnabled(ECollisionEnabled::PhysicsOnly);
+	
 	// GetMesh()->SetCollisionEnabled(ECollisionEnabled::PhysicsOnly);
 
 }

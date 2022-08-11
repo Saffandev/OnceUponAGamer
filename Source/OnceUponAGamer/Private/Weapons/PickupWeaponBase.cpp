@@ -37,68 +37,68 @@ void APickupWeaponBase::PickupWeapon(){}
 void APickupWeaponBase::PickupWeaponSetup(EWeaponName LWeaponName, TSubclassOf<AWeaponBase> LWeaponClass, TSubclassOf<APickupWeaponBase> LPickupWeaponClass, int LTotalAmmo,int LMaxAmmo, int LMagSize,int LCurrentMagAmmo,float LFireRate)
 {
 	
-	if(UKismetMathLibrary::EqualEqual_ClassClass(PlayerCharacter->PrimaryWeapon.WeaponClass.Get(),LWeaponClass.Get())&&
-		UKismetMathLibrary::EqualEqual_ClassClass(PlayerCharacter->SecondaryWeapon.WeaponClass.Get(),LWeaponClass.Get()))
-		{
-			return;
-		}
+	// if(UKismetMathLibrary::EqualEqual_ClassClass(PlayerCharacter->PrimaryWeapon.WeaponClass.Get(),LWeaponClass.Get())&&
+	// 	UKismetMathLibrary::EqualEqual_ClassClass(PlayerCharacter->SecondaryWeapon.WeaponClass.Get(),LWeaponClass.Get()))
+	// 	{
+	// 		return;
+	// 	}
 
-	if(PlayerCharacter->PrimaryWeapon.WeaponClass->IsChildOf(AKnifeWeapon::StaticClass()))
-	{
-		PlayerCharacter->WeaponEquippedSlot = 0;
-		PlayerCharacter->DropWeapon();
-		PlayerCharacter->PrimaryWeapon.WeaponName 			= LWeaponName;
-		PlayerCharacter->PrimaryWeapon.WeaponClass 			= LWeaponClass;
-		PlayerCharacter->PrimaryWeapon.PickupWeaponClass 	= LPickupWeaponClass;
-		PlayerCharacter->PrimaryWeapon.TotalAmmo 			= LTotalAmmo;
-		PlayerCharacter->PrimaryWeapon.MaxAmmo 				= LMaxAmmo;
-		PlayerCharacter->PrimaryWeapon.MagSize 				= LMagSize;
-		PlayerCharacter->PrimaryWeapon.CurrentMagAmmo 		= LCurrentMagAmmo;
-		PlayerCharacter->PrimaryWeapon.FireRate 			= LFireRate;
-	}
+	// if(PlayerCharacter->PrimaryWeapon.WeaponClass->IsChildOf(AKnifeWeapon::StaticClass()))
+	// {
+	// 	PlayerCharacter->WeaponEquippedSlot = 0;
+	// 	PlayerCharacter->DropWeapon();
+	// 	PlayerCharacter->PrimaryWeapon.WeaponName 			= LWeaponName;
+	// 	PlayerCharacter->PrimaryWeapon.WeaponClass 			= LWeaponClass;
+	// 	PlayerCharacter->PrimaryWeapon.PickupWeaponClass 	= LPickupWeaponClass;
+	// 	PlayerCharacter->PrimaryWeapon.TotalAmmo 			= LTotalAmmo;
+	// 	PlayerCharacter->PrimaryWeapon.MaxAmmo 				= LMaxAmmo;
+	// 	PlayerCharacter->PrimaryWeapon.MagSize 				= LMagSize;
+	// 	PlayerCharacter->PrimaryWeapon.CurrentMagAmmo 		= LCurrentMagAmmo;
+	// 	PlayerCharacter->PrimaryWeapon.FireRate 			= LFireRate;
+	// }
 	
-	else if(PlayerCharacter->SecondaryWeapon.WeaponClass->IsChildOf(AKnifeWeapon::StaticClass()))
-	{
-		PlayerCharacter->WeaponEquippedSlot = 1;
-		PlayerCharacter->DropWeapon();
-		PlayerCharacter->SecondaryWeapon.WeaponClass 		= LWeaponClass;
-		PlayerCharacter->SecondaryWeapon.PickupWeaponClass 	= LPickupWeaponClass;
-		PlayerCharacter->SecondaryWeapon.TotalAmmo 			= LTotalAmmo;
-		PlayerCharacter->SecondaryWeapon.MaxAmmo 			= LMaxAmmo;
-		PlayerCharacter->SecondaryWeapon.MagSize 			= LMagSize;
-		PlayerCharacter->SecondaryWeapon.CurrentMagAmmo 	= LCurrentMagAmmo;
-		PlayerCharacter->SecondaryWeapon.FireRate 			= LFireRate;
-	}
+	// else if(PlayerCharacter->SecondaryWeapon.WeaponClass->IsChildOf(AKnifeWeapon::StaticClass()))
+	// {
+	// 	PlayerCharacter->WeaponEquippedSlot = 1;
+	// 	PlayerCharacter->DropWeapon();
+	// 	PlayerCharacter->SecondaryWeapon.WeaponClass 		= LWeaponClass;
+	// 	PlayerCharacter->SecondaryWeapon.PickupWeaponClass 	= LPickupWeaponClass;
+	// 	PlayerCharacter->SecondaryWeapon.TotalAmmo 			= LTotalAmmo;
+	// 	PlayerCharacter->SecondaryWeapon.MaxAmmo 			= LMaxAmmo;
+	// 	PlayerCharacter->SecondaryWeapon.MagSize 			= LMagSize;
+	// 	PlayerCharacter->SecondaryWeapon.CurrentMagAmmo 	= LCurrentMagAmmo;
+	// 	PlayerCharacter->SecondaryWeapon.FireRate 			= LFireRate;
+	// }
 
-	else
-	{
-		if(PlayerCharacter->WeaponEquippedSlot == 0)
-		{
-			PlayerCharacter->DropWeapon();
-			PlayerCharacter->PrimaryWeapon.WeaponClass 			= LWeaponClass;
-			PlayerCharacter->PrimaryWeapon.PickupWeaponClass 	= LPickupWeaponClass;
-			PlayerCharacter->PrimaryWeapon.TotalAmmo 			= LTotalAmmo;
-			PlayerCharacter->PrimaryWeapon.MaxAmmo 				= LMaxAmmo;
-			PlayerCharacter->PrimaryWeapon.MagSize 				= LMagSize;
-			PlayerCharacter->PrimaryWeapon.CurrentMagAmmo 		= LCurrentMagAmmo;
-			PlayerCharacter->PrimaryWeapon.FireRate 			= LFireRate;
-		}
+	// else
+	// {
+	// 	if(PlayerCharacter->WeaponEquippedSlot == 0)
+	// 	{
+	// 		PlayerCharacter->DropWeapon();
+	// 		PlayerCharacter->PrimaryWeapon.WeaponClass 			= LWeaponClass;
+	// 		PlayerCharacter->PrimaryWeapon.PickupWeaponClass 	= LPickupWeaponClass;
+	// 		PlayerCharacter->PrimaryWeapon.TotalAmmo 			= LTotalAmmo;
+	// 		PlayerCharacter->PrimaryWeapon.MaxAmmo 				= LMaxAmmo;
+	// 		PlayerCharacter->PrimaryWeapon.MagSize 				= LMagSize;
+	// 		PlayerCharacter->PrimaryWeapon.CurrentMagAmmo 		= LCurrentMagAmmo;
+	// 		PlayerCharacter->PrimaryWeapon.FireRate 			= LFireRate;
+	// 	}
 
-		else if(PlayerCharacter->WeaponEquippedSlot == 1)
-		{
-			PlayerCharacter->DropWeapon();
-			PlayerCharacter->SecondaryWeapon.WeaponClass 		= LWeaponClass;
-			PlayerCharacter->SecondaryWeapon.PickupWeaponClass 	= LPickupWeaponClass;
-			PlayerCharacter->SecondaryWeapon.TotalAmmo 			= LTotalAmmo;
-			PlayerCharacter->SecondaryWeapon.MaxAmmo 			= LMaxAmmo;
-			PlayerCharacter->SecondaryWeapon.MagSize 			= LMagSize;
-			PlayerCharacter->SecondaryWeapon.CurrentMagAmmo 	= LCurrentMagAmmo;
-			PlayerCharacter->SecondaryWeapon.FireRate 			= LFireRate;
-		}
-	}
+	// 	else if(PlayerCharacter->WeaponEquippedSlot == 1)
+	// 	{
+	// 		PlayerCharacter->DropWeapon();
+	// 		PlayerCharacter->SecondaryWeapon.WeaponClass 		= LWeaponClass;
+	// 		PlayerCharacter->SecondaryWeapon.PickupWeaponClass 	= LPickupWeaponClass;
+	// 		PlayerCharacter->SecondaryWeapon.TotalAmmo 			= LTotalAmmo;
+	// 		PlayerCharacter->SecondaryWeapon.MaxAmmo 			= LMaxAmmo;
+	// 		PlayerCharacter->SecondaryWeapon.MagSize 			= LMagSize;
+	// 		PlayerCharacter->SecondaryWeapon.CurrentMagAmmo 	= LCurrentMagAmmo;
+	// 		PlayerCharacter->SecondaryWeapon.FireRate 			= LFireRate;
+	// 	}
+	// }
 
-	PlayerCharacter->SwitchWeapon();
-	this->Destroy();
+	// PlayerCharacter->SwitchWeapon(true);
+	// this->Destroy();
 }
 
 void APickupWeaponBase::SetPickupWeaponName(){}

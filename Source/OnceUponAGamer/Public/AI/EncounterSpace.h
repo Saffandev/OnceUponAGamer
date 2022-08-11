@@ -19,6 +19,14 @@ public:
 	void AssingInvestigation(FVector SuspectLocation);
 	void MoveBackToPatrol();
 	void AddAI(class ABasicNPCAI* AI);
+	void IAMDead();
+	UFUNCTION(BlueprintImplementableEvent)
+	void TheratCleared();
+	UFUNCTION(BlueprintImplementableEvent)
+	void ThreatDetected();
+	void RequestAllies(FVector SpawnLocation);
+	UFUNCTION(BlueprintImplementableEvent)
+	void SomeoneIsDead();
 protected:
 	// Called when the game starts or when spawned
 	virtual void BeginPlay() override;
@@ -37,4 +45,6 @@ private:
 	TSubclassOf<class ACover> CoverBp;
 	UPROPERTY(EditAnywhere)
 	TSubclassOf<class ABasicNPCAI> AIBp;
+	UPROPERTY(VisibleAnywhere,BlueprintReadOnly,meta = (AllowPrivateAccess = "true"))
+	int32 NoOfAiAlive;
 };

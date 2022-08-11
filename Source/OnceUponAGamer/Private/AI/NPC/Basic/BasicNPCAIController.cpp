@@ -54,17 +54,8 @@ void ABasicNPCAIController::BeginPlay()
 {
     Super::BeginPlay();
    
-    if(BehaviorTree)
-    {
-        RunBehaviorTree(BehaviorTree);
-        Blackboard = GetBlackboardComponent();
-        Blackboard->SetValueAsInt(FName("PatrolDirection"),1);
-        FTimerHandle VisibilityTimerHandle;
-        GetWorld()->GetTimerManager().SetTimer(VisibilityTimerHandle,this,&ABasicNPCAIController::CheckPlayerVisibility,0.5,true);
-    }
     FTimerHandle OwnerAIHandle;
-    GetWorld()->GetTimerManager().SetTimer(OwnerAIHandle,[&](){
-                    OwnerAI = Cast<ABasicNPCAI>(GetPawn());},0.1,false);
+    GetWorld()->GetTimerManager().SetTimer(OwnerAIHandle,this,&ABasicNPCAIController::InitOwner,0.2,false);
     if(!OwnerAI)
         UE_LOG(LogTemp,Error,TEXT("No owner Ai "));
     PlayerCharacter = Cast<APlayerCharacter>(UGameplayStatics::GetPlayerCharacter(this,0));
@@ -74,6 +65,50 @@ void ABasicNPCAIController::BeginPlay()
     // {
     //     Blackboard->SetValueAsObject(FName("PatrolObject"),OwnerAI->PatrolPointObj);
     // }
+}
+
+void ABasicNPCAIController::InitOwner()
+{
+    OwnerAI = Cast<ABasicNPCAI>(GetPawn());
+    OwnerAI->MyEncounterSpace = MyEncounterSpace;
+    if(OwnerAI && OwnerAI->bCanAutoActivate)
+    {
+        Activate();
+    }
+}
+void ABasicNPCAIController::Activate()
+{
+    UE_LOG(LogTemp,Warning,TEXT("Activated"));
+    if(OwnerAI)
+    {
+        if(BehaviorTree)
+        {
+            RunBehaviorTree(BehaviorTree);
+            Blackboard = GetBlackboardComponent();
+            Blackboard->SetValueAsInt(FName("PatrolDirection"),1);
+            FTimerHandle VisibilityTimerHandle;
+            GetWorld()->GetTimerManager().SetTimer(VisibilityTimerHandle,this,&ABasicNPCAIController::CheckPlayerVisibility,0.5,true);
+            if(!OwnerAI->bCanAutoActivate)
+            {
+                Blackboard->SetValueAsBool(FName("bCanSeePlayer"),true);
+                Blackboard->SetValueAsVector(FName("PlayerLocation"),PlayerCharacter->GetActorLocation());
+                Blackboard->SetValueAsVector(FName("PlayerLastKnownLocation"),PlayerCharacter->GetActorLocation()); 
+            }
+        }
+        
+        else
+        {
+            UE_LOG(LogTemp,Warning,TEXT("No BehaviorTree"));
+        }
+    
+    }
+    else
+    {
+        UE_LOG(LogTemp,Warning,TEXT("No Owner"));
+    }
+   
+
+    
 }
 
 ABasicNPCAI* ABasicNPCAIController::GetControlledPawn()
@@ -86,7 +121,7 @@ ABasicNPCAI* ABasicNPCAIController::GetControlledPawn()
 }
 void ABasicNPCAIController::OnPerceptionUpdated(TArray<AActor*>const& SensedActors)
 {
-    if(AIPerceptionComponent)
+    if(AIPerceptionComponent && Blackboard)
     {
         UE_LOG(LogTemp,Warning,TEXT("%i"),SensedActors.Num());
         for(AActor* SensedActor:SensedActors)
@@ -177,17 +212,17 @@ void ABasicNPCAIController::CoverRequest()
                 continue;
             }
             
-            // else if(OwnerAI->GetDistanceTo(TempCover) < CoverDistance)
-            // {
-            //     CoverPoints = TempCover->GiveCoverPoints();
-            //     if(!UNavigationSystemV1::GetCurrent(GetWorld())->ProjectPointToNavigation(CoverPoints,NavLocation))
-            //     {
-            //         continue;
-            //     }
-            //     CoverDistance = OwnerAI->GetDistanceTo(TempCover);
-            //     MainCover = TempCover;
+            else if(OwnerAI->GetDistanceTo(TempCover) < CoverDistance)
+            {
+                CoverPoints = TempCover->GiveCoverPoints();
+                if(!UNavigationSystemV1::GetCurrent(GetWorld())->ProjectPointToNavigation(CoverPoints,NavLocation))
+                {
+                    continue;
+                }
+                CoverDistance = OwnerAI->GetDistanceTo(TempCover);
+                MainCover = TempCover;
 
-            // }
+            }
         }
         CoverDistance = 1000000;
         if(MainCover == nullptr)
@@ -267,3 +302,9 @@ void ABasicNPCAIController::ToggleSightSense()
     AIPerceptionComponent->SetSenseEnabled(SightSense->GetSenseImplementation(),false);
     AIPerceptionComponent->SetSenseEnabled(SightSense->GetSenseImplementation(),true);
 }
+//  void ABasicNPCAIController::Dead()
+//  {
+    
+//     MyEncounterSpace->IAMDead();
+//     UE_LOG(LogTemp,Warning,TEXT("Deadddddddddddddd"));
+//  }

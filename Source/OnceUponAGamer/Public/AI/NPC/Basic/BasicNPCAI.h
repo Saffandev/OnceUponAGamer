@@ -50,12 +50,13 @@ public:
 	UPROPERTY(VisibleAnywhere,BlueprintReadOnly)
 	bool bIsReloading;
 	class ACover* ActiveCover;
-
+	class AEncounterSpace* MyEncounterSpace;
+	UPROPERTY(EditAnywhere)
+	bool bCanAutoActivate = true;
 
 protected:
 	UPROPERTY(VisibleAnywhere)
 	class UCapsuleComponent* TouchSenseCapsule;
-	
 	UPROPERTY(EditAnywhere)
 	TSubclassOf<class AAIGun> GunBp;
 	UPROPERTY(VisibleAnywhere,BlueprintReadOnly,meta = (AllowPrivateAccess = "true"))
@@ -83,5 +84,6 @@ protected:
 	FName LastHitBoneName;
 	UPROPERTY(VisibleAnywhere,BlueprintReadOnly,meta = (AllowPrivateAccess = "true"))
 	bool bCanCrouch;//	
+	
 
 };

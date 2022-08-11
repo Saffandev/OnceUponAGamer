@@ -18,7 +18,10 @@ EBTNodeResult::Type UBTT_AttackMadDog::ExecuteTask(UBehaviorTreeComponent &Owner
     OwnerComp.GetAIOwner()->StopMovement();
     OwnerComp.GetAIOwner()->SetFocus(UGameplayStatics::GetPlayerPawn(OwnerPawn,0)); 
     OwnerPawn->bCanThrowHand = bIsThisThrowHandTask;
-    
+    if(bIsThisThrowHandTask)
+    {
+        UE_LOG(LogTemp,Error,TEXT("------------------------------Throw hand task"));
+    }
     OwnerComp.GetBlackboardComponent()->SetValueAsBool(BB_bIsHoldingHand.SelectedKeyName,!bIsThisThrowHandTask);
 
     if(OwnerPawn)
