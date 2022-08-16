@@ -69,6 +69,7 @@ void ABasicNPCAIController::BeginPlay()
 
 void ABasicNPCAIController::InitOwner()
 {
+    UE_LOG(LogTemp,Warning,TEXT("Init Owner-------"));
     OwnerAI = Cast<ABasicNPCAI>(GetPawn());
     OwnerAI->MyEncounterSpace = MyEncounterSpace;
     if(OwnerAI && OwnerAI->bCanAutoActivate)

@@ -93,6 +93,7 @@ void APlayerCharacter::BeginPlay()
 	PlayerController = GetController();
 	// Binding Section
 	Capsule->OnComponentHit.AddDynamic(this, &APlayerCharacter::OnHit);
+	OnTakeAnyDamage.AddDynamic(this,&APlayerCharacter::TakeAnyDamage);
 	OnTakePointDamage.AddDynamic(this,&APlayerCharacter::TakePointDamage);
 	OnTakeRadialDamage.AddDynamic(this,&APlayerCharacter::TakeRadialDamage);
 	CurrentWeapon = GetWorld()->SpawnActor<AWeaponBase>(InitialWeapon);
@@ -222,6 +223,12 @@ void APlayerCharacter::OnHit(UPrimitiveComponent *HitComponent, AActor *OtherAct
 	}
 }
 
+void APlayerCharacter::TakeAnyDamage(AActor* DamagedActor,float Damage,const UDamageType* DamageType,AController* InstigatedBy, AActor* DamageCauser)
+{
+	UE_LOG(LogTemp,Warning,TEXT("Any Damage"));
+	TakeDamage(Damage);
+}
+
 void APlayerCharacter::TakePointDamage(AActor* DamagedActor,float Damage,AController* InstigatedBy, FVector HitLocation,UPrimitiveComponent* HitComp,FName BoneName,FVector ShotDirection,const UDamageType* DamageType,AActor* DamageCauser)
 {
 	UE_LOG(LogTemp,Warning,TEXT("Point Damage"));
@@ -233,8 +240,6 @@ void APlayerCharacter::TakeRadialDamage(AActor* DamagedActor,float Damage,const 
 {
 	UE_LOG(LogTemp,Warning,TEXT("Radial Damage"));
 	TakeDamage(Damage);
-
-
 }
 
 void APlayerCharacter::TakeDamage(float Damage)
@@ -272,6 +277,19 @@ void APlayerCharacter::Heal(float Health)
 	if(CurrentHealth > MaxHealth)
 	{
 		CurrentHealth = MaxHealth;
+	}
+}
+
+void APlayerCharacter::SetHealthShield(float Health,float Shield)
+{
+	if(Health <= MaxHealth)
+	{
+		CurrentHealth = Health;
+	}
+
+	if(Shield <= MaxShield)
+	{
+		CurrentShield = Shield;
 	}
 }
 
@@ -558,11 +576,11 @@ void APlayerCharacter::Turn(float AxisValue)
 	float LTurnInterpSpeed;
 	if (bIsADS)
 	{
-		LTurnInterpSpeed = TurnInterpSpeed;
+		LTurnInterpSpeed = TurnInterpSpeedADS;
 	}
 	else
 	{
-		LTurnInterpSpeed = TurnInterpSpeedADS;
+		LTurnInterpSpeed = TurnInterpSpeed;
 	}
 	PlayerMesh->SetRelativeRotation(FRotator(PlayerMesh->GetRelativeRotation().Pitch,
 											 PlayerMesh->GetRelativeRotation().Yaw - AxisValue,
@@ -587,7 +605,7 @@ void APlayerCharacter::LookUp(float AxisValue)
 	float LLookupInterpSpeed;
 	if (bIsADS)
 	{
-		LLookupInterpSpeed = LookInterpSpeed;
+		LLookupInterpSpeed = LookInterpSpeedADS;
 	}
 	else
 	{
@@ -1075,14 +1093,18 @@ void APlayerCharacter::PickupInAction()
 			IPickupWeaponInterface *PickupWeaponInterface = Cast<IPickupWeaponInterface>(HitActor);
 			if (PickupWeaponInterface != nullptr)
 			{
-				if (PickupWeaponInterface->IsPickupGun()) // gun pickup
+				PickupWeaponInterface->SetPickupWeaponName();
+				bIsPickupGun = PickupWeaponInterface->IsPickupGun();
+				if (bIsPickupGun) // gun pickup
 				{
 					if (UKismetMathLibrary::NotEqual_ClassClass(PrimaryWeapon.WeaponClass.Get(), HitActor->GetClass()) &&
 						UKismetMathLibrary::NotEqual_ClassClass(SecondaryWeapon.WeaponClass.Get(), HitActor->GetClass()))
 					{
 						// UE_LOG(LogTemp, Warning, TEXT("Pickup Weapon Ok"));
+							bIsWeaponHit = true;
 						if (bCanPickup)
 						{
+							bIsWeaponHit = false;
 							PickupHitWeapon = HitActor;
 							bCanPickup = false;
 							PickupWeaponInterface->SetPickupWeaponName();
@@ -1092,7 +1114,7 @@ void APlayerCharacter::PickupInAction()
 
 					else // Weapon Already in the slot
 					{
-						// UE_LOG(LogTemp, Warning, TEXT("Weapon Already in the slot"));
+						UE_LOG(LogTemp, Warning, TEXT("Weapon Already in the slot"));
 						if (UKismetMathLibrary::EqualEqual_ClassClass(PrimaryWeapon.WeaponClass.Get(), HitActor->GetClass()))
 						{
 							if (PrimaryWeapon.TotalAmmo < PrimaryWeapon.MaxAmmo)
@@ -1101,6 +1123,10 @@ void APlayerCharacter::PickupInAction()
 								PrimaryWeapon.TotalAmmo = FMath::Min(PrimaryWeapon.TotalAmmo + 30, PrimaryWeapon.MaxAmmo);
 								CurrentWeapon->TotalAmmo = PrimaryWeapon.TotalAmmo;
 								HitActor->Destroy();
+							}
+							else
+							{
+								UE_LOG(LogTemp,Warning,TEXT("Primary Total Ammo = %i //// Max Ammo = %i"),PrimaryWeapon.TotalAmmo,PrimaryWeapon.MaxAmmo);
 							}
 						}
 						else if (UKismetMathLibrary::EqualEqual_ClassClass(SecondaryWeapon.WeaponClass.Get(), HitActor->GetClass()))
@@ -1122,9 +1148,11 @@ void APlayerCharacter::PickupInAction()
 					if (UKismetMathLibrary::NotEqual_ClassClass(PrimaryThrowableData.BP_Throwable.Get(), HitActor->GetClass()) &&
 						UKismetMathLibrary::NotEqual_ClassClass(SecondaryThrowableData.BP_Throwable.Get(), HitActor->GetClass()))
 					{
+						bIsWeaponHit = true;
 						if (bCanPickup)
 						{
 							bCanPickup = false;
+							bIsWeaponHit = false;
 							UE_LOG(LogTemp, Warning, TEXT("Throwable not in slot"));
 							// PickupWeaponInterface->SetPickupWeaponName();
 							PickupWeaponInterface->PickupWeapon();
@@ -1163,6 +1191,11 @@ void APlayerCharacter::PickupInAction()
 		{
 			UE_LOG(LogTemp, Warning, TEXT("PickupWeaponNull"));
 		}
+	}
+	else
+	{
+		bIsWeaponHit = false;
+		PickupWeaponName = EWeaponName::EWN_None;
 	}
 }
 
@@ -1212,19 +1245,22 @@ void APlayerCharacter::SetWeaponVars(FWeaponData NewWeaponData, bool bIsPrimaryW
 	{
 		if(bIsPickupWeapon)
 		{
-
 			if(bIsPrimaryWeapon)
 			{
 				//change the primary weapon
+				UE_LOG(LogTemp,Warning,TEXT("Equipping the primary Weapon"));
 				EqPrimaryWeapon = Cast<AWeaponBase>(PickupHitWeapon);
 				CurrentWeapon = EqPrimaryWeapon;
+				EqSecondaryWeapon->SetActorHiddenInGame(true);
 			}
-
 			else
 			{
+				UE_LOG(LogTemp,Warning,TEXT("Equipping the secondary Weapon"));
 				//change the secondary weapon
 				EqSecondaryWeapon = Cast<AWeaponBase>(PickupHitWeapon);
 				CurrentWeapon = EqSecondaryWeapon;
+				EqPrimaryWeapon->SetActorHiddenInGame(true);
+
 			}
 		}
 		else
@@ -1235,7 +1271,6 @@ void APlayerCharacter::SetWeaponVars(FWeaponData NewWeaponData, bool bIsPrimaryW
 				EqPrimaryWeapon->SetActorHiddenInGame(false);
 				CurrentWeapon = EqPrimaryWeapon;	
 			}
-
 			else
 			{
 				EqPrimaryWeapon->SetActorHiddenInGame(true);
@@ -1249,6 +1284,7 @@ void APlayerCharacter::SetWeaponVars(FWeaponData NewWeaponData, bool bIsPrimaryW
 			UE_LOG(LogTemp, Warning, TEXT("NO weapon reference"));
 			return;
 		}
+		UE_LOG(LogTemp,Warning,TEXT("Pickup Weapon Name = %s"),*PickupHitWeapon->GetName());
 		PickupHitWeapon->AttachToComponent(PlayerMesh, FAttachmentTransformRules::SnapToTargetNotIncludingScale, FName("WeaponSocket_r"));
 		CurrentWeapon->bIsPrimaryWeapon = bIsPrimaryWeapon;
 		CurrentWeapon->DrawWeapon();
@@ -1315,7 +1351,43 @@ void APlayerCharacter::MeleeAttackInAction()
 		// apply damage and radial force
 	}
 }
+FWeaponData APlayerCharacter::GetWeaponData(bool bIsSecondaryWeapon)
+{
+	// if(bIsSecondaryWeapon)
+	// {
+	// 	UE_LOG(LogTemp,Warning,TEXT("Get Weapon Data Called"));
+	// 	return SecondaryWeapon;
+	// }
+	// else
+	// 	return PrimaryWeapon;
 
+	return bIsSecondaryWeapon ? SecondaryWeapon : PrimaryWeapon;
+}
+
+void APlayerCharacter::SetWeaponData(bool bIsSecondaryWeapon,FWeaponData WeaponData)
+{
+	AWeaponBase* TempWeapon = GetWorld()->SpawnActor<AWeaponBase>(WeaponData.WeaponClass);
+	TempWeapon->GunMesh->SetSimulatePhysics(false);
+	TempWeapon->GunMesh->SetCollisionEnabled(ECollisionEnabled::NoCollision);
+
+	TempWeapon->CurrentMagAmmo = WeaponData.CurrentMagAmmo;
+	TempWeapon->TotalAmmo = WeaponData.TotalAmmo;
+	UE_LOG(LogTemp,Error,TEXT("Max Ammo = %i"),WeaponData.MaxAmmo);
+	PickupHitWeapon = TempWeapon;
+	if(bIsSecondaryWeapon)
+	{
+		DropWeapon(false);
+		SecondaryWeapon = WeaponData;
+		WeaponEquippedSlot = 1;
+	}
+	else
+	{
+		DropWeapon(true);
+		PrimaryWeapon = WeaponData;
+		WeaponEquippedSlot = 0;
+	}
+	SwitchWeapon(true);
+}
 //================================================Throwable Stuff======================================================
 
 void APlayerCharacter::SwitchThrowable()
@@ -1329,6 +1401,16 @@ void APlayerCharacter::SwitchThrowable()
 		ThrowableEquippedSlot = 0;
 	}
 }
+
+FThrowableData APlayerCharacter::GetThrowableData(bool bIsSecondaryThrowable)
+{
+	return bIsSecondaryThrowable ? SecondaryThrowableData : PrimaryThrowableData ;
+}
+void APlayerCharacter::SetThrowableData(FThrowableData ThrowableData, bool bIsSecondaryThrowable)
+{
+	bIsSecondaryThrowable ? (SecondaryThrowableData = ThrowableData) : (PrimaryThrowableData = ThrowableData);
+}
+
 
 void APlayerCharacter::PrimaryThrowStart()
 {
@@ -1417,6 +1499,9 @@ void APlayerCharacter::ThrowPredection()
 	// }
 }
 
+
+
+
 // void APlayerCharacter::OnConstruction(const FTransform &Transform)
 // {
 // 	Super::OnConstruction(Transform);
@@ -1429,24 +1514,4 @@ void APlayerCharacter::ThrowPredection()
 
 // }
 
-FWeaponData APlayerCharacter::GetWeaponData(bool bIsSecondaryWeapon)
-{
-	if(bIsSecondaryWeapon)
-	{
-		return SecondaryWeapon;
-	}
-	else
-		return PrimaryWeapon;
-}
 
-void APlayerCharacter::SetWeaponData(bool bIsSecondaryWeapon,FWeaponData WeaponData)
-{
-	if(bIsSecondaryWeapon)
-	{
-		SecondaryWeapon = WeaponData;
-	}
-	else
-	{
-		PrimaryWeapon = WeaponData;
-	}
-}

@@ -5,6 +5,7 @@
 #include "CoreMinimal.h"
 #include "GameFramework/Actor.h"
 #include "Interface/PickupWeaponInterface.h"
+#include "Enum/EnumThrowableNames.h"
 #include "ThrowableBase.generated.h"
 
 UCLASS()
@@ -50,7 +51,8 @@ protected:
 	UPROPERTY(EditAnywhere)
 	TSubclassOf<AThrowableBase> BP_Throwable;
 	class APlayerCharacter* PlayerCharacter;
-
+	UPROPERTY(EditAnywhere)
+	EThrowableName ThrowableName;
 private:
 	
 	uint32 HitCount;

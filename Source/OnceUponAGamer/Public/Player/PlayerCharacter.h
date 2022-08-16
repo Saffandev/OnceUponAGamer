@@ -6,6 +6,7 @@
 #include "GameFramework/Character.h"
 #include "Components/TimelineComponent.h"
 #include "Enum/EnumWeaponName.h"
+#include "Enum/EnumThrowableNames.h"
 #include "PlayerCharacter.generated.h"
 
 class UCurveFloat;
@@ -49,13 +50,13 @@ USTRUCT(BlueprintType)
 		EWeaponName WeaponName;
 		UPROPERTY(VisibleAnywhere,BlueprintReadOnly)
 		TSubclassOf<AWeaponBase> WeaponClass;
-		// TSubclassOf<class APickupWeaponBase> PickupWeaponClass;
+		UPROPERTY(VisibleAnywhere,BlueprintReadOnly)
 		int32 MaxAmmo;
 		UPROPERTY(VisibleAnywhere,BlueprintReadOnly)
 		int32 TotalAmmo;
 		UPROPERTY(VisibleAnywhere,BlueprintReadOnly)
 		int32 CurrentMagAmmo;
-		UPROPERTY(VisibleAnywhere,BlueprintReadOnly)
+		//remove below vars
 		int32 MagSize;
 		float ReloadTime;
 		float Accuracy;
@@ -65,6 +66,7 @@ USTRUCT(BlueprintType)
 	struct FThrowableData
 	{
 		GENERATED_BODY()
+		UPROPERTY(VisibleAnywhere,BlueprintReadOnly)
 		TSubclassOf<AThrowableBase> BP_Throwable;
 		UPROPERTY(VisibleAnywhere,BlueprintReadOnly)
 		int32 Count;
@@ -102,13 +104,18 @@ public:
 	UFUNCTION(BlueprintCallable)
 	void Heal(float Health);
 	UFUNCTION(BlueprintCallable)
+	void SetHealthShield(float Health,float Shield);
+	UFUNCTION(BlueprintCallable)
 	void HealShield(float ShieldHeal);
 	void RegainShield();
 	UFUNCTION(BlueprintCallable)
-	FWeaponData GetWeaponData(bool bIsSecondaryWeapon);
+FWeaponData GetWeaponData(bool bIsSecondaryWeapon);
 	UFUNCTION(BlueprintCallable)
 	void SetWeaponData(bool bIsSecondaryWeapon, FWeaponData WeaponData);
-
+	UFUNCTION(BlueprintCallable)
+	FThrowableData GetThrowableData(bool bIsSecondaryThrowable);
+	UFUNCTION(BlueprintCallable)
+	void SetThrowableData(FThrowableData ThrowableData, bool bIsSecondaryThrowable);
 protected:
 	virtual void BeginPlay() override;
 	// void OnConstruction(const FTransform &Transform) override;
@@ -173,6 +180,8 @@ private:
 	UFUNCTION()
 	void ADSOffInAction();
 	
+	UFUNCTION()
+	void TakeAnyDamage(AActor* DamagedActor,float Damage,const UDamageType* DamageType,AController* InstigatedBy,AActor* DamageCauser);
 	UFUNCTION()
 	void TakePointDamage(AActor* DamagedActor,float Damage,AController* InstigatedBy, FVector HitLocation,UPrimitiveComponent* HitComp,FName BoneName,FVector ShotDirection,const UDamageType* DamageType,AActor* DamageCauser);
 
@@ -317,7 +326,10 @@ private:
 	UPROPERTY(EditAnywhere)
 	float ShieldRechargeRate;
 	FTimerHandle ShieldRechargeTimer;
-
+	UPROPERTY(VisibleAnywhere,BlueprintReadOnly,meta = (AllowPrivateAccess = "true"))
+	bool bIsWeaponHit;
+	UPROPERTY(VisibleAnywhere,BlueprintReadOnly,meta = (AllowPrivateAccess = "true"))
+	bool bIsPickupGun;
 
 public:
 	UPROPERTY(VisibleAnywhere,BlueprintReadOnly,Category = "Weapon")
@@ -329,11 +341,14 @@ public:
 	AWeaponBase* CurrentWeapon;
 	AWeaponBase* EqPrimaryWeapon;
 	AWeaponBase* EqSecondaryWeapon;
+	UPROPERTY(VisibleAnywhere,BlueprintReadOnly)
 	EWeaponName PickupWeaponName;
 	UPROPERTY(VisibleAnywhere,BlueprintReadOnly,Category = "Throwable")
 	FThrowableData PrimaryThrowableData;
 	UPROPERTY(VisibleAnywhere,BlueprintReadOnly,Category = "Throwable")
 	FThrowableData SecondaryThrowableData;
+	UPROPERTY(VisibleAnywhere,BlueprintReadOnly,Category = "Throwable")
+	EThrowableName ThrowableName;
 	UPROPERTY(VisibleAnywhere)
 	int32 ThrowableEquippedSlot;
 	bool bIsDoingMeleeAttack;

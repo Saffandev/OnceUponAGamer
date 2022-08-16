@@ -29,7 +29,6 @@ public:
 	virtual bool IsPickupGun() override;
 	void DropGun();
 
-
 protected:
 	// Called when the game starts or when spawned
 	virtual void BeginPlay() override;
@@ -46,9 +45,10 @@ private:
 	float DamagePerBone(FName BoneName);
 
 
-protected:
+public:
 	UPROPERTY(VisibleAnywhere)
 	USkeletalMeshComponent* GunMesh;
+protected:
 	UPROPERTY(VisibleAnywhere)
 	USceneComponent* Muzzle;
 	

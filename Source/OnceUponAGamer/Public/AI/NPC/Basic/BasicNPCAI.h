@@ -84,6 +84,7 @@ protected:
 	FName LastHitBoneName;
 	UPROPERTY(VisibleAnywhere,BlueprintReadOnly,meta = (AllowPrivateAccess = "true"))
 	bool bCanCrouch;//	
-	
+	UPROPERTY(EditAnywhere)
+	UParticleSystem* HitParticle;
 
 };

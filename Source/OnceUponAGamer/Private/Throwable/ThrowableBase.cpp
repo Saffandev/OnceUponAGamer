@@ -76,7 +76,7 @@ void AThrowableBase::PickupWeapon()
 }
 void AThrowableBase::SetPickupWeaponName()
 {
-
+	PlayerCharacter->ThrowableName = ThrowableName;
 }
 bool AThrowableBase::IsPickupGun() 
 {

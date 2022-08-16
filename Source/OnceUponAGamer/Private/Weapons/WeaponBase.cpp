@@ -381,6 +381,7 @@ void AWeaponBase::PickupWeaponSetup(EWeaponName LWeaponName, TSubclassOf<AWeapon
 
 void AWeaponBase::SetPickupWeaponName()
 {
+	PlayerCharacter->PickupWeaponName = WeaponName;
 }
 
 bool AWeaponBase::IsPickupGun()

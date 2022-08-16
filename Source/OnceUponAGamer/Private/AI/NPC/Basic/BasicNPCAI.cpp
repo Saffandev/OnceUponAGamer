@@ -72,12 +72,15 @@ void ABasicNPCAI::OnOverlapTouchSense(UPrimitiveComponent* OverlappedComp,AActor
 }
 void ABasicNPCAI::OnOverlap(UPrimitiveComponent* OverlappedComp,AActor* OtherActor,UPrimitiveComponent* OtherComp,int32 OtherBodyIndex, bool bFromSweep ,const FHitResult &SweepResult)
 {
-	MyEncounterSpace = Cast<AEncounterSpace>(OtherActor);
-	if(MyEncounterSpace)
+	if(MyEncounterSpace == nullptr)
 	{
-		UE_LOG(LogTemp,Warning,TEXT("Encounterspace overlappaed"));
-		MyEncounterSpace->AddAI(this);
-		
+		MyEncounterSpace = Cast<AEncounterSpace>(OtherActor);
+		if(MyEncounterSpace)
+		{
+			UE_LOG(LogTemp,Warning,TEXT("Encounterspace overlappaed"));
+			MyEncounterSpace->AddAI(this);
+			
+		}
 	}
 }
 void ABasicNPCAI::StartShooting()
@@ -145,6 +148,7 @@ void ABasicNPCAI::TakePointDamage(AActor* DamagedActor,float Damage,AController*
 {
 	UE_LOG(LogTemp,Warning,TEXT("Damage Taken %f"),Damage);
 	Health -= Damage;
+	UGameplayStatics::SpawnEmitterAtLocation(GetWorld(),HitParticle,HitLocation);
 	if(Health <= 0 && bIsDead == false)
 	{
 		//death;
