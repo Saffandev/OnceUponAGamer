@@ -14,6 +14,8 @@ class ONCEUPONAGAMER_API AMadDogNPCAI : public ACharacter
 
 private:
 	UFUNCTION()
+	void HandBeginOverlap(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult &SweepResult);
+	UFUNCTION()
 	void BeginOverlap(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult &SweepResult);
 	FVector ThrowForceCalc();
 	UFUNCTION()
@@ -72,6 +74,7 @@ private:
 	UPROPERTY(EditAnywhere)
 	UCurveLinearColor* ShieldHitColorCurve;
 	bool bIsShieldActive = true;
+	class AEncounterSpace* MyEncounterSpace;
 
 public:
 	UPROPERTY(EditAnywhere,BlueprintReadWrite)

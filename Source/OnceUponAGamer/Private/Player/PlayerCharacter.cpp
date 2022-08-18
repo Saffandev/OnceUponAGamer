@@ -44,7 +44,7 @@ APlayerCharacter::APlayerCharacter()
 	AIPerceptionStimuliSource->RegisterForSense(TSubclassOf<UAISense_Sight>());
 	AIPerceptionStimuliSource->RegisterForSense(TSubclassOf<UAISense_Hearing>());
 	AIPerceptionStimuliSource->RegisterForSense(TSubclassOf<UAISense_Damage>());
-	AIPerceptionStimuliSource->RegisterForSense(TSubclassOf<UAISense_Touch>());
+	// AIPerceptionStimuliSource->RegisterForSense(TSubclassOf<UAISense_Touch>());
 	AIPerceptionStimuliSource->RegisterWithPerceptionSystem();
 
 	GetCapsuleComponent()->InitCapsuleSize(40.f, 96.f);
@@ -1287,6 +1287,7 @@ void APlayerCharacter::SetWeaponVars(FWeaponData NewWeaponData, bool bIsPrimaryW
 		UE_LOG(LogTemp,Warning,TEXT("Pickup Weapon Name = %s"),*PickupHitWeapon->GetName());
 		PickupHitWeapon->AttachToComponent(PlayerMesh, FAttachmentTransformRules::SnapToTargetNotIncludingScale, FName("WeaponSocket_r"));
 		CurrentWeapon->bIsPrimaryWeapon = bIsPrimaryWeapon;
+		CurrentWeapon->SetOwner(this);
 		CurrentWeapon->DrawWeapon();
 	}
 	else
@@ -1353,20 +1354,18 @@ void APlayerCharacter::MeleeAttackInAction()
 }
 FWeaponData APlayerCharacter::GetWeaponData(bool bIsSecondaryWeapon)
 {
-	// if(bIsSecondaryWeapon)
-	// {
-	// 	UE_LOG(LogTemp,Warning,TEXT("Get Weapon Data Called"));
-	// 	return SecondaryWeapon;
-	// }
-	// else
-	// 	return PrimaryWeapon;
-
 	return bIsSecondaryWeapon ? SecondaryWeapon : PrimaryWeapon;
 }
 
 void APlayerCharacter::SetWeaponData(bool bIsSecondaryWeapon,FWeaponData WeaponData)
 {
-	AWeaponBase* TempWeapon = GetWorld()->SpawnActor<AWeaponBase>(WeaponData.WeaponClass);
+	FActorSpawnParameters GunSpawnParams;
+	GunSpawnParams.Owner = this;
+	AWeaponBase* TempWeapon = GetWorld()->SpawnActor<AWeaponBase>(WeaponData.WeaponClass,
+																  GetActorLocation(),
+																  GetActorRotation(),
+																  GunSpawnParams);
+
 	TempWeapon->GunMesh->SetSimulatePhysics(false);
 	TempWeapon->GunMesh->SetCollisionEnabled(ECollisionEnabled::NoCollision);
 

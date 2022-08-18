@@ -18,7 +18,7 @@ public:
 	bool IsPlayerVisibleToAnyone();
 	void AssingInvestigation(FVector SuspectLocation);
 	void MoveBackToPatrol();
-	void AddAI(class ABasicNPCAI* AI);
+	void AddAI(class ACharacter* AI);
 	void IAMDead();
 	UFUNCTION(BlueprintImplementableEvent)
 	void TheratCleared();

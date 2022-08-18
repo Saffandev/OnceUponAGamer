@@ -19,8 +19,8 @@ EBTNodeResult::Type UBTT_FindPatrolPointHeavy::ExecuteTask(UBehaviorTreeComponen
     AHeavyAI* OwnerCharacter = Cast<AHeavyAI>(OwnerController->GetPawn());
     if(OwnerCharacter)
     {
-        uint32 Index = OwnerController->GetBlackboardComponent()->GetValueAsInt(PatrolPointIndex.SelectedKeyName);
-        if(OwnerCharacter->PatrolPoint.Num() > 0)
+        int32 Index = OwnerController->GetBlackboardComponent()->GetValueAsInt(PatrolPointIndex.SelectedKeyName);
+        if(OwnerCharacter->PatrolPoint.Num() > 0 && OwnerCharacter->PatrolPoint.Num() < Index)
         {
         FVector MoveToLocation = OwnerCharacter->PatrolPoint[Index];
         OwnerController->GetBlackboardComponent()->SetValueAsVector(PatrolPointLocation.SelectedKeyName, MoveToLocation);

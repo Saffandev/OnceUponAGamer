@@ -16,11 +16,16 @@ class ONCEUPONAGAMER_API AHeavyAI : public ABasicNPCAI
 
 public:
 	void ReleaseAbility();	
+	
 
 protected:
 	virtual void BeginPlay();
 	virtual void StartShooting() override;
+	virtual void DeathRituals(bool bIsExplosionDeath) override;
 
+
+private:
+	void ActivateAbility();
 private:
 	FTimerHandle AbilityReleaseTimer;
 	UPROPERTY(EditAnywhere)

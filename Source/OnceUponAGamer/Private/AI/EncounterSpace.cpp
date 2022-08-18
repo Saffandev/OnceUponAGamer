@@ -45,23 +45,24 @@ if(AIBp)
 			ABasicNPCAIController* TempController = Cast<ABasicNPCAIController>(tempActor->GetInstigatorController());
 			if(TempController)
 			{
+				UE_LOG(LogTemp,Warning,TEXT("Encounter Space added ---------------"));
 				TempController->MyEncounterSpace = this;
 			}
 		}
 	}
 }
 
-void AEncounterSpace::AddAI(ABasicNPCAI* AI)
+void AEncounterSpace::AddAI(ACharacter* AI)
 {
 	if(!AI)
 	{
 		return;
 	}
 	ABasicNPCAIController* TempController = Cast<ABasicNPCAIController>(AI->GetInstigatorController());
+	NoOfAiAlive++;
 	if(TempController)
 	{	
 		OverlappedAI.Add(AI);
-		NoOfAiAlive++;
 		TempController->MyEncounterSpace = this;
 		UE_LOG(LogTemp,Warning,TEXT("AI added"));
 	}
@@ -78,14 +79,17 @@ bool AEncounterSpace::IsPlayerVisibleToAnyone()
 {
 	for(auto TempActor: OverlappedAI)
 	{
-		ABasicNPCAIController* TempController = Cast<ABasicNPCAIController>(TempActor->GetInstigatorController());
-		if(TempController == nullptr)
+		if(TempActor)
 		{
-			return false;
-		}
-		if(TempController->GetBlackboardComponent()->GetValueAsBool(FName("bIsPlayerVisible")))
-		{
-			return true;
+			ABasicNPCAIController* TempController = Cast<ABasicNPCAIController>(TempActor->GetInstigatorController());
+			if(TempController == nullptr)
+			{
+				return false;
+			}
+			if(TempController->GetBlackboardComponent() && TempController->GetBlackboardComponent()->GetValueAsBool(FName("bIsPlayerVisible")))
+			{
+				return true;
+			}
 		}
 	}
 	return false;

@@ -23,11 +23,8 @@ void AHeavyAI::StartShooting()
         if(AIController)
         {
             AbilityTimerValue += UKismetMathLibrary::RandomFloatInRange(-2,2);
-            GetWorld()->GetTimerManager().SetTimer(AbilityReleaseTimer,
-                                                   [&]()
-                                                   {
-                                                    AIController->GetBlackboardComponent()->SetValueAsBool(FName("bCanReleaseAbility"),true);
-                                                   },
+            GetWorld()->GetTimerManager().SetTimer(AbilityReleaseTimer,this,
+                                                   &AHeavyAI::ActivateAbility,
                                                    AbilityTimerValue,
                                                    true);
             
@@ -38,4 +35,16 @@ void AHeavyAI::StartShooting()
 void AHeavyAI::ReleaseAbility()
 {
     Gun->ReleaseAbility();
+}
+
+void AHeavyAI::ActivateAbility()
+{
+    if(AIController)
+    AIController->GetBlackboardComponent()->SetValueAsBool(FName("bCanReleaseAbility"),true);
+}
+
+void AHeavyAI::DeathRituals(bool bIsExplosionDeath) 
+{
+    Super::DeathRituals(bIsExplosionDeath);
+    GetWorld()->GetTimerManager().ClearTimer(AbilityReleaseTimer);
 }

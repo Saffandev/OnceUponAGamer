@@ -4,6 +4,7 @@
 #include "AI/NPC/MadDog/MadDogNPCAI.h"
 #include "AI/NPC/MadDog/MadDogController.h"
 #include "AI/NPC/MadDog/MadDogHand.h"
+#include "AI/EncounterSpace.h"
 #include "Components/StaticMeshComponent.h"
 #include "Components/ArrowComponent.h"
 #include "Components/CapsuleComponent.h"
@@ -39,11 +40,11 @@ void AMadDogNPCAI::BeginPlay()
 	AIController = Cast<AMadDogController>(GetInstigatorController());
 	this->OnTakePointDamage.AddDynamic(this,&AMadDogNPCAI::TakePointDamage);
 	this->OnTakeRadialDamage.AddDynamic(this,&AMadDogNPCAI::TakeRadialDamage);
-
+	GetCapsuleComponent()->OnComponentBeginOverlap.AddDynamic(this,&AMadDogNPCAI::BeginOverlap);
 	ActivateForBattle();
 	if(HandMesh)
 	{
-		HandMesh->OnComponentBeginOverlap.AddDynamic(this,&AMadDogNPCAI::BeginOverlap);
+		HandMesh->OnComponentBeginOverlap.AddDynamic(this,&AMadDogNPCAI::HandBeginOverlap);
 	}	
 
 	if(ThrowArrow)
@@ -90,7 +91,7 @@ void AMadDogNPCAI::ActivateForBattle()
 }
 
 
-void AMadDogNPCAI::BeginOverlap(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult &SweepResult)
+void AMadDogNPCAI::HandBeginOverlap(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult &SweepResult)
 {
 	if(OtherActor == UGameplayStatics::GetPlayerPawn(this,0))
 	{
@@ -103,7 +104,18 @@ void AMadDogNPCAI::BeginOverlap(UPrimitiveComponent* OverlappedComponent, AActor
 	}
 }
 
-
+void AMadDogNPCAI::BeginOverlap(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult &SweepResult)
+{
+	if(MyEncounterSpace == nullptr)
+	{
+		MyEncounterSpace = Cast<AEncounterSpace>(OtherActor);
+		if(MyEncounterSpace)
+		{
+			UE_LOG(LogTemp,Warning,TEXT("Overlapped the encounter space-------------------------"));
+			MyEncounterSpace->AddAI(this);
+		}
+	}	
+}
 void AMadDogNPCAI::ThrowHand()
 {
 	// calculate the impulse
@@ -248,6 +260,10 @@ void AMadDogNPCAI::DeathRituals(bool bIsExplosionDeath)
 	Health = 0;
 	bIsDead = true;
 	SetCanBeDamaged(false);
+	if(MyEncounterSpace)
+	{
+		MyEncounterSpace->IAMDead();
+	}
 	int timer = GetVelocity().Size() > 10 || bIsExplosionDeath? 0:1;
 	FTimerHandle DeathTimer;
 	GetWorld()->GetTimerManager().SetTimer(DeathTimer,[&](){GetMesh()->SetSimulatePhysics(true);},0.01,false,timer);

@@ -37,7 +37,7 @@ protected:
 	void OnOverlapTouchSense(UPrimitiveComponent* OverlappedComp,AActor* OtherActor,UPrimitiveComponent* OtherComp,int32 OtherBodyIndex, bool bFromSweep ,const FHitResult &SweepResult);
 	UFUNCTION()
 	void OnOverlap(UPrimitiveComponent* OverlappedComp,AActor* OtherActor,UPrimitiveComponent* OtherComp,int32 OtherBodyIndex, bool bFromSweep ,const FHitResult &SweepResult);	
-	void DeathRituals(bool bIsExplosionDeath);
+	virtual void DeathRituals(bool bIsExplosionDeath);
 	
 public:
 	TArray<FVector> PatrolPoint;
@@ -53,6 +53,8 @@ public:
 	class AEncounterSpace* MyEncounterSpace;
 	UPROPERTY(EditAnywhere)
 	bool bCanAutoActivate = true;
+	UPROPERTY(VisibleAnywhere,BlueprintReadOnly)
+	bool bIsDead;
 
 protected:
 	UPROPERTY(VisibleAnywhere)
@@ -73,8 +75,6 @@ protected:
 	UAnimationAsset* DeathAnim_3;
 	UPROPERTY(EditAnywhere)
 	float Health;
-	UPROPERTY(VisibleAnywhere,BlueprintReadOnly,meta=(AllowPrivateAccess = "true"))
-	bool bIsDead;
 	FTimerHandle MeleeTimerHandle;
 	class AAIController* AIController;
 	UPROPERTY(EditAnywhere)
@@ -86,5 +86,7 @@ protected:
 	bool bCanCrouch;//	
 	UPROPERTY(EditAnywhere)
 	UParticleSystem* HitParticle;
+	UPROPERTY(EditAnywhere)
+	USoundBase* HitSound;
 
 };

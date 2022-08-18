@@ -46,7 +46,7 @@ ABasicNPCAIController::ABasicNPCAIController()
     AIPerceptionComponent->ConfigureSense(*SightSense);
     AIPerceptionComponent->ConfigureSense(*DamageSense);
     AIPerceptionComponent->ConfigureSense(*HearingSense);
-    AIPerceptionComponent->SetDominantSense(SightSense->GetSenseImplementation());
+    AIPerceptionComponent->SetDominantSense(*SightSense->GetSenseImplementation());
     AIPerceptionComponent->OnPerceptionUpdated.AddDynamic(this,&ABasicNPCAIController::OnPerceptionUpdated);
 }
 
@@ -122,6 +122,14 @@ ABasicNPCAI* ABasicNPCAIController::GetControlledPawn()
 }
 void ABasicNPCAIController::OnPerceptionUpdated(TArray<AActor*>const& SensedActors)
 {
+    if(!OwnerAI)
+    {
+        return;
+    }
+    if(OwnerAI->bIsDead)
+    {
+        return;
+    }
     if(AIPerceptionComponent && Blackboard)
     {
         UE_LOG(LogTemp,Warning,TEXT("%i"),SensedActors.Num());
@@ -130,7 +138,7 @@ void ABasicNPCAIController::OnPerceptionUpdated(TArray<AActor*>const& SensedActo
         if(SensedActor)
         {
             FActorPerceptionBlueprintInfo Info;
-            AIPerceptionComponent->GetActorsPerception(SensedActors[0],Info);
+            AIPerceptionComponent->GetActorsPerception(SensedActor,Info);
             if(Info.Target != nullptr)
             {
                 AActor* EnemyTarget = Info.Target;
@@ -140,7 +148,8 @@ void ABasicNPCAIController::OnPerceptionUpdated(TArray<AActor*>const& SensedActo
                     if(!Blackboard->GetValueAsBool(FName("bCanSeePlayer")))
                     {
                     for( FAIStimulus AIStimulus:Info.LastSensedStimuli )
-                    {
+                    {   
+                        
                         TSubclassOf<UAISense> SensedClass = UAIPerceptionSystem::GetSenseClassForStimulus(this,AIStimulus);
                             if(SensedClass)
                             {
@@ -148,9 +157,9 @@ void ABasicNPCAIController::OnPerceptionUpdated(TArray<AActor*>const& SensedActo
                                 if(!SightSense)
                                 {
                                     UE_LOG(LogTemp,Error,TEXT("No Sight Sense"));
-                                    SightSense->GetSenseImplementation();
+                                    return;
                                 }
-                                if(UKismetMathLibrary::EqualEqual_ObjectObject(SensedClass,SightSense->GetSenseImplementation()))
+                                if(UKismetMathLibrary::EqualEqual_ObjectObject(SensedClass,UAISense_Sight::StaticClass()))
                                 {
                                     Blackboard->SetValueAsBool(FName("bCanSeePlayer"),true);
                                     UE_LOG(LogTemp,Warning,TEXT("PlayerSpotted"));
@@ -246,14 +255,7 @@ void ABasicNPCAIController::CoverRequest()
             OwnerAI->ActiveCover = MainCover;
             if(!CoverTimerHandle.IsValid())
             {
-                GetWorld()->GetTimerManager().SetTimer(CoverTimerHandle,
-                                                        [&](){
-                                                                Blackboard->SetValueAsBool(FName("bCanDoAnotherCoverRequest"),true);
-                                                                UE_LOG(LogTemp,Error,TEXT("Now you can do another request"));
-                                                             },
-                                                            15,
-                                                            true,
-                                                            15);
+                GetWorld()->GetTimerManager().SetTimer(CoverTimerHandle,this,&ABasicNPCAIController::CoverRequestEntry,15.f,true);
             }
         }
 
@@ -269,7 +271,10 @@ void ABasicNPCAIController::CoverRequest()
     }
     return;
 }
-
+void ABasicNPCAIController::CoverRequestEntry()
+{
+    Blackboard->SetValueAsBool(FName("bCanDoAnotherCoverRequest"),true);
+}
 void ABasicNPCAIController::CheckPlayerVisibility()
 {
     if(!PlayerCharacter || !OwnerAI)

@@ -28,6 +28,7 @@ protected:
 	UFUNCTION()
 	void OnPerceptionUpdated(TArray<AActor*>const& SensedActors);
 	void CheckPlayerVisibility();
+	void CoverRequestEntry();
 public:
 	class AEncounterSpace* MyEncounterSpace;
 	bool bIsOwnerAlive;

@@ -18,11 +18,7 @@ void AHeavyAIController::BeginPlay()
     OwnerAI = Cast<AHeavyAI>(GetPawn());
     if(Blackboard && OwnerAI)
     {
-        UE_LOG(LogTemp,Warning,TEXT("Inside the if of heavy"));
         Blackboard->SetValueAsObject(FName("PatrolObject"),OwnerAI->PatrolPointObj);
-        // if(OwnerAI->PatrolPointObj == nullptr)
-        // {
-        //     UE_LOG(LogTemp,Error,TEXT("No patrol obj with AI"));
-        // }
+       
     }
 }

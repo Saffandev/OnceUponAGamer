@@ -149,6 +149,7 @@ void ABasicNPCAI::TakePointDamage(AActor* DamagedActor,float Damage,AController*
 	UE_LOG(LogTemp,Warning,TEXT("Damage Taken %f"),Damage);
 	Health -= Damage;
 	UGameplayStatics::SpawnEmitterAtLocation(GetWorld(),HitParticle,HitLocation);
+	UGameplayStatics::PlaySoundAtLocation(GetWorld(),HitSound,HitLocation);
 	if(Health <= 0 && bIsDead == false)
 	{
 		//death;
@@ -210,6 +211,16 @@ void ABasicNPCAI::TakeRadialDamage(AActor* DamagedActor,float Damage,const UDama
 void ABasicNPCAI::DeathRituals(bool bIsExplosionDeath)
 {
 	Health = 0;
+	if(Gun)
+	{
+		Gun->DetachFromActor(FDetachmentTransformRules::KeepRelativeTransform);
+		Gun->Destroy();
+	}
+	//spawn drop gun
+	if(GunDrop)
+	{
+		GetWorld()->SpawnActor<AWeaponBase>(GunDrop,GetMesh()->GetSocketLocation(FName("Weapon")),GetMesh()->GetSocketRotation(FName()));
+	}
 	UE_LOG(LogTemp,Error,TEXT("I am deaddddddd"));
 	bIsDead = true;
 	StopShooting();
@@ -229,23 +240,13 @@ void ABasicNPCAI::DeathRituals(bool bIsExplosionDeath)
 	GetCharacterMovement()->StopMovementImmediately();
 	AIController->GetBrainComponent()->StopLogic(FString("Dead"));
 	AIController->UnPossess();
-	
-	if(Gun)
-	{
-		Gun->DetachFromActor(FDetachmentTransformRules::KeepRelativeTransform);
-		Gun->Destroy();
-	}
-	//spawn drop gun
-	if(GunDrop)
-	{
-		GetWorld()->SpawnActor<AWeaponBase>(GunDrop,GetMesh()->GetSocketLocation(FName("Weapon")),GetMesh()->GetSocketRotation(FName()));
-	}
 	if(ActiveCover)
 	{
 		ActiveCover->bIsAcquired = false;
 	}
-	TouchSenseCapsule->DestroyComponent();
 	DetachFromControllerPendingDestroy();
+	AIController->Destroy();
+	TouchSenseCapsule->DestroyComponent();
 	SetCanBeDamaged(false);
 	GetCapsuleComponent()->SetCollisionEnabled(ECollisionEnabled::PhysicsOnly);
 	
