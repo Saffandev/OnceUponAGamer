@@ -10,6 +10,7 @@
 #include "Perception/AISense_Hearing.h"
 #include "Weapons/KnifeWeapon.h"
 #include "Math/Color.h"
+#include "PhysicalMaterials/PhysicalMaterial.h"
 
 // Sets default values
 AWeaponBase::AWeaponBase()
@@ -101,7 +102,7 @@ void AWeaponBase::ShootingInAction()
 			TArray<AActor *> ActorsToIgnore;
 			ActorsToIgnore.Add(UGameplayStatics::GetPlayerCharacter(this, 0));
 			FHitResult GunShotHitResult;
-			UKismetSystemLibrary::LineTraceSingle(this,
+			bool bIsHit = UKismetSystemLibrary::LineTraceSingle(this,
 												  PlayerCamera->GetComponentLocation(),
 												  EndTrace,
 												  UEngineTypes::ConvertToTraceType(ECollisionChannel::ECC_Visibility),
@@ -110,7 +111,7 @@ void AWeaponBase::ShootingInAction()
 												  EDrawDebugTrace::None,
 												  GunShotHitResult,
 												  true);
-
+			
 			if (ShootAnim)
 				GunMesh->PlayAnimation(ShootAnim, false);
 
@@ -142,14 +143,19 @@ void AWeaponBase::ShootingInAction()
 			UpdateWeaponVarsInPlayer();
 			UpdateWeaponVisuals();
 			UAISense_Hearing::ReportNoiseEvent(this, GetActorLocation(), 1.f, PlayerCharacter, 2000.f);
-			AActor *HitActor = GunShotHitResult.GetActor();
-			if (HitActor)
+			if(bIsHit)
 			{
-				if (HitActor->CanBeDamaged())
+				HitSound(GunShotHitResult);
+				AActor *HitActor = GunShotHitResult.GetActor();
+				if (HitActor)
 				{
-					GiveDamage(GunShotHitResult);
+					if (HitActor->CanBeDamaged())
+					{
+						GiveDamage(GunShotHitResult);
+					}
 				}
 			}
+
 		}
 		else
 		{
@@ -164,6 +170,37 @@ void AWeaponBase::ShootingInAction()
 		UE_LOG(LogTemp, Warning, TEXT("Cannnot shoot"));
 	}
 }
+
+	void AWeaponBase::HitSound(FHitResult GunHit)
+	{
+			EPhysicalSurface SurfaceType = 	UGameplayStatics::GetSurfaceType(GunHit);
+			switch (SurfaceType)
+			{
+				//wood
+			case EPhysicalSurface::SurfaceType1:
+				UE_LOG(LogTemp,Warning,TEXT("Surface 1"));
+				UGameplayStatics::SpawnEmitterAtLocation(this,WoodHitParticle,GunHit.Location);
+				UGameplayStatics::PlaySoundAtLocation(this,WoodHit,GunHit.Location);
+				break;
+
+				//Metal
+			case EPhysicalSurface::SurfaceType2:
+				UE_LOG(LogTemp,Warning,TEXT("Surface 2"));
+				UGameplayStatics::SpawnEmitterAtLocation(this,MetalHitParticle,GunHit.Location);
+				UGameplayStatics::PlaySoundAtLocation(this,MetalHit,GunHit.Location);
+				break;
+
+				//Stone
+			case EPhysicalSurface::SurfaceType3:
+				UE_LOG(LogTemp,Warning,TEXT("Surface 3"));
+				UGameplayStatics::SpawnEmitterAtLocation(this,StoneHitParticle,GunHit.Location);
+				UGameplayStatics::PlaySoundAtLocation(this,StoneHit,GunHit.Location);
+				break;
+			
+			default:
+				break;
+			}
+	}
 
 void AWeaponBase::Recoil()
 {

@@ -308,9 +308,3 @@ void ABasicNPCAIController::ToggleSightSense()
     AIPerceptionComponent->SetSenseEnabled(SightSense->GetSenseImplementation(),false);
     AIPerceptionComponent->SetSenseEnabled(SightSense->GetSenseImplementation(),true);
 }
-//  void ABasicNPCAIController::Dead()
-//  {
-    
-//     MyEncounterSpace->IAMDead();
-//     UE_LOG(LogTemp,Warning,TEXT("Deadddddddddddddd"));
-//  }

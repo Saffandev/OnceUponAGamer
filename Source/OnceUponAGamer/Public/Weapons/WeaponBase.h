@@ -43,7 +43,7 @@ private:
 	void UpdateWeaponVarsInPlayer();
 	void GiveDamage(FHitResult GunHit);
 	float DamagePerBone(FName BoneName);
-
+	void HitSound(FHitResult GunHit);
 
 public:
 	UPROPERTY(VisibleAnywhere)
@@ -52,43 +52,43 @@ protected:
 	UPROPERTY(VisibleAnywhere)
 	USceneComponent* Muzzle;
 	
-	UPROPERTY(EditAnywhere)
+	UPROPERTY(EditAnywhere,Category = "Animation")
 	UAnimationAsset* ShootAnim;
 
-	UPROPERTY(EditAnywhere)
+	UPROPERTY(EditAnywhere,Category = "Animation")
 	UAnimationAsset* GunReloadAnim;
 
-	UPROPERTY(EditAnywhere)
+	UPROPERTY(EditAnywhere,Category = "Animation")
 	UAnimMontage* PlayerShootMontage;
 
-	UPROPERTY(EditAnywhere)
+	UPROPERTY(EditAnywhere,Category = "Animation")
 	UAnimMontage* PlayerCrouchShootMontage;
 
-	UPROPERTY(EditAnywhere)
+	UPROPERTY(EditAnywhere,Category = "Animation")
 	UAnimMontage* PlayerAdsShootingMontage;
 	
-	UPROPERTY(EditAnywhere)
+	UPROPERTY(EditAnywhere,Category = "Animation")
 	UAnimMontage* PlayerReloadMontage;
 
-	UPROPERTY(EditAnywhere)
+	UPROPERTY(EditAnywhere,Category = "Animation")
 	UAnimMontage* WeaponDrawMontage;
 
-	UPROPERTY(EditAnywhere)
+	UPROPERTY(EditAnywhere,Category = "Animation")
 	UAnimMontage* MeleeAttackMontage;
 	
-	UPROPERTY(EditAnywhere)
+	UPROPERTY(EditAnywhere,Category = "Weapon Vars")
 	TSubclassOf<AActor> TracerRound;
 	
-	UPROPERTY(EditAnywhere)
+	UPROPERTY(EditAnywhere,Category = "Weapon Vars")
 	TSubclassOf<UCameraShakeBase> CameraShake;
 	
-	UPROPERTY(EditAnywhere)
+	UPROPERTY(EditAnywhere,Category = "Weapon Vars")
 	float CameraShakeScale;
 	
-	UPROPERTY(EditAnywhere)
+	UPROPERTY(EditAnywhere,Category = "Weapon Vars")
 	TSubclassOf<AWeaponBase> WeaponBP;
 	
-	UPROPERTY(EditAnywhere)
+	UPROPERTY(EditAnywhere,Category = "Weapon Vars")
 	EWeaponName WeaponName;
 	// UPROPERTY(EditAnywhere)
 	// TSubclassOf<class APickupWeaponBase>  PickupWeapon;
@@ -99,7 +99,18 @@ protected:
 	bool bCanShoot;
 	class APlayerCharacter* PlayerCharacter;
 	class UCameraComponent* PlayerCamera;
-
+	UPROPERTY(EditAnywhere,Category = "Weapon Hit Visuals")
+	USoundBase* WoodHit;
+	UPROPERTY(EditAnywhere,Category = "Weapon Hit Visuals")
+	USoundBase* MetalHit;
+	UPROPERTY(EditAnywhere,Category = "Weapon Hit Visuals")
+	USoundBase* StoneHit;
+	UPROPERTY(EditAnywhere,Category = "Weapon Hit Visuals")
+	UParticleSystem* WoodHitParticle;
+	UPROPERTY(EditAnywhere,Category = "Weapon Hit Visuals")
+	UParticleSystem* MetalHitParticle;
+	UPROPERTY(EditAnywhere,Category = "Weapon Hit Visuals")
+	UParticleSystem* StoneHitParticle;
 private:
 	FTimerHandle ShootingTimerHandle;
 	UPROPERTY(EditAnywhere)
@@ -110,28 +121,28 @@ private:
 	float HeadshotDamage;
 
 public:
-	UPROPERTY(EditAnywhere)
+	UPROPERTY(EditAnywhere,Category = "Weapon Vars")
 	int TotalAmmo;
 
-	UPROPERTY(EditAnywhere,BlueprintReadOnly)
+	UPROPERTY(EditAnywhere,BlueprintReadOnly,Category = "Weapon Vars")
 	int MaxAmmo;
 
-	UPROPERTY(EditAnywhere,BlueprintReadOnly)
+	UPROPERTY(EditAnywhere,BlueprintReadOnly,Category = "Weapon Vars")
 	int MagSize;
 
-	UPROPERTY(EditAnywhere,BlueprintReadOnly)
+	UPROPERTY(EditAnywhere,BlueprintReadOnly,Category = "Weapon Vars")
 	int CurrentMagAmmo;
 
-	UPROPERTY(EditAnywhere)
+	UPROPERTY(EditAnywhere,Category = "Weapon Vars")
 	float Accuracy;
 
-	UPROPERTY(EditAnywhere)
+	UPROPERTY(EditAnywhere,Category = "Weapon Vars")
 	float FireRate;
 
-	UPROPERTY(EditAnywhere)
+	UPROPERTY(EditAnywhere,Category = "Weapon Vars")
 	float Range;
 
-	UPROPERTY(EditAnywhere)
+	UPROPERTY(EditAnywhere,Category = "Weapon Vars")
 	bool bIsWeaponShootable;
 
 	bool bIsPrimaryWeapon;
