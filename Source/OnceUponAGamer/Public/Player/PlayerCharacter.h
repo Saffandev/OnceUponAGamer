@@ -212,7 +212,7 @@ private:
 	USkeletalMeshComponent* PlayerMesh;
 
 	UPROPERTY(VisibleAnywhere)
-	class UAIPerceptionStimuliSourceComponent* AIPerceptionStimuliSource;
+class UAIPerceptionStimuliSourceComponent* AIPerceptionStimuliSource;
 
 	UPROPERTY(EditAnywhere,Category = "Curves")
 	UCurveFloat* CrouchCurve;
