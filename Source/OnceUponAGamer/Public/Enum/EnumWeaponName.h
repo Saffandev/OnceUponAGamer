@@ -12,11 +12,7 @@ enum class EWeaponName: uint8
 {
 	EWN_None,
 	EWN_BAR30,
-	EWN_BSG14
+	EWN_BSG14,
+	EWN_CG01
 };
-// UCLASS()
-// class ONCEUPONAGAMER_API UEnumWeaponName : public UUserDefinedEnum
-// {
-// 	GENERATED_BODY()
-	
-// };
+

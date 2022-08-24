@@ -12,10 +12,8 @@
 #include "Math/Color.h"
 #include "PhysicalMaterials/PhysicalMaterial.h"
 
-// Sets default values
 AWeaponBase::AWeaponBase()
 {
-	// Set this actor to call Tick() every frame.  You can turn this off to improve performance if you don't need it.
 	PrimaryActorTick.bCanEverTick = false;
 
 	GunMesh = CreateDefaultSubobject<USkeletalMeshComponent>(TEXT("GunMesh"));
@@ -24,24 +22,26 @@ AWeaponBase::AWeaponBase()
 
 	Muzzle = CreateDefaultSubobject<USceneComponent>(TEXT("Muzzle"));
 	Muzzle->SetupAttachment(GunMesh);
+
+	GunMesh->SetCollisionEnabled(ECollisionEnabled::QueryAndPhysics);
+	GunMesh->SetCollisionObjectType(ECollisionChannel::ECC_GameTraceChannel2);
+	GunMesh->SetCollisionResponseToChannel(ECollisionChannel::ECC_Visibility,ECollisionResponse::ECR_Ignore);
+	GunMesh->SetCollisionResponseToChannel(ECollisionChannel::ECC_Camera,ECollisionResponse::ECR_Ignore);
+
 }
 
-// Called when the game starts or when spawned
 void AWeaponBase::BeginPlay()
 {
 	Super::BeginPlay();
 	PlayerCharacter = Cast<APlayerCharacter>(UGameplayStatics::GetPlayerCharacter(this, 0));
 	PlayerCamera = PlayerCharacter->GetCamera();
-	SingleShotAlpha = 1.f;
-	// CurrentMagAmmo = MagSize;
-	// TotalAmmo = MaxAmmo;
+	SingleShotAlpha = 1.f;//used to add randomness when firing auto
 	bCanShoot = true;
 	bIsReloading = false;
 	bIsWeaponShootable = true;
 	GunMesh->SetSimulatePhysics(true);
 }
 
-// Called every frame
 void AWeaponBase::Tick(float DeltaTime)
 {
 	Super::Tick(DeltaTime);
@@ -59,6 +59,7 @@ void AWeaponBase::DrawWeapon()
 	{
 		float DrawTime = PlayerCharacter->GetMesh()->GetAnimInstance()->Montage_Play(WeaponDrawMontage);
 		FTimerHandle DrawTimerHandle;
+
 		GetWorld()->GetTimerManager().SetTimer(
 			DrawTimerHandle, [&]()
 			{ bCanShoot = true; },
@@ -74,20 +75,25 @@ void AWeaponBase::Shoot()
 {
 	if (bIsWeaponShootable)
 	{
-		// UE_LOG(LogTemp,Warning,TEXT("Shooting called"));
-
-		GetWorld()->GetTimerManager().SetTimer(ShootingTimerHandle, this, &AWeaponBase::ShootingInAction, FireRate, true, 0);
+		if(!ShootingTimerHandle.IsValid())
+		GetWorld()->GetTimerManager().SetTimer(ShootingTimerHandle, this, &AWeaponBase::ShootingInAction, FireRate, bIsAuto,0.f);
 	}
-	else
-		UE_LOG(LogTemp, Warning, TEXT("Not Shootable"));
 }
 
 void AWeaponBase::StopShooting()
 {
+	if(GetWorld()->GetTimerManager().IsTimerActive(ShootingCooldownTimerHandle))
+	{
+		return;
+	}
+	GetWorld()->GetTimerManager().SetTimer(ShootingCooldownTimerHandle,[&](){
+
 	if (ShootingTimerHandle.IsValid())
 	{
 		GetWorld()->GetTimerManager().ClearTimer(ShootingTimerHandle);
-	}
+	};
+	},CoolDownTime,false);
+
 	SingleShotAlpha = 0.01f;
 }
 
@@ -98,109 +104,120 @@ void AWeaponBase::ShootingInAction()
 		if (CurrentMagAmmo > 0)
 		{
 			CurrentMagAmmo--;
-			FVector EndTrace = PlayerCamera->GetComponentLocation() + PlayerCamera->GetForwardVector() * Range;
-			TArray<AActor *> ActorsToIgnore;
-			ActorsToIgnore.Add(UGameplayStatics::GetPlayerCharacter(this, 0));
-			FHitResult GunShotHitResult;
-			bool bIsHit = UKismetSystemLibrary::LineTraceSingle(this,
-												  PlayerCamera->GetComponentLocation(),
-												  EndTrace,
-												  UEngineTypes::ConvertToTraceType(ECollisionChannel::ECC_Visibility),
-												  false,
-												  ActorsToIgnore,
-												  EDrawDebugTrace::None,
-												  GunShotHitResult,
-												  true);
 			
-			if (ShootAnim)
-				GunMesh->PlayAnimation(ShootAnim, false);
+			if (GunShootAnim)
+				GunMesh->PlayAnimation(GunShootAnim, false);
 
-			if (PlayerCharacter->IsADSButtonDown())
+			if (PlayerCharacter->IsADSButtonDown() && PlayerAdsShootingMontage)
 			{
-				if (PlayerAdsShootingMontage)
-					PlayerCharacter->GetMesh()->GetAnimInstance()->Montage_Play(PlayerAdsShootingMontage);
+				PlayerCharacter->GetMesh()->GetAnimInstance()->Montage_Play(PlayerAdsShootingMontage);
 			}
+
 			else
 			{
-				if (PlayerShootMontage && !((PlayerCharacter->GetCurrentMovementType() == EMovementType::EMT_Crouching) || PlayerCharacter->GetCurrentMovementType() == EMovementType::EMT_Sliding))
-				{
-					PlayerCharacter->GetMesh()->GetAnimInstance()->Montage_Play(PlayerShootMontage);
-				}
-				else if (PlayerCrouchShootMontage && ((PlayerCharacter->GetCurrentMovementType() == EMovementType::EMT_Crouching) || PlayerCharacter->GetCurrentMovementType() == EMovementType::EMT_Sliding))
+				if (PlayerCrouchShootMontage && ((PlayerCharacter->GetCurrentMovementType() == EMovementType::EMT_Crouching) || PlayerCharacter->GetCurrentMovementType() == EMovementType::EMT_Sliding))
 				{
 					PlayerCharacter->GetMesh()->GetAnimInstance()->Montage_Play(PlayerCrouchShootMontage);
 				}
+				else if (PlayerShootMontage)
+				{
+					PlayerCharacter->GetMesh()->GetAnimInstance()->Montage_Play(PlayerShootMontage);
+				}
 			}
+
 			if (TracerRound)
+			{
 				GetWorld()->SpawnActor<AActor>(TracerRound, Muzzle->GetComponentLocation(), PlayerCamera->GetForwardVector().Rotation())->SetLifeSpan(1.0f);
+			}
 
 			Recoil();
+
 			if (CameraShake)
 			{
 				PlayerCharacter->PlayCameraShake(CameraShake, CameraShakeScale);
 			}
+
 			SingleShotAlpha = 1.f;
 			UpdateWeaponVarsInPlayer();
 			UpdateWeaponVisuals();
 			UAISense_Hearing::ReportNoiseEvent(this, GetActorLocation(), 1.f, PlayerCharacter, 2000.f);
-			if(bIsHit)
+			for(int i = 0 ; i < PalletCount; i++)
 			{
-				HitSound(GunShotHitResult);
-				AActor *HitActor = GunShotHitResult.GetActor();
-				if (HitActor)
+				FVector RandomVector = FVector(UKismetMathLibrary::RandomFloatInRange(-TraceOffset,TraceOffset),UKismetMathLibrary::RandomFloatInRange(-TraceOffset,TraceOffset),UKismetMathLibrary::RandomFloatInRange(-TraceOffset,TraceOffset));
+				FVector EndTrace = PlayerCamera->GetComponentLocation() + PlayerCamera->GetForwardVector() * Range + RandomVector;
+				TArray<AActor *> ActorsToIgnore;
+				ActorsToIgnore.Add(UGameplayStatics::GetPlayerCharacter(this, 0));
+				FHitResult GunShotHitResult;
+
+				bool bIsHit = UKismetSystemLibrary::LineTraceSingle(this,
+																	PlayerCamera->GetComponentLocation(),
+																	EndTrace,
+																	UEngineTypes::ConvertToTraceType(ECollisionChannel::ECC_Visibility),
+																	false,
+																	ActorsToIgnore,
+																	EDrawDebugTrace::ForDuration,
+																	GunShotHitResult,
+																	true);
+				
+				if(bIsHit)
 				{
-					if (HitActor->CanBeDamaged())
+					HitSound(GunShotHitResult);
+					AActor *HitActor = GunShotHitResult.GetActor();
+					if (HitActor)
 					{
-						GiveDamage(GunShotHitResult);
+						if (HitActor->CanBeDamaged())
+						{
+							GiveDamage(GunShotHitResult);
+						}
 					}
 				}
 			}
-
 		}
 		else
 		{
-			// UE_LOG(LogTemp,Warning,TEXT("No ammo"));
 			StopShooting();
 			PlayerCharacter->Reload();
 		}
 	}
-
-	else
-	{
-		UE_LOG(LogTemp, Warning, TEXT("Cannnot shoot"));
-	}
 }
 
-	void AWeaponBase::HitSound(FHitResult GunHit)
+void AWeaponBase::HitSound(FHitResult GunHit)
+{
+	EPhysicalSurface SurfaceType = 	UGameplayStatics::GetSurfaceType(GunHit);
+	switch (SurfaceType)
 	{
-			EPhysicalSurface SurfaceType = 	UGameplayStatics::GetSurfaceType(GunHit);
-			switch (SurfaceType)
-			{
-				//wood
-			case EPhysicalSurface::SurfaceType1:
-				UE_LOG(LogTemp,Warning,TEXT("Surface 1"));
-				UGameplayStatics::SpawnEmitterAtLocation(this,WoodHitParticle,GunHit.Location);
-				UGameplayStatics::PlaySoundAtLocation(this,WoodHit,GunHit.Location);
-				break;
+		//wood
+	case EPhysicalSurface::SurfaceType1:
+		UE_LOG(LogTemp,Warning,TEXT("Surface 1"));
+		UGameplayStatics::SpawnEmitterAtLocation(this,WoodHitParticle,GunHit.Location,GunHit.Normal.Rotation());
+		UGameplayStatics::PlaySoundAtLocation(this,WoodHit,GunHit.Location);
+		break;
 
-				//Metal
-			case EPhysicalSurface::SurfaceType2:
-				UE_LOG(LogTemp,Warning,TEXT("Surface 2"));
-				UGameplayStatics::SpawnEmitterAtLocation(this,MetalHitParticle,GunHit.Location);
-				UGameplayStatics::PlaySoundAtLocation(this,MetalHit,GunHit.Location);
-				break;
+		//Metal
+	case EPhysicalSurface::SurfaceType2 :
+		UE_LOG(LogTemp,Warning,TEXT("Surface 2"));
+		UGameplayStatics::SpawnEmitterAtLocation(this,MetalHitParticle,GunHit.Location,GunHit.Normal.Rotation());
+		UGameplayStatics::PlaySoundAtLocation(this,MetalHit,GunHit.Location);
+		break;
 
-				//Stone
-			case EPhysicalSurface::SurfaceType3:
-				UE_LOG(LogTemp,Warning,TEXT("Surface 3"));
-				UGameplayStatics::SpawnEmitterAtLocation(this,StoneHitParticle,GunHit.Location);
-				UGameplayStatics::PlaySoundAtLocation(this,StoneHit,GunHit.Location);
-				break;
-			
-			default:
-				break;
-			}
+		//Stone
+	case EPhysicalSurface::SurfaceType3:
+		UE_LOG(LogTemp,Warning,TEXT("Surface 3"));
+		UGameplayStatics::SpawnEmitterAtLocation(this,StoneHitParticle,GunHit.Location,GunHit.Normal.Rotation());
+		UGameplayStatics::PlaySoundAtLocation(this,StoneHit,GunHit.Location);
+		break;
+
+		//HeavyMetal
+	case EPhysicalSurface::SurfaceType4 :
+		UE_LOG(LogTemp,Warning,TEXT("Surface 4"));
+		UGameplayStatics::SpawnEmitterAtLocation(this,MetalHitParticle,GunHit.Location,GunHit.Normal.Rotation());
+		UGameplayStatics::PlaySoundAtLocation(this,MetalHit,GunHit.Location);
+		break;
+	
+	default:
+		break;
 	}
+}
 
 void AWeaponBase::Recoil()
 {
@@ -274,8 +291,12 @@ void AWeaponBase::ReloadEffect()
 	bIsReloading = false;
 	PlayerCharacter->bIsReloading = false;
 	bCanShoot = true;
+
 	if (PlayerCharacter->IsADSButtonDown())
+	{
 		PlayerCharacter->ADSON();
+	}
+
 	UpdateWeaponVisuals();
 	UpdateWeaponVarsInPlayer();
 }
@@ -288,7 +309,7 @@ void AWeaponBase::UpdateWeaponVisuals()
 	GunMesh->CreateDynamicMaterialInstance(0)->SetVectorParameterValue(FName("EmissiveColor"), NewColor);
 }
 
-void AWeaponBase::UpdateWeaponVarsInPlayer()
+void AWeaponBase::UpdateWeaponVarsInPlayer()//for updating the struct 	 inside the player character to used them in the player hud
 {
 	if (bIsPrimaryWeapon)
 	{
@@ -323,6 +344,7 @@ void AWeaponBase::GiveDamage(FHitResult GunHit)
 									   PlayerCharacter->GetInstigatorController(),
 									   this,
 									   UDamageType::StaticClass());
+
 	// UE_LOG(LogTemp,Warning,TEXT("Damage Given %f"),FinalDamage);
 	UAISense_Damage::ReportDamageEvent(this, GunHit.GetActor(), PlayerCharacter, FinalDamage, GunHit.TraceStart, GunHit.Location);
 }
@@ -346,70 +368,52 @@ float AWeaponBase::DamagePerBone(FName BoneName)
 //=============================================================Pickup Weapon=============================================//
 void AWeaponBase::PickupWeapon()
 {
-}
-
-void AWeaponBase::PickupWeaponSetup(EWeaponName LWeaponName, TSubclassOf<AWeaponBase> LWeaponClass, int LTotalAmmo, int LMaxAmmo, int LMagSize, int LCurrentMagAmmo, float LFireRate)
-{
-
-	if (UKismetMathLibrary::EqualEqual_ClassClass(PlayerCharacter->PrimaryWeapon.WeaponClass.Get(), LWeaponClass.Get()) &&
-		UKismetMathLibrary::EqualEqual_ClassClass(PlayerCharacter->SecondaryWeapon.WeaponClass.Get(), LWeaponClass.Get()))
+	//just a cross check to make sure player cannot pickup already holding weapon
+	if (UKismetMathLibrary::EqualEqual_ClassClass(PlayerCharacter->PrimaryWeapon.WeaponClass.Get(), WeaponBP.Get()) &&
+		UKismetMathLibrary::EqualEqual_ClassClass(PlayerCharacter->SecondaryWeapon.WeaponClass.Get(), WeaponBP.Get()))
 	{
 		return;
 	}
+	// FWeaponData Data;	
 	bIsPlayerHoldingTheWeapon = true;
 	GunMesh->SetSimulatePhysics(false);
 	GunMesh->SetCollisionEnabled(ECollisionEnabled::NoCollision);
+
+	//using this to save the data inside the player, so that we can use it in widgets and during save game
+	FWeaponData WeaponData;
+	WeaponData.WeaponName = WeaponName;
+	WeaponData.WeaponClass = WeaponBP;
+	WeaponData.TotalAmmo = TotalAmmo;
+	WeaponData.MaxAmmo = MaxAmmo;
+	WeaponData.CurrentMagAmmo = CurrentMagAmmo;
+	
+	//first we will check of the empty slot and assign the weapon to it
 	if (PlayerCharacter->PrimaryWeapon.WeaponClass->IsChildOf(AKnifeWeapon::StaticClass()))
 	{
-		UE_LOG(LogTemp,Warning,TEXT("Primary Weapon Pickup in empty slot"));
 		PlayerCharacter->WeaponEquippedSlot = 0;
 		PlayerCharacter->DropWeapon(true);
-		PlayerCharacter->PrimaryWeapon.WeaponName = LWeaponName;
-		PlayerCharacter->PrimaryWeapon.WeaponClass = LWeaponClass;
-		PlayerCharacter->PrimaryWeapon.TotalAmmo = LTotalAmmo;
-		PlayerCharacter->PrimaryWeapon.MaxAmmo = LMaxAmmo;
-		PlayerCharacter->PrimaryWeapon.MagSize = LMagSize;
-		PlayerCharacter->PrimaryWeapon.CurrentMagAmmo = LCurrentMagAmmo;
-		PlayerCharacter->PrimaryWeapon.FireRate = LFireRate;
+		PlayerCharacter->PrimaryWeapon = WeaponData;
 	}
 
 	else if (PlayerCharacter->SecondaryWeapon.WeaponClass->IsChildOf(AKnifeWeapon::StaticClass()))
 	{
-		UE_LOG(LogTemp,Warning,TEXT("Secondary Weapon Pickup in empty slot"));
 		PlayerCharacter->WeaponEquippedSlot = 1;
 		PlayerCharacter->DropWeapon(false);
-		PlayerCharacter->SecondaryWeapon.WeaponClass = LWeaponClass;
-		PlayerCharacter->SecondaryWeapon.TotalAmmo = LTotalAmmo;
-		PlayerCharacter->SecondaryWeapon.MaxAmmo = LMaxAmmo;
-		PlayerCharacter->SecondaryWeapon.MagSize = LMagSize;
-		PlayerCharacter->SecondaryWeapon.CurrentMagAmmo = LCurrentMagAmmo;
-		PlayerCharacter->SecondaryWeapon.FireRate = LFireRate;
+		PlayerCharacter->SecondaryWeapon = WeaponData;
 	}
 
 	else
 	{
 		if (PlayerCharacter->WeaponEquippedSlot == 0)
 		{
-			UE_LOG(LogTemp,Warning,TEXT("Primary Weapon Pickup"));
 			PlayerCharacter->DropWeapon(true);
-			PlayerCharacter->PrimaryWeapon.WeaponClass = LWeaponClass;
-			PlayerCharacter->PrimaryWeapon.TotalAmmo = LTotalAmmo;
-			PlayerCharacter->PrimaryWeapon.MaxAmmo = LMaxAmmo;
-			PlayerCharacter->PrimaryWeapon.MagSize = LMagSize;
-			PlayerCharacter->PrimaryWeapon.CurrentMagAmmo = LCurrentMagAmmo;
-			PlayerCharacter->PrimaryWeapon.FireRate = LFireRate;
+			PlayerCharacter->PrimaryWeapon = WeaponData;
 		}
 
 		else if (PlayerCharacter->WeaponEquippedSlot == 1)
 		{
-			UE_LOG(LogTemp,Warning,TEXT("Secondary Weapon Pickup"));
 			PlayerCharacter->DropWeapon(false);
-			PlayerCharacter->SecondaryWeapon.WeaponClass = LWeaponClass;
-			PlayerCharacter->SecondaryWeapon.TotalAmmo = LTotalAmmo;
-			PlayerCharacter->SecondaryWeapon.MaxAmmo = LMaxAmmo;
-			PlayerCharacter->SecondaryWeapon.MagSize = LMagSize;
-			PlayerCharacter->SecondaryWeapon.CurrentMagAmmo = LCurrentMagAmmo;
-			PlayerCharacter->SecondaryWeapon.FireRate = LFireRate;
+			PlayerCharacter->SecondaryWeapon = WeaponData;
 		}
 	}
 

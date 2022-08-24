@@ -14,7 +14,6 @@ class ONCEUPONAGAMER_API AWeaponBase : public AActor,public IPickupWeaponInterfa
 	GENERATED_BODY()
 	
 public:	
-	// Sets default values for this actor's properties
 	AWeaponBase();
 	virtual void Tick(float DeltaTime) override;
 	virtual void Shoot();
@@ -22,19 +21,16 @@ public:
 	virtual void Reload();
 	virtual void ReloadEffect();
 	virtual void DrawWeapon();
-	virtual TSubclassOf<AWeaponBase> GetPickupWeapon();
-	virtual float DoMeleeAttack();
 	virtual void PickupWeapon() override;
 	virtual void SetPickupWeaponName() override;
 	virtual bool IsPickupGun() override;
+	virtual float DoMeleeAttack();
+	virtual TSubclassOf<AWeaponBase> GetPickupWeapon();
 	void DropGun();
 
 protected:
-	// Called when the game starts or when spawned
 	virtual void BeginPlay() override;
 	virtual void Recoil();
-	void PickupWeaponSetup(EWeaponName LWeaponName, TSubclassOf<AWeaponBase> LWeaponClass, int LTotalAmmo,int LMaxAmmo, int LMagSize,int LCurrentMagAmmo,float LFireRate);
-
 
 private:
 	UFUNCTION()
@@ -42,18 +38,19 @@ private:
 	void UpdateWeaponVisuals();
 	void UpdateWeaponVarsInPlayer();
 	void GiveDamage(FHitResult GunHit);
-	float DamagePerBone(FName BoneName);
 	void HitSound(FHitResult GunHit);
+	float DamagePerBone(FName BoneName);
 
 public:
 	UPROPERTY(VisibleAnywhere)
 	USkeletalMeshComponent* GunMesh;
+
 protected:
 	UPROPERTY(VisibleAnywhere)
 	USceneComponent* Muzzle;
 	
 	UPROPERTY(EditAnywhere,Category = "Animation")
-	UAnimationAsset* ShootAnim;
+	UAnimationAsset* GunShootAnim;
 
 	UPROPERTY(EditAnywhere,Category = "Animation")
 	UAnimationAsset* GunReloadAnim;
@@ -90,15 +87,25 @@ protected:
 	
 	UPROPERTY(EditAnywhere,Category = "Weapon Vars")
 	EWeaponName WeaponName;
-	// UPROPERTY(EditAnywhere)
-	// TSubclassOf<class APickupWeaponBase>  PickupWeapon;
+
+	UPROPERTY(EditAnywhere,Category = "Weapon Vars")
+	bool bIsAuto;
 	
+	UPROPERTY(EditAnywhere,Category = "Weapon Vars")
+	int32 PalletCount = 1;
+
+	UPROPERTY(EditAnywhere,Category = "Weapon Vars")
+	float TraceOffset;
+	
+	UPROPERTY(EditAnywhere,Category = "Weapon Vars")
+	float CoolDownTime = 0.f;
 	float ReloadTime;
 	bool bIsReloading;
 	float SingleShotAlpha;
 	bool bCanShoot;
 	class APlayerCharacter* PlayerCharacter;
 	class UCameraComponent* PlayerCamera;
+
 	UPROPERTY(EditAnywhere,Category = "Weapon Hit Visuals")
 	USoundBase* WoodHit;
 	UPROPERTY(EditAnywhere,Category = "Weapon Hit Visuals")
@@ -111,8 +118,10 @@ protected:
 	UParticleSystem* MetalHitParticle;
 	UPROPERTY(EditAnywhere,Category = "Weapon Hit Visuals")
 	UParticleSystem* StoneHitParticle;
+
 private:
 	FTimerHandle ShootingTimerHandle;
+	FTimerHandle ShootingCooldownTimerHandle;
 	UPROPERTY(EditAnywhere)
 	float BaseDamage;
 	UPROPERTY(EditAnywhere)
@@ -146,7 +155,6 @@ public:
 	bool bIsWeaponShootable;
 
 	bool bIsPrimaryWeapon;
-
 	bool bIsPlayerHoldingTheWeapon;
 
 

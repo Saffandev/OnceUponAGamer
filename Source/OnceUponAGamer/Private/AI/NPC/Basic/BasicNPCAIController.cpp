@@ -76,6 +76,10 @@ void ABasicNPCAIController::InitOwner()
     {
         Activate();
     }
+    if(Blackboard && OwnerAI)
+    {
+        Blackboard->SetValueAsObject(FName("PatrolObject"),OwnerAI->PatrolPointObj);
+    }
 }
 void ABasicNPCAIController::Activate()
 {

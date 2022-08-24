@@ -14,8 +14,8 @@ void ABSG15::BeginPlay()
 {
     Super::BeginPlay();
 }
-void ABSG15::PickupWeapon() 
-{
-    PickupWeaponSetup(WeaponName, WeaponBP, TotalAmmo, MaxAmmo, MagSize, CurrentMagAmmo, FireRate);
-    UE_LOG(LogTemp,Warning,TEXT("Pickup weapon"));
-}
+// void ABSG15::PickupWeapon() 
+// {
+//     PickupWeaponSetup(WeaponName, WeaponBP, TotalAmmo, MaxAmmo, MagSize, CurrentMagAmmo, FireRate);
+//     UE_LOG(LogTemp,Warning,TEXT("Pickup weapon"));
+// }

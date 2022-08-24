@@ -18,6 +18,6 @@ public:
 
 protected:
 	virtual void BeginPlay() override;
-	virtual void PickupWeapon() override;
+	// virtual void PickupWeapon() override;
 	
 };

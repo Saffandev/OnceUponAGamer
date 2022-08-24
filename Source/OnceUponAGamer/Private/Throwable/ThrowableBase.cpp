@@ -46,11 +46,14 @@ if(!PlayerCharacter || !LThrowable)
 	{
 		PlayerCharacter->PrimaryThrowableData.BP_Throwable = LThrowable;
 		PlayerCharacter->PrimaryThrowableData.Count++;
+		PlayerCharacter->PrimaryThrowableData.ThrowableName = ThrowableName;
 	}
 	else if(PlayerCharacter->SecondaryThrowableData.BP_Throwable == nullptr)
 	{
 		PlayerCharacter->SecondaryThrowableData.BP_Throwable = LThrowable;
 		PlayerCharacter->SecondaryThrowableData.Count++;
+		PlayerCharacter->PrimaryThrowableData.ThrowableName = ThrowableName;
+
 	}
 	else
 	{
@@ -58,11 +61,15 @@ if(!PlayerCharacter || !LThrowable)
 		{
 			PlayerCharacter->PrimaryThrowableData.BP_Throwable = LThrowable;
 			PlayerCharacter->PrimaryThrowableData.Count++;
+			PlayerCharacter->SecondaryThrowableData.ThrowableName = ThrowableName;
+
 		}
 		else if(PlayerCharacter->ThrowableEquippedSlot == 1)
 		{
 			PlayerCharacter->SecondaryThrowableData.BP_Throwable = LThrowable;
 			PlayerCharacter->SecondaryThrowableData.Count++;
+			PlayerCharacter->SecondaryThrowableData.ThrowableName = ThrowableName;
+
 		}
 	}
 

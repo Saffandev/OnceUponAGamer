@@ -44,31 +44,23 @@ APlayerCharacter::APlayerCharacter()
 	AIPerceptionStimuliSource->RegisterForSense(TSubclassOf<UAISense_Sight>());
 	AIPerceptionStimuliSource->RegisterForSense(TSubclassOf<UAISense_Hearing>());
 	AIPerceptionStimuliSource->RegisterForSense(TSubclassOf<UAISense_Damage>());
-	// AIPerceptionStimuliSource->RegisterForSense(TSubclassOf<UAISense_Touch>());
 	AIPerceptionStimuliSource->RegisterWithPerceptionSystem();
 
 	GetCapsuleComponent()->InitCapsuleSize(40.f, 96.f);
 	bIsWallRunning = false;
 	bCanDoWallRunAgain = true;
 	bCanEndWallRun = false;
-
+	
+	//Setting Default Values for the WeaponStruct
 	PrimaryWeapon.WeaponName = EWeaponName::EWN_None;
 	PrimaryWeapon.MaxAmmo = 0;
 	PrimaryWeapon.TotalAmmo = 0;
-	PrimaryWeapon.MagSize = 0;
 	PrimaryWeapon.CurrentMagAmmo = 0;
-	PrimaryWeapon.ReloadTime = 0.f;
-	PrimaryWeapon.Accuracy = 0.f;
-	PrimaryWeapon.FireRate = 0.f;
 
 	SecondaryWeapon.WeaponName = EWeaponName::EWN_None;
 	SecondaryWeapon.MaxAmmo = 0;
 	SecondaryWeapon.TotalAmmo = 0;
-	SecondaryWeapon.MagSize = 0;
 	SecondaryWeapon.CurrentMagAmmo = 0;
-	SecondaryWeapon.ReloadTime = 0.f;
-	SecondaryWeapon.Accuracy = 0.f;
-	SecondaryWeapon.Accuracy = 0.f;
 }
 
 //=====================Begin Play==================================//
@@ -91,19 +83,20 @@ void APlayerCharacter::BeginPlay()
 	CrouchCameraHeight = StandingCameraHeight * CrouchScale;
 
 	PlayerController = GetController();
+
 	// Binding Section
 	Capsule->OnComponentHit.AddDynamic(this, &APlayerCharacter::OnHit);
 	OnTakeAnyDamage.AddDynamic(this,&APlayerCharacter::TakeAnyDamage);
 	OnTakePointDamage.AddDynamic(this,&APlayerCharacter::TakePointDamage);
 	OnTakeRadialDamage.AddDynamic(this,&APlayerCharacter::TakeRadialDamage);
+	
 	CurrentWeapon = GetWorld()->SpawnActor<AWeaponBase>(InitialWeapon);
 	CurrentWeapon->AttachToComponent(PlayerMesh, FAttachmentTransformRules::SnapToTargetNotIncludingScale, FName("WeaponSocket_r"));
+	
 	EqPrimaryWeapon = CurrentWeapon;
 	EqSecondaryWeapon = CurrentWeapon;
-	PrimaryWeapon.WeaponClass = InitialWeapon;
-	// PrimaryWeapon.PickupWeaponClass = InitialWeapon->GetDefaultObject<AWeaponBase>()->GetPickupWeapon();
+	PrimaryWeapon.WeaponClass = InitialWeapon;//Here initial weapon is knife(can also be null but for that some code need to be changed)
 	SecondaryWeapon.WeaponClass = InitialWeapon;
-	// SecondaryWeapon.PickupWeaponClass = InitialWeapon->GetDefaultObject<AWeaponBase>()->GetPickupWeapon();
 
 	JumpsLeft = MaxJumps;
 	WalkSpeed = CharacterMovement->MaxWalkSpeed;
@@ -168,16 +161,19 @@ void APlayerCharacter::BeginPlay()
 void APlayerCharacter::Tick(float DeltaTime)
 {
 	Super::Tick(DeltaTime);
+
 	CrouchTimeline.TickTimeline(DeltaTime);
 	SlideTimeline.TickTimeline(DeltaTime);
 	CameraTiltTimeline.TickTimeline(DeltaTime);
 	WallRunUpdateTimeline.TickTimeline(DeltaTime);
 	ADS_OnTimeline.TickTimeline(DeltaTime);
 	ADS_OffTimeline.TickTimeline(DeltaTime);
-	PickupInAction();
+
+	PickupInAction();//Function that tracks pickables hit with player
+
 	if (bCanPredictPath)
 	{
-		ThrowPredection();
+		ThrowPredection();//Grenade Throw predection
 	}
 }
 
@@ -210,10 +206,10 @@ void APlayerCharacter::SetupPlayerInputComponent(UInputComponent *PlayerInputCom
 	PlayerInputComponent->BindAction(TEXT("Throw"), 		 	EInputEvent::IE_Pressed, 	this, &APlayerCharacter::PrimaryThrowStart);
 	PlayerInputComponent->BindAction(TEXT("Throw"), 		 	EInputEvent::IE_Released, 	this, &APlayerCharacter::PrimaryThrowEnd);
 	PlayerInputComponent->BindAction(TEXT("ThrowableSwitch"),  	EInputEvent::IE_Released, 	this, &APlayerCharacter::SwitchThrowable);
-	// PlayerInputComponent ->BindAction(TEXT("Secondary Throw"),			EInputEvent::IE_Released,this, &APlayerCharacter::SecondaryThrowEnd);
-}
-//====================================================================OnComponentHit for capsule======================================//
 
+}
+
+//====================================================================OnComponentHit for capsule======================================//
 void APlayerCharacter::OnHit(UPrimitiveComponent *HitComponent, AActor *OtherActor, UPrimitiveComponent *OtherComp, FVector NormalizeImpulse, const FHitResult &Hit)
 {
 	LedgeGrab(Hit.ImpactPoint);
@@ -223,22 +219,19 @@ void APlayerCharacter::OnHit(UPrimitiveComponent *HitComponent, AActor *OtherAct
 	}
 }
 
+//=================================================================Damage Events=====================================================//
 void APlayerCharacter::TakeAnyDamage(AActor* DamagedActor,float Damage,const UDamageType* DamageType,AController* InstigatedBy, AActor* DamageCauser)
 {
-	UE_LOG(LogTemp,Warning,TEXT("Any Damage"));
 	TakeDamage(Damage);
 }
 
 void APlayerCharacter::TakePointDamage(AActor* DamagedActor,float Damage,AController* InstigatedBy, FVector HitLocation,UPrimitiveComponent* HitComp,FName BoneName,FVector ShotDirection,const UDamageType* DamageType,AActor* DamageCauser)
 {
-	UE_LOG(LogTemp,Warning,TEXT("Point Damage"));
 	TakeDamage(Damage);
-	
 }
 
 void APlayerCharacter::TakeRadialDamage(AActor* DamagedActor,float Damage,const UDamageType* DamageType,FVector Origin,FHitResult Hit,AController* InstigatedBy,AActor* DamageCauser)
 {
-	UE_LOG(LogTemp,Warning,TEXT("Radial Damage"));
 	TakeDamage(Damage);
 }
 
@@ -265,11 +258,16 @@ void APlayerCharacter::TakeDamage(float Damage)
 			{
 				GetWorld()->GetTimerManager().ClearTimer(ShieldRechargeTimer);
 			}
-			GetWorld()->GetTimerManager().SetTimer(ShieldRechargeTimer,this,&APlayerCharacter::RegainShield,0.1f,true,TimeForShieldRecharge);
+			GetWorld()->GetTimerManager().SetTimer(ShieldRechargeTimer,
+												   this,
+												   &APlayerCharacter::RegainShield,
+												   0.1f,
+												   true,
+												   TimeForShieldRecharge);
 		}
 }
 
-
+//==============================================================Healing Events=================================================//
 void APlayerCharacter::Heal(float Health)
 {
 
@@ -302,7 +300,7 @@ void APlayerCharacter::HealShield(float ShieldHealth)
 	}
 }
 
-void APlayerCharacter::RegainShield()
+void APlayerCharacter::RegainShield()// Will gain sheild overtime if its had not touched 0 && player hadn't taken damage for some time
 {
 	CurrentShield = UKismetMathLibrary::FInterpTo_Constant(CurrentShield,MaxShield,UGameplayStatics::GetWorldDeltaSeconds(this),ShieldRechargeRate);
 
@@ -326,7 +324,7 @@ void APlayerCharacter::LedgeGrab(FVector ImpactPoint)
 																	UEngineTypes::ConvertToTraceType(ECC_Visibility),
 																	false,
 																	ActorsToIgnore,
-																	EDrawDebugTrace::ForDuration,
+																	EDrawDebugTrace::None,
 																	LedgeForwardOutHit,
 																	true);
 		if (IsForwardHit)
@@ -339,7 +337,7 @@ void APlayerCharacter::LedgeGrab(FVector ImpactPoint)
 																   UEngineTypes::ConvertToTraceType(ECC_Visibility),
 																   false,
 																   ActorsToIgnore,
-																   EDrawDebugTrace::ForDuration,
+																   EDrawDebugTrace::None,
 																   LedgeUpOutHit,
 																   true);
 			if (IsUpHit)
@@ -367,7 +365,7 @@ void APlayerCharacter::LedgeGrab(FVector ImpactPoint)
 														  true,
 														  EMoveComponentAction::Move,
 														  LatentInfo);
-					// EnablePlayerInput();
+		
 				}
 			}
 		}
@@ -376,12 +374,12 @@ void APlayerCharacter::LedgeGrab(FVector ImpactPoint)
 
 bool APlayerCharacter::CanLedgeGrab(FVector ImpactPoint)
 {
-
+	//Canuncroch() => this function will check if there is nothing over the player that might cause issue while finishing the ledge grab
 	return CanUncrouch(0.f) &&
 		   CharacterMovement->IsFalling() &&
 		   ForwardAxis > 0 &&
 		   (GetActorLocation().Z + 90.f) >= ImpactPoint.Z &&
-		   (GetActorLocation().Z - 20.f) <= ImpactPoint.Z;
+		   (GetActorLocation().Z - 50.f) <= ImpactPoint.Z;
 }
 
 //===============================================================================Wall Run Section==============================//
@@ -396,15 +394,19 @@ void APlayerCharacter::WallRun(AActor *HitActor, FVector HitImpactNormal)
 
 			float WallAngleWithPlayer = FVector2D::DotProduct(UKismetMathLibrary::Conv_VectorToVector2D(HitImpactNormal),
 															  UKismetMathLibrary::Conv_VectorToVector2D(GetActorRightVector()));
+
 			EWallRunDirection LWallRunSide = WallAngleWithPlayer > 0.f ? EWallRunDirection::EWRD_Right : EWallRunDirection::EWRD_Left;
+			
 			WallRunSide = LWallRunSide;
+			
 			WallRunDirection = FVector::CrossProduct(HitImpactNormal, FVector(0, 0, (WallRunSide == EWallRunDirection::EWRD_Left ? -1 : 1)));
 
 			BeginWallRun();
 		}
 	}
 }
-//==========================================================================Wall run conditions===========================================//
+
+//======================================Wall run conditions========================//
 bool APlayerCharacter::CanDoWallRun(AActor *HitActor, FVector HitImpactNormal)
 {
 	return IsPlayerInStateOfWallRun(HitImpactNormal) &&
@@ -431,8 +433,8 @@ bool APlayerCharacter::CanSurfaceBeWallRun(FVector HitImpactNormal)
 	float FloorInclineAngle = UKismetMathLibrary::DegAcos(FVector::DotProduct(FVector(HitImpactNormal.X, HitImpactNormal.Y, 0), HitImpactNormal));
 	return FloorInclineAngle < CharacterMovement->GetWalkableFloorAngle();
 }
-//===================================================================================Wall run in action========================//
 
+//==========================================Wall run in action========================//
 void APlayerCharacter::BeginWallRun()
 {
 	CanPerformCertainMovement(EMovementType::EMT_WallRun);
@@ -447,6 +449,7 @@ void APlayerCharacter::CameraTiltAction()
 {
 	float Alpha = CameraTiltCurve->GetFloatValue(CameraTiltTimeline.GetPlaybackPosition()) *
 				  (WallRunSide == EWallRunDirection::EWRD_Right ? 1 : -1);
+				  
 	FRotator ControlRotation = PlayerController->GetControlRotation();
 	PlayerController->SetControlRotation(FRotator(ControlRotation.Pitch, ControlRotation.Yaw, Alpha));
 }
@@ -472,32 +475,37 @@ void APlayerCharacter::WallRunOutOfAction()
 
 void APlayerCharacter::UpdateWallRun()
 {
-	if (!(ForwardAxis > 0 && UKismetMathLibrary::VSize(GetVelocity()) > 100.f))
+	if (!(ForwardAxis > 0 && UKismetMathLibrary::VSize(GetVelocity()) > 100.f))//will stop the wall run if player release the forward input key or got stuck onto something
 	{
-		UE_LOG(LogTemp, Warning, TEXT("Required keys not down"));
+		UE_LOG(LogTemp, Warning, TEXT("Required keys not down || Got Stuck with something"));
 		EndWallRun(EWallRunEndReason::EWRER_FallOfWall); // End wallrun Fall of from wall
-		return;
+		return;//we don't want below code if the condition satisfies
 	}
 
 	FVector EndTrace = FVector::CrossProduct(WallRunDirection, FVector(0, 0, (WallRunSide == EWallRunDirection::EWRD_Right ? 1 : -1)));
-	EndTrace = EndTrace * 200 + GetActorLocation();
+	
+	/* using capsule radius to make sure that player will not continue wallrun if there is comes whose (X or Y) 
+	doesn't alligns with the current wall and 20 is like error tolenrece */
+	EndTrace = EndTrace * (GetCapsuleComponent()->GetScaledCapsuleRadius() + 20.f) + GetActorLocation();
 	TArray<AActor *> ActorsToIgnore;
 	FHitResult WallRunOutHit;
-	bool bIsWallHit = UKismetSystemLibrary::LineTraceSingle(this,
+	bool bIsWallHit = UKismetSystemLibrary::SphereTraceSingle(this,
 															GetActorLocation(),
 															EndTrace,
+															2.f,
 															UEngineTypes::ConvertToTraceType(ECollisionChannel::ECC_Visibility),
 															false,
 															ActorsToIgnore,
 															EDrawDebugTrace::None,
 															WallRunOutHit,
-															true);
+															true);//using sphere trace so ingore small gaps between walls
 	if (!bIsWallHit)
 	{
 		UE_LOG(LogTemp, Warning, TEXT("No wall hit"));
 		EndWallRun(EWallRunEndReason::EWRER_FallOfWall); // end wall run fall of from wall
 		return;
 	}
+
 	EWallRunDirection LWallRunSide = FVector2D::DotProduct(UKismetMathLibrary::Conv_VectorToVector2D(WallRunOutHit.ImpactNormal),
 														   UKismetMathLibrary::Conv_VectorToVector2D(GetActorRightVector())) > 0.f
 										 ? EWallRunDirection::EWRD_Right
@@ -528,10 +536,9 @@ void APlayerCharacter::EndWallRun(EWallRunEndReason WallRunEndReason)
 	WallRunUpdateTimeline.Stop();
 	FTimerHandle LTimerHandle;
 	float WallRunReEnableTime = (WallRunEndReason == EWallRunEndReason::EWRER_JumpOfWall) ? 0.5 : 1;
-	GetWorld()->GetTimerManager().SetTimer(
-		LTimerHandle, [&]()
-		{ bCanDoWallRunAgain = true; },
-		WallRunReEnableTime, false);
+	GetWorld()->GetTimerManager().SetTimer(LTimerHandle, 
+										   [&](){ bCanDoWallRunAgain = true; },
+										   WallRunReEnableTime, false);
 }
 //===================================================================Wall run section end ======================================//
 
@@ -630,13 +637,13 @@ void APlayerCharacter::LookUp(float AxisValue)
 
 void APlayerCharacter::Jump()
 {
-	if (GetCurrentMovementType() == EMovementType::EMT_Crouching)
+	if (GetCurrentMovementType() == EMovementType::EMT_Crouching)//if the player is croucing it will uncrouch
 	{
 		Crouch();
 	}
 	else
 	{
-		SlideDirection = GetActorForwardVector();
+		SlideDirection = GetActorForwardVector();//cancle the slide if player is sliding
 		if (SlideTimeline.IsPlaying())
 		{
 			SlideTimeline.Stop();
@@ -655,13 +662,11 @@ void APlayerCharacter::Jump()
 		else if (CharacterMovement->IsFalling() && JumpsLeft > 0)
 		{
 			JumpsLeft -= 2;
-			// SetMovementSpeed(EMovementType::EMT_Walking);
 			LaunchCharacter(FindLaunchVelocity(), false, true);
 		}
 		else if (JumpsLeft > 0)
 		{
 			JumpsLeft--;
-			// SetMovementSpeed(EMovementType::EMT_Walking);
 			LaunchCharacter(FindLaunchVelocity(), false, true);
 		}
 	}
@@ -688,12 +693,10 @@ FVector APlayerCharacter::FindLaunchVelocity() const
 
 	if (bIsWallRunning)
 	{
-		LaunchDirection = FVector::CrossProduct(WallRunDirection, FVector(0, 0, WallRunSide == EWallRunDirection::EWRD_Right ? 1 : -1));
+		//Just to offect the launch direction to the right vector depending upon the wallrun side 
+		LaunchDirection = FVector::CrossProduct(WallRunDirection, FVector(0, WallRunSide == EWallRunDirection::EWRD_Right ? 5 : -5, 0));
 	}
-	// else if(CharacterMovement->IsFalling())
-	// {
-	// 	LaunchDirection = (GetActorForwardVector() * ForwardAxis) + (GetActorRightVector() * RightAxis);
-	// }
+
 	FVector FinalLaunchVelocity = (LaunchDirection + FVector(0, 0, 1)) * CharacterMovement->JumpZVelocity;
 	return FinalLaunchVelocity;
 }
@@ -702,7 +705,7 @@ FVector APlayerCharacter::FindLaunchVelocity() const
 
 //========================================================Crouch===================================//
 
-void APlayerCharacter::Crouch()
+void APlayerCharacter::Crouch()//right now its a toggle funciton,
 {
 	if (bIsCrouched && CanUncrouch(CrouchCapsuleHeight))
 	{
@@ -719,6 +722,8 @@ void APlayerCharacter::Crouch()
 			SetMovementSpeed(EMovementType::EMT_Walking);
 		}
 	}
+	/*if sprinting or faling with a certain forward velocity the player will slide in the forward direction and 
+	if falling then will slide in the direction stored just after leaving the ground*/
 	else if (CanPerformCertainMovement(EMovementType::EMT_Sliding) && !CharacterMovement->IsFalling())
 	{
 		Slide(GetActorForwardVector(), "Crouch");
@@ -728,22 +733,19 @@ void APlayerCharacter::Crouch()
 		bIsCrouched = true;
 		CrouchTimeline.Play();
 	}
-	else
-	{
-		UE_LOG(LogTemp, Warning, TEXT("Else of the crouch"));
-	}
 }
 
 void APlayerCharacter::ToggleCrouch()
 {
 	float Alpha = CrouchCurve->GetFloatValue(CrouchTimeline.GetPlaybackPosition());
 	GetCapsuleComponent()->SetCapsuleHalfHeight(FMath::Lerp(StandingCapsuleHeight, CrouchCapsuleHeight, Alpha));
-	Camera->SetRelativeLocation(FVector(
-		Camera->GetRelativeLocation().X,
-		Camera->GetRelativeLocation().Y,
-		FMath::Lerp(StandingCameraHeight, CrouchCameraHeight, Alpha)));
+
+	Camera->SetRelativeLocation(FVector(Camera->GetRelativeLocation().X,
+										Camera->GetRelativeLocation().Y,
+										FMath::Lerp(StandingCameraHeight, CrouchCameraHeight, Alpha)));
 }
 
+// doing a sphere trace slightly smaller that the capsule radius in the upward direcion to check if player can uncrouch or not
 bool APlayerCharacter::CanUncrouch(float CapsuleHeightAlpha) const
 {
 	float TraceRadius = Capsule->GetUnscaledCapsuleRadius() - 1;
@@ -770,7 +772,7 @@ bool APlayerCharacter::CanUncrouch(float CapsuleHeightAlpha) const
 
 void APlayerCharacter::Slide(FVector LSlideDirection, FString Caller)
 {
-	UE_LOG(LogTemp, Warning, TEXT("Caller = %s"), *Caller);
+	UE_LOG(LogTemp, Warning, TEXT("Caller = %s"), *Caller);//just for testing by whome this function is getting called
 	if (LSlideDirection == FVector::ZeroVector)
 	{
 		return;
@@ -787,7 +789,7 @@ void APlayerCharacter::PerformSlide()
 {
 	float Alpha = SlideCurve->GetFloatValue(SlideTimeline.GetPlaybackPosition());
 	CharacterMovement->MaxWalkSpeed = FMath::Lerp(SlideSpeed, CrouchSpeed, Alpha);
-	UE_LOG(LogTemp, Warning, TEXT("Slide Direction = %s"), *SlideDirection.ToString());
+	//UE_LOG(LogTemp, Warning, TEXT("Slide Direction = %s"), *SlideDirection.ToString());
 	AddMovementInput(SlideDirection, 1);
 	if (GetVelocity().Size() < 10)
 	{
@@ -799,7 +801,7 @@ void APlayerCharacter::PerformSlide()
 
 void APlayerCharacter::EndSlide()
 {
-	SetMovementSpeed(EMovementType::EMT_Crouching);
+	SetMovementSpeed(EMovementType::EMT_Crouching);//end result of the slide...
 }
 //======================================================================Slide End================================================//
 
@@ -808,7 +810,7 @@ void APlayerCharacter::EndSlide()
 void APlayerCharacter::Sprint()
 {
 	bIsSprintKeyDown = true;
-	if (GetCurrentMovementType() == EMovementType::EMT_Crouching)
+	if (GetCurrentMovementType() == EMovementType::EMT_Crouching )
 	{
 		bIsSprintKeyDown = false;
 		Crouch();
@@ -866,25 +868,23 @@ EMovementType APlayerCharacter::GetCurrentMovementType()
 	return CurrentMovementType;
 }
 
+//this function return true/false if player can perform feeded movement and also sets the movement speed it the condition satifies
 bool APlayerCharacter::CanPerformCertainMovement(EMovementType Movement)
 {
 	EMovementType LCurrentMovementType = GetCurrentMovementType();
 	switch (Movement)
 	{
 	case EMovementType::EMT_Walking:
-
 		if (ForwardAxis <= 0 && GetCurrentMovementType() == EMovementType::EMT_Sprinting)
 		{
 			CancelSprint();
 		}
 		if (ForwardAxis != 0)
 		{
-
 			if (GetCurrentMovementType() == EMovementType::EMT_Sliding && ForwardAxis < 0)
 			{
-				SlideTimeline.SetPlayRate(3);
+				SlideTimeline.SetPlayRate(3);//increasing the play rate to make player stop sliding but with some smooth looks
 			}
-
 			if (GetCurrentMovementType() == EMovementType::EMT_Sliding)
 			{
 				if (FVector::DotProduct(GetActorForwardVector(), SlideDirection) < 0) // player will stop sliding if he turns back during sliding
@@ -906,6 +906,10 @@ bool APlayerCharacter::CanPerformCertainMovement(EMovementType Movement)
 		{
 			if (SlideTimeline.IsPlaying())
 			{
+				if(!CanUncrouch(CrouchCapsuleHeight))
+				{
+					return false;
+				}
 				SlideTimeline.Stop();
 				Crouch();
 			}
@@ -1072,12 +1076,14 @@ void APlayerCharacter::PickupInAction()
 	FVector EndTrace = GetActorLocation() + GetActorUpVector() * -100;
 	FHitResult PickupHit;
 	TArray<AActor *> ActorsToIgnore;
+
+	//all the pickables are given pickup collisoin channel so that pickup sphere trace will hit only those its which have pickup collision channel
 	TArray<TEnumAsByte<EObjectTypeQuery>> PickupObject;
 	PickupObject.Add(UEngineTypes::ConvertToObjectType(ECollisionChannel::ECC_GameTraceChannel2));
 	bool bIsPickupHit = UKismetSystemLibrary::SphereTraceSingleForObjects(this,
-																		  GetActorLocation(),
+																		  GetActorLocation() + 20.f,
 																		  EndTrace,
-																		  30,
+																		  45,
 																		  PickupObject,
 																		  false,
 																		  ActorsToIgnore,
@@ -1090,97 +1096,23 @@ void APlayerCharacter::PickupInAction()
 		AActor *HitActor = PickupHit.GetActor();
 		if (HitActor != nullptr)
 		{
-			IPickupWeaponInterface *PickupWeaponInterface = Cast<IPickupWeaponInterface>(HitActor);
+			PickupWeaponInterface = Cast<IPickupWeaponInterface>(HitActor);//The pickup item has an interface to avoid casting to each pickup item
+			
 			if (PickupWeaponInterface != nullptr)
 			{
 				PickupWeaponInterface->SetPickupWeaponName();
-				bIsPickupGun = PickupWeaponInterface->IsPickupGun();
-				if (bIsPickupGun) // gun pickup
+				bIsPickupGun = PickupWeaponInterface->IsPickupGun();//Currently there are two types of pickables (gun and throwables)
+
+				if (bIsPickupGun) 
 				{
-					if (UKismetMathLibrary::NotEqual_ClassClass(PrimaryWeapon.WeaponClass.Get(), HitActor->GetClass()) &&
-						UKismetMathLibrary::NotEqual_ClassClass(SecondaryWeapon.WeaponClass.Get(), HitActor->GetClass()))
-					{
-						// UE_LOG(LogTemp, Warning, TEXT("Pickup Weapon Ok"));
-							bIsWeaponHit = true;
-						if (bCanPickup)
-						{
-							bIsWeaponHit = false;
-							PickupHitWeapon = HitActor;
-							bCanPickup = false;
-							PickupWeaponInterface->SetPickupWeaponName();
-							PickupWeaponInterface->PickupWeapon();
-						}
-					}
-
-					else // Weapon Already in the slot
-					{
-						UE_LOG(LogTemp, Warning, TEXT("Weapon Already in the slot"));
-						if (UKismetMathLibrary::EqualEqual_ClassClass(PrimaryWeapon.WeaponClass.Get(), HitActor->GetClass()))
-						{
-							if (PrimaryWeapon.TotalAmmo < PrimaryWeapon.MaxAmmo)
-							{
-								UE_LOG(LogTemp, Error, TEXT("Primary Weapon Ammo pick"));
-								PrimaryWeapon.TotalAmmo = FMath::Min(PrimaryWeapon.TotalAmmo + 30, PrimaryWeapon.MaxAmmo);
-								CurrentWeapon->TotalAmmo = PrimaryWeapon.TotalAmmo;
-								HitActor->Destroy();
-							}
-							else
-							{
-								UE_LOG(LogTemp,Warning,TEXT("Primary Total Ammo = %i //// Max Ammo = %i"),PrimaryWeapon.TotalAmmo,PrimaryWeapon.MaxAmmo);
-							}
-						}
-						else if (UKismetMathLibrary::EqualEqual_ClassClass(SecondaryWeapon.WeaponClass.Get(), HitActor->GetClass()))
-						{
-							if (SecondaryWeapon.TotalAmmo < SecondaryWeapon.MaxAmmo)
-							{
-								UE_LOG(LogTemp, Error, TEXT("Secondary Weapon Ammo pick"));
-								SecondaryWeapon.TotalAmmo = FMath::Min((SecondaryWeapon.TotalAmmo + 30), SecondaryWeapon.MaxAmmo);
-								CurrentWeapon->TotalAmmo = SecondaryWeapon.TotalAmmo;
-								HitActor->Destroy();
-							}
-						}
-					}
+					PickupGun(HitActor);
 				}
-
 				else
 				{
-					// item not in the slot
-					if (UKismetMathLibrary::NotEqual_ClassClass(PrimaryThrowableData.BP_Throwable.Get(), HitActor->GetClass()) &&
-						UKismetMathLibrary::NotEqual_ClassClass(SecondaryThrowableData.BP_Throwable.Get(), HitActor->GetClass()))
-					{
-						bIsWeaponHit = true;
-						if (bCanPickup)
-						{
-							bCanPickup = false;
-							bIsWeaponHit = false;
-							UE_LOG(LogTemp, Warning, TEXT("Throwable not in slot"));
-							// PickupWeaponInterface->SetPickupWeaponName();
-							PickupWeaponInterface->PickupWeapon();
-						}
-					}
-					else
-					{
-						UE_LOG(LogTemp, Warning, TEXT("Throwable in slot"));
-
-						if (UKismetMathLibrary::EqualEqual_ClassClass(PrimaryThrowableData.BP_Throwable.Get(), HitActor->GetClass()))
-						{
-							if (PrimaryThrowableData.Count < ThrowableMaxCount)
-							{
-								PrimaryThrowableData.Count++;
-								HitActor->Destroy();
-							}
-						}
-						else if (UKismetMathLibrary::EqualEqual_ClassClass(SecondaryThrowableData.BP_Throwable.Get(), HitActor->GetClass()))
-						{
-							if (SecondaryThrowableData.Count < ThrowableMaxCount)
-							{
-								SecondaryThrowableData.Count++;
-								HitActor->Destroy();
-							}
-						}
-					}
+					PickupThrowable(HitActor);
 				}
 			}
+
 			else
 			{
 				UE_LOG(LogTemp, Warning, TEXT("Pickup weapon has no interface"));
@@ -1199,11 +1131,86 @@ void APlayerCharacter::PickupInAction()
 	}
 }
 
+void APlayerCharacter::PickupGun(AActor* HitActor)
+{
+	//Checking if the player dosen't holds the pickup item
+	if (UKismetMathLibrary::NotEqual_ClassClass(PrimaryWeapon.WeaponClass.Get(), HitActor->GetClass()) &&
+		UKismetMathLibrary::NotEqual_ClassClass(SecondaryWeapon.WeaponClass.Get(), HitActor->GetClass()))
+	{
+		bIsWeaponHit = true;//for the Hud to display pickup text
+		if (bCanPickup)
+		{
+			bIsWeaponHit = false;
+			PickupHitWeapon = HitActor;
+			bCanPickup = false;
+			PickupWeaponInterface->PickupWeapon();
+		}
+	}
+	else // Weapon Already in the slot
+	{
+		if (UKismetMathLibrary::EqualEqual_ClassClass(PrimaryWeapon.WeaponClass.Get(), HitActor->GetClass()))
+		{
+			if (PrimaryWeapon.TotalAmmo < PrimaryWeapon.MaxAmmo)//will shift this function to the weaponBase to give different weapons different ammo
+			{
+				PrimaryWeapon.TotalAmmo = FMath::Min(PrimaryWeapon.TotalAmmo + 30, PrimaryWeapon.MaxAmmo);
+				CurrentWeapon->TotalAmmo = PrimaryWeapon.TotalAmmo;
+				HitActor->Destroy();
+			}
+		}
+		else if (UKismetMathLibrary::EqualEqual_ClassClass(SecondaryWeapon.WeaponClass.Get(), HitActor->GetClass()))
+		{
+			if (SecondaryWeapon.TotalAmmo < SecondaryWeapon.MaxAmmo)
+			{
+				SecondaryWeapon.TotalAmmo = FMath::Min((SecondaryWeapon.TotalAmmo + 30), SecondaryWeapon.MaxAmmo);
+				CurrentWeapon->TotalAmmo = SecondaryWeapon.TotalAmmo;
+				HitActor->Destroy();
+			}
+		}
+	}
+}
+
+void APlayerCharacter::PickupThrowable(AActor* HitActor)
+{
+	
+	// item not in the slot
+	if (UKismetMathLibrary::NotEqual_ClassClass(PrimaryThrowableData.BP_Throwable.Get(), HitActor->GetClass()) &&
+		UKismetMathLibrary::NotEqual_ClassClass(SecondaryThrowableData.BP_Throwable.Get(), HitActor->GetClass()))
+	{
+		bIsWeaponHit = true;
+		if (bCanPickup)
+		{
+			bCanPickup = false;
+			bIsWeaponHit = false;
+			PickupWeaponInterface->PickupWeapon();
+		}
+	}
+	else
+	{
+		// UE_LOG(LogTemp, Warning, TEXT("Throwable in slot"));
+		if (UKismetMathLibrary::EqualEqual_ClassClass(PrimaryThrowableData.BP_Throwable.Get(), HitActor->GetClass()))
+		{
+			if (PrimaryThrowableData.Count < ThrowableMaxCount)
+			{
+				PrimaryThrowableData.Count++;
+				HitActor->Destroy();
+			}
+		}
+		else if (UKismetMathLibrary::EqualEqual_ClassClass(SecondaryThrowableData.BP_Throwable.Get(), HitActor->GetClass()))
+		{
+			if (SecondaryThrowableData.Count < ThrowableMaxCount)
+			{
+				SecondaryThrowableData.Count++;
+				HitActor->Destroy();
+			}
+		}
+	}
+}
+
 void APlayerCharacter::EquipPrimaryWeapon()
 {
 	if (WeaponEquippedSlot == 1)
 	{
-		if (!(SecondaryWeapon.WeaponClass->IsChildOf(AKnifeWeapon::StaticClass())))
+		if (!(PrimaryWeapon.WeaponClass->IsChildOf(AKnifeWeapon::StaticClass())))//will not switch to this weapon if its empty(or has knife)
 		{
 			UE_LOG(LogTemp,Warning,TEXT("Eqiup Primary Weapon call"));
 			WeaponEquippedSlot = 0;
@@ -1216,7 +1223,7 @@ void APlayerCharacter::EquipSecondaryWeapon()
 {
 	if (WeaponEquippedSlot == 0)
 	{
-		if (!(PrimaryWeapon.WeaponClass->IsChildOf(AKnifeWeapon::StaticClass())))
+		if (!(SecondaryWeapon.WeaponClass->IsChildOf(AKnifeWeapon::StaticClass())))
 		{
 			UE_LOG(LogTemp,Warning,TEXT("Eqiup Secondary Weapon call"));
 			WeaponEquippedSlot = 1;
@@ -1238,13 +1245,18 @@ void APlayerCharacter::SwitchWeapon(bool bIsPickupWeapon)
 	}
 }
 
-void APlayerCharacter::SetWeaponVars(FWeaponData NewWeaponData, bool bIsPrimaryWeapon,bool bIsPickupWeapon)
+void APlayerCharacter::SetWeaponVars(FWeaponData NewWeaponData, bool bIsPrimaryWeapon,bool bIsPickupWeapon)//function called by the weapon base when picking the weapon 
 {
 	UE_LOG(LogTemp,Warning,TEXT("Setting weapon vars for %i"),bIsPrimaryWeapon);
 	if (NewWeaponData.WeaponClass != nullptr)
 	{
+		/*this check is here to check if we are manually switch the weapon(false) or 
+		its getting switched while picking(true) it up as in manual switch we are not casting to that weapon*/
 		if(bIsPickupWeapon)
 		{
+			/*we are saving the primary weapon and secondary weapon in thier own seprate variables 
+			so that we don't to cast to the weapon everytime we switch the weapon, we just need to set the value of the CurrentWeapon
+			depending on which weapon we wanna use and at this time we will make it visible and hide the other weapon*/
 			if(bIsPrimaryWeapon)
 			{
 				//change the primary weapon
@@ -1255,8 +1267,8 @@ void APlayerCharacter::SetWeaponVars(FWeaponData NewWeaponData, bool bIsPrimaryW
 			}
 			else
 			{
-				UE_LOG(LogTemp,Warning,TEXT("Equipping the secondary Weapon"));
 				//change the secondary weapon
+				UE_LOG(LogTemp,Warning,TEXT("Equipping the secondary Weapon"));
 				EqSecondaryWeapon = Cast<AWeaponBase>(PickupHitWeapon);
 				CurrentWeapon = EqSecondaryWeapon;
 				EqPrimaryWeapon->SetActorHiddenInGame(true);
@@ -1278,13 +1290,13 @@ void APlayerCharacter::SetWeaponVars(FWeaponData NewWeaponData, bool bIsPrimaryW
 				CurrentWeapon = EqSecondaryWeapon;
 			}
 		}
-		// CurrentWeapon = Cast<AWeaponBase>(PickupHitWeapon);
 		if (CurrentWeapon == nullptr)
 		{
 			UE_LOG(LogTemp, Warning, TEXT("NO weapon reference"));
 			return;
 		}
 		UE_LOG(LogTemp,Warning,TEXT("Pickup Weapon Name = %s"),*PickupHitWeapon->GetName());
+		//Also we are not spawning the weapon, as the pickup weapon and firing weapons are same, this way we can get away from spawning 
 		PickupHitWeapon->AttachToComponent(PlayerMesh, FAttachmentTransformRules::SnapToTargetNotIncludingScale, FName("WeaponSocket_r"));
 		CurrentWeapon->bIsPrimaryWeapon = bIsPrimaryWeapon;
 		CurrentWeapon->SetOwner(this);
@@ -1298,13 +1310,6 @@ void APlayerCharacter::SetWeaponVars(FWeaponData NewWeaponData, bool bIsPrimaryW
 
 void APlayerCharacter::DropWeapon(bool bIsPrimaryDrop)
 {
-	// if (CurrentWeapon)
-	// {
-	// 	CurrentWeapon->DetachFromActor(FDetachmentTransformRules::KeepWorldTransform);
-	// 	CurrentWeapon->bIsPlayerHoldingTheWeapon = false;
-	// 	CurrentWeapon->DropGun();
-	// }
-
 	if(bIsPrimaryDrop)
 	{
 		EqPrimaryWeapon->DetachFromActor(FDetachmentTransformRules::KeepWorldTransform);
@@ -1347,16 +1352,18 @@ void APlayerCharacter::MeleeAttackInAction()
 															   EDrawDebugTrace::ForDuration,
 															   MeleeOutHit,
 															   true);
-	if (bIsMeleeHit)
+	if (bIsMeleeHit && MeleeOutHit.GetActor())
 	{
 		// apply damage and radial force
+		UGameplayStatics::ApplyPointDamage(MeleeOutHit.GetActor(),20,MeleeOutHit.Location,MeleeOutHit,GetInstigatorController(),this,UDamageType::StaticClass());
 	}
 }
-FWeaponData APlayerCharacter::GetWeaponData(bool bIsSecondaryWeapon)
+FWeaponData APlayerCharacter::GetWeaponData(bool bIsSecondaryWeapon)//function used by the save data
 {
 	return bIsSecondaryWeapon ? SecondaryWeapon : PrimaryWeapon;
 }
 
+//function used by the save data, here we will spawn the saved gun and then attach it to the player
 void APlayerCharacter::SetWeaponData(bool bIsSecondaryWeapon,FWeaponData WeaponData)
 {
 	FActorSpawnParameters GunSpawnParams;
@@ -1389,7 +1396,7 @@ void APlayerCharacter::SetWeaponData(bool bIsSecondaryWeapon,FWeaponData WeaponD
 }
 //================================================Throwable Stuff======================================================
 
-void APlayerCharacter::SwitchThrowable()
+void APlayerCharacter::SwitchThrowable()//flipflop funciton for switching the throwables
 {
 	if (ThrowableEquippedSlot == 0)
 	{
@@ -1405,6 +1412,7 @@ FThrowableData APlayerCharacter::GetThrowableData(bool bIsSecondaryThrowable)
 {
 	return bIsSecondaryThrowable ? SecondaryThrowableData : PrimaryThrowableData ;
 }
+
 void APlayerCharacter::SetThrowableData(FThrowableData ThrowableData, bool bIsSecondaryThrowable)
 {
 	bIsSecondaryThrowable ? (SecondaryThrowableData = ThrowableData) : (PrimaryThrowableData = ThrowableData);

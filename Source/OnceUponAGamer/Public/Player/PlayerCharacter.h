@@ -36,12 +36,6 @@ UENUM(BlueprintType)
 		EWRER_JumpOfWall
 	};
 
-	// enum class EWeaponName : uint8
-	// {
-	// 	EWN_None UMETA(DisplayName = "None"),
-	// 	EWN_BAR30 UMETA(DisplayName = "BAR30")
-	// };
-
 USTRUCT(BlueprintType)
 	struct FWeaponData
 	{
@@ -57,11 +51,8 @@ USTRUCT(BlueprintType)
 		UPROPERTY(VisibleAnywhere,BlueprintReadOnly)
 		int32 CurrentMagAmmo;
 		//remove below vars
-		int32 MagSize;
-		float ReloadTime;
-		float Accuracy;
-		float FireRate;
 	};
+
 USTRUCT(BlueprintType)
 	struct FThrowableData
 	{
@@ -70,7 +61,8 @@ USTRUCT(BlueprintType)
 		TSubclassOf<AThrowableBase> BP_Throwable;
 		UPROPERTY(VisibleAnywhere,BlueprintReadOnly)
 		int32 Count;
-		//throwable name;
+		UPROPERTY(VisibleAnywhere,BlueprintReadOnly)
+		EThrowableName ThrowableName;
 	};
 
 UCLASS()
@@ -88,68 +80,58 @@ public:
 	virtual void Landed(const FHitResult& Hit);
 	EMovementType GetCurrentMovementType();
 	UCameraComponent* GetCamera();
-	USkeletalMeshComponent* GetMesh();
-	class UChildActorComponent* GetGun();
-	bool IsInAir();
 	void PlayCameraShake(TSubclassOf<UCameraShakeBase> ShakeClass,float Scale);
+	USkeletalMeshComponent* GetMesh();
+	bool IsInAir();
+	bool GetWallRunning()
+	{
+		return bIsWallRunning;
+	}
+	//================================Weapons=============================//
 	bool IsADSButtonDown();
 	void ADSON();
 	void DropWeapon(bool bIsPrimaryDrop);
 	void SwitchWeapon(bool bIsPickupWeapon);
 	void Reload();
-	bool GetWallRunning()
-	{
-		return bIsWallRunning;
-	}
 	UFUNCTION(BlueprintCallable)
-	void Heal(float Health);
+	FWeaponData GetWeaponData(bool bIsSecondaryWeapon);
 	UFUNCTION(BlueprintCallable)
-	void SetHealthShield(float Health,float Shield);
-	UFUNCTION(BlueprintCallable)
-	void HealShield(float ShieldHeal);
-	void RegainShield();
-	UFUNCTION(BlueprintCallable)
-FWeaponData GetWeaponData(bool bIsSecondaryWeapon);
-	UFUNCTION(BlueprintCallable)
-	void SetWeaponData(bool bIsSecondaryWeapon, FWeaponData WeaponData);
+	void SetWeaponData(bool bIsSecondaryWeapon, FWeaponData WeaponData);//used by the save game to set the weapon equipped before quiting the game
+
+	//===============================Throwables==========================//
 	UFUNCTION(BlueprintCallable)
 	FThrowableData GetThrowableData(bool bIsSecondaryThrowable);
 	UFUNCTION(BlueprintCallable)
 	void SetThrowableData(FThrowableData ThrowableData, bool bIsSecondaryThrowable);
+
+	//==============================Health/Sheild=====================//
+	UFUNCTION(BlueprintCallable)
+	void Heal(float Health);
+	UFUNCTION(BlueprintCallable)
+	void SetHealthShield(float Health,float Shield);//used by the save game
+	UFUNCTION(BlueprintCallable)
+	void HealShield(float ShieldHeal);
+	void RegainShield();
+	
 protected:
 	virtual void BeginPlay() override;
 	// void OnConstruction(const FTransform &Transform) override;
 				 
 private:
+	//======================================== Movement=========================================//
 	void MoveForward(float AxisValue);
 	void MoveRight(float AxisValue);
 	void Turn(float AxisValue);
 	void LookUp(float AxisValue);
 	void Jump();
 	void StopJump();
-	void Crouch();
 	void Sprint();
 	void Slide(FVector LSlideDirection,FString Caller = "None");
 	void CancelSprint();
 	void SetMovementSpeed(enum EMovementType MovementType);
-	void Shoot();
-	void StopShooting();
-	void ADSOFF();
-	void PerformADS(float FinalADSValue,float NewVignetteIntensity,float Alpha);
-	void EquipPrimaryWeapon();
-	void EquipSecondaryWeapon();
-	void Pickup();
-	void NoPickup();
-	void PickupInAction();
-	void MeleeAttack();
-	void PrimaryThrowStart();
-	void PrimaryThrowEnd();
-	void SwitchThrowable();
-	AThrowableBase* StartThrow(TSubclassOf<AThrowableBase> Throwable);
-	void EndThrow(AThrowableBase* CurrentThrowable);
-	void ThrowPredection();
-	void SetWeaponVars(FWeaponData NewWeaponData,bool bIsPrimaryWeapon,bool bIsPickupWeapon);
+	void Crouch();
 	bool CanUncrouch(float CapsuleHeightAlpha = 0.f) const;
+	bool CanPerformCertainMovement(EMovementType MovementMode);
 	FVector FindLaunchVelocity() const;	
 
 	UFUNCTION()
@@ -161,35 +143,17 @@ private:
 	UFUNCTION()
 	void EndSlide();
 	
-	bool CanPerformCertainMovement(EMovementType MovementMode);
-	UFUNCTION()
-	void OnHit(UPrimitiveComponent* HitComponent, AActor* HitActor, UPrimitiveComponent* OtherComp,FVector NormalizeImpulse,const FHitResult& Hit);
-	
 	UFUNCTION()
 	void DisablePlayerInput();
 	
 	UFUNCTION(BlueprintCallable)
 	void EnablePlayerInput();
-	
-	UFUNCTION()
-	void ADSOnInAction();
-	
-	UFUNCTION(BlueprintCallable,meta = (AllowPrivateAccess = "true"))
-	void MeleeAttackInAction();
 
-	UFUNCTION()
-	void ADSOffInAction();
-	
-	UFUNCTION()
-	void TakeAnyDamage(AActor* DamagedActor,float Damage,const UDamageType* DamageType,AController* InstigatedBy,AActor* DamageCauser);
-	UFUNCTION()
-	void TakePointDamage(AActor* DamagedActor,float Damage,AController* InstigatedBy, FVector HitLocation,UPrimitiveComponent* HitComp,FName BoneName,FVector ShotDirection,const UDamageType* DamageType,AActor* DamageCauser);
-
-	UFUNCTION()
-	void TakeRadialDamage(AActor* DamagedActor,float Damage,const UDamageType* DamageType,FVector Origin,FHitResult Hit,AController* InstigatedBy,AActor* DamageCauser);
-	void TakeDamage(float Damage);
+	//======================================== Ledge Grab =========================================//
 	void LedgeGrab(FVector ImpactPoint);
 	bool CanLedgeGrab(FVector ImpactPoint);
+	
+	//======================================== Wall Run =========================================//
 	void WallRun(AActor* HitActor, FVector HitImpactNormal);
 	bool CanDoWallRun(AActor* HitActor, FVector HitImpactNormal);
 	bool IsPlayerInStateOfWallRun(FVector HitImpactNormal);
@@ -204,6 +168,53 @@ private:
 	UFUNCTION()
 	void CameraTiltAction();
 
+	//======================================== Weapons =========================================//
+	void Shoot();
+	void StopShooting();
+	void ADSOFF();
+	void PerformADS(float FinalADSValue,float NewVignetteIntensity,float Alpha);
+	void EquipPrimaryWeapon();
+	void EquipSecondaryWeapon();
+	void Pickup();
+	void NoPickup();
+	void PickupInAction();
+	void PickupGun(AActor* HitActor);
+	void PickupThrowable(AActor* HitActor);
+	void MeleeAttack();
+	void PrimaryThrowStart();
+	void PrimaryThrowEnd();
+	void SwitchThrowable();
+	void EndThrow(AThrowableBase* CurrentThrowable);
+	void ThrowPredection();
+	void SetWeaponVars(FWeaponData NewWeaponData,bool bIsPrimaryWeapon,bool bIsPickupWeapon);
+	AThrowableBase* StartThrow(TSubclassOf<AThrowableBase> Throwable);
+
+	UFUNCTION()
+	void ADSOnInAction();
+	
+	UFUNCTION(BlueprintCallable,meta = (AllowPrivateAccess = "true"))
+	void MeleeAttackInAction();
+
+	UFUNCTION()
+	void ADSOffInAction();
+	
+	//======================================== Hit/Damage =========================================//
+	UFUNCTION()
+	void OnHit(UPrimitiveComponent* HitComponent, AActor* HitActor, UPrimitiveComponent* OtherComp,FVector NormalizeImpulse,const FHitResult& Hit);
+	
+	UFUNCTION()
+	void TakeAnyDamage(AActor* DamagedActor,float Damage,const UDamageType* DamageType,AController* InstigatedBy,AActor* DamageCauser);
+
+	UFUNCTION()
+	void TakePointDamage(AActor* DamagedActor,float Damage,AController* InstigatedBy, FVector HitLocation,UPrimitiveComponent* HitComp,FName BoneName,FVector ShotDirection,const UDamageType* DamageType,AActor* DamageCauser);
+
+	UFUNCTION()
+	void TakeRadialDamage(AActor* DamagedActor,float Damage,const UDamageType* DamageType,FVector Origin,FHitResult Hit,AController* InstigatedBy,AActor* DamageCauser);
+	
+	void TakeDamage(float Damage);
+
+	
+
 private:
 	UPROPERTY(VisibleAnywhere)
 	UCameraComponent* Camera;
@@ -212,8 +223,13 @@ private:
 	USkeletalMeshComponent* PlayerMesh;
 
 	UPROPERTY(VisibleAnywhere)
-class UAIPerceptionStimuliSourceComponent* AIPerceptionStimuliSource;
+	class UAIPerceptionStimuliSourceComponent* AIPerceptionStimuliSource;
 
+	UCharacterMovementComponent* CharacterMovement;
+	AController* PlayerController;
+	UCapsuleComponent* Capsule;
+
+	//======================================== Curves =========================================//
 	UPROPERTY(EditAnywhere,Category = "Curves")
 	UCurveFloat* CrouchCurve;
 
@@ -226,10 +242,7 @@ class UAIPerceptionStimuliSourceComponent* AIPerceptionStimuliSource;
 	UPROPERTY(EditAnywhere,Category = "Curves")
 	UCurveFloat* WallRunUpdateCurve;
 
-	UCharacterMovementComponent* CharacterMovement;
-	AController* PlayerController;
-	UCapsuleComponent* Capsule;
-
+	//======================================== Timelines =========================================//
 	FTimeline CrouchTimeline;//timeline componet, you have to create different FTimeline for each new timeline
 	FTimeline SlideTimeline;
 	FTimeline CameraTiltTimeline;
@@ -238,20 +251,47 @@ class UAIPerceptionStimuliSourceComponent* AIPerceptionStimuliSource;
 	FTimeline ADS_OffTimeline;
 	FTimerHandle WallRunTimerHandle;
 	
-
+	//======================================== Wall Run =========================================//
 	bool bIsCrouched;
 	bool bIsSprintKeyDown;
 	bool bIsWallRunning;
 	bool bCanEndWallRun;
 	bool bCanDoWallRunAgain;
+	FVector WallRunDirection;
+	EWallRunDirection WallRunSide;
+
+	//======================================== Weapons =========================================//
+	UPROPERTY(VisibleAnywhere,BlueprintReadOnly,Category = "Weapon",meta = (AllowPrivateAccess = "true"))
+	bool bIsADS;
+	UPROPERTY(VisibleAnywhere,BlueprintReadOnly,Category = "Weapon",meta = (AllowPrivateAccess = "true"))
+	bool bIsWeaponHit;
+	UPROPERTY(VisibleAnywhere,BlueprintReadOnly,Category = "Weapon",meta = (AllowPrivateAccess = "true"))
+	bool bIsPickupGun;
+	UPROPERTY(EditAnywhere,Category = "Weapon")
+	float ADSFOV;
+	UPROPERTY(EditAnywhere,Category = "Weapon")
+	TSubclassOf<AWeaponBase> InitialWeapon;
+
 	bool bIsShooting;
 	bool bIsADSButtonDown;
 	bool bCanPickup;
-	bool bIsDoingLedgeGrab;
-	UPROPERTY(VisibleAnywhere,BlueprintReadOnly,Category = "Weapon",meta = (AllowPrivateAccess = "true"))
-	bool bIsADS;
+	AActor* PickupHitWeapon;
+	class IPickupWeaponInterface *PickupWeaponInterface;
+	//======================================== Throwable =========================================//
+	UPROPERTY(EditAnywhere,Category = "Throwable")
+	int32 ThrowableMaxCount;
+	UPROPERTY(EditAnywhere,Category = "Throwable")
+	TSubclassOf<AThrowableBase> BPThrowable;
+	UPROPERTY(EditAnywhere,BlueprintReadOnly,Category = "Throwable",meta = (AllowPrivateAccess = "true"))
+	float ThrowSpeed;
 
+	FVector ThrowVelocity;
+	AThrowableBase* PrimaryThrowable;
+	AThrowableBase* SecondaryThrowable;
+	bool bCanPredictPath;
 	
+	//======================================== Movement =========================================//
+	bool bIsDoingLedgeGrab;
 	float CrouchCapsuleHeight;
 	float StandingCapsuleHeight;
 	float CrouchCameraHeight;
@@ -261,8 +301,7 @@ class UAIPerceptionStimuliSourceComponent* AIPerceptionStimuliSource;
 	float DefaultFOV;
 	float SmoothHorizontalLook;
 	float SmoothVerticalLook;
-	UPROPERTY(EditAnywhere,Category = "Weapon")
-	float ADSFOV;
+
 	UPROPERTY(EditAnywhere,Category = "Movement")
 	float CrouchScale;
 	UPROPERTY(EditAnywhere,Category = "Movement")
@@ -287,32 +326,17 @@ class UAIPerceptionStimuliSourceComponent* AIPerceptionStimuliSource;
 	float LookInterpSpeedADS;
 	int32 JumpsLeft;
 	UPROPERTY(VisibleAnywhere,BlueprintReadOnly,Category = "Movement",meta = (AllowPrivateAccess = "true"))
-	EMovementType CurrentMovementType;
-	UPROPERTY(VisibleAnywhere,BlueprintReadOnly,Category = "Weapon",meta = (AllowPrivateAccess = "true"))
-	bool bIsPointingToWeapon;
-	EWallRunDirection WallRunSide;
+	EMovementType CurrentMovementType;//used for driving animation in anim bp
 	FVector SlideDirection;
-	FVector WallRunDirection;
-	UPROPERTY(EditAnywhere,Category = "Weapon")
-	TSubclassOf<AWeaponBase> InitialWeapon;
-	UPROPERTY(EditAnywhere)
-	UAnimMontage* MeleeAttackMontage;
-	UPROPERTY(EditAnywhere)
-	class USplineComponent* PredictionSpline;
-	TArray<class USplineMeshComponent*> PredictionSplineMesh;
-	UPROPERTY(EditAnywhere)
-	UStaticMesh* SplineMesh;
-	FVector ThrowVelocity;
-	AThrowableBase* PrimaryThrowable;
-	AThrowableBase* SecondaryThrowable;
-	UPROPERTY(EditAnywhere,Category = "Throwable")
-	int32 ThrowableMaxCount;
-	UPROPERTY(EditAnywhere,Category = "Throwable")
-	TSubclassOf<AThrowableBase> BPThrowable;
-	UPROPERTY(EditAnywhere,BlueprintReadOnly,Category = "Throwable",meta = (AllowPrivateAccess = "true"))
-	float ThrowSpeed;
-	bool bCanPredictPath;
-	AActor* PickupHitWeapon;
+
+	
+	// UPROPERTY(EditAnywhere)
+	// class USplineComponent* PredictionSpline;
+	// TArray<class USplineMeshComponent*> PredictionSplineMesh;
+	// UPROPERTY(EditAnywhere)
+	// UStaticMesh* SplineMesh;
+
+	//======================================== Health/Shield =========================================//
 	UPROPERTY(EditAnywhere)
 	float MaxHealth;
 	UPROPERTY(VisibleAnywhere,BlueprintReadOnly,meta = (AllowPrivateAccess = "true"))
@@ -326,31 +350,38 @@ class UAIPerceptionStimuliSourceComponent* AIPerceptionStimuliSource;
 	UPROPERTY(EditAnywhere)
 	float ShieldRechargeRate;
 	FTimerHandle ShieldRechargeTimer;
-	UPROPERTY(VisibleAnywhere,BlueprintReadOnly,meta = (AllowPrivateAccess = "true"))
-	bool bIsWeaponHit;
-	UPROPERTY(VisibleAnywhere,BlueprintReadOnly,meta = (AllowPrivateAccess = "true"))
-	bool bIsPickupGun;
 
 public:
+	//======================================== Weapons =========================================//
 	UPROPERTY(VisibleAnywhere,BlueprintReadOnly,Category = "Weapon")
 	FWeaponData PrimaryWeapon;
+
 	UPROPERTY(VisibleAnywhere,BlueprintReadOnly,Category = "Weapon")
 	FWeaponData SecondaryWeapon;
+
 	UPROPERTY(VisibleAnywhere,BlueprintReadOnly,Category = "Weapon")
 	int32 WeaponEquippedSlot;
+
 	AWeaponBase* CurrentWeapon;
 	AWeaponBase* EqPrimaryWeapon;
 	AWeaponBase* EqSecondaryWeapon;
+
 	UPROPERTY(VisibleAnywhere,BlueprintReadOnly)
 	EWeaponName PickupWeaponName;
+	
+	//======================================== Throwable =========================================//
 	UPROPERTY(VisibleAnywhere,BlueprintReadOnly,Category = "Throwable")
 	FThrowableData PrimaryThrowableData;
+
 	UPROPERTY(VisibleAnywhere,BlueprintReadOnly,Category = "Throwable")
 	FThrowableData SecondaryThrowableData;
+
 	UPROPERTY(VisibleAnywhere,BlueprintReadOnly,Category = "Throwable")
 	EThrowableName ThrowableName;
+
 	UPROPERTY(VisibleAnywhere)
 	int32 ThrowableEquippedSlot;
+
 	bool bIsDoingMeleeAttack;
 	bool bIsReloading;
 };
