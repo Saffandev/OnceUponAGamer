@@ -15,7 +15,7 @@ public:
 	// Sets default values for this actor's properties
 	APatrolPoint();	
 
-	UPROPERTY(EditAnywhere,meta = (MakeEditWidget = "true"))
+	UPROPERTY(EditAnywhere,BlueprintReadOnly,meta = (MakeEditWidget = "true"))
 	TArray<FVector> PatrolPointLocation;
 	
 

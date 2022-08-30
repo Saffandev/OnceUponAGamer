@@ -254,6 +254,11 @@ void APlayerCharacter::TakeDamage(float Damage)
 		else
 		{
 			CurrentShield -= Damage;
+			if(CurrentShield <= 0)
+			{
+				TakeDamage(UKismetMathLibrary::Abs(CurrentShield));
+				CurrentShield = 0;
+			}
 			if(ShieldRechargeTimer.IsValid())
 			{
 				GetWorld()->GetTimerManager().ClearTimer(ShieldRechargeTimer);

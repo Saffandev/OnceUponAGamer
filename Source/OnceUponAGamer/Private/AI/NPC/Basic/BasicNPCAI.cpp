@@ -170,20 +170,26 @@ void ABasicNPCAI::TakePointDamage(AActor* DamagedActor,float Damage,AController*
 			{
 				case 0:
 				if(DeathAnim_1)
-					UE_LOG(LogTemp,Warning,TEXT("Inside death anim"));
+				{
+					UE_LOG(LogTemp,Error,TEXT("Inside death anim"));
 					GetMesh()->PlayAnimation(DeathAnim_1,false);
+				}
 				break;
 				
 				case 1:
 				if(DeathAnim_2)
-					UE_LOG(LogTemp,Warning,TEXT("Inside death anim"));
+				{
+					UE_LOG(LogTemp,Error,TEXT("Inside death anim"));
 					GetMesh()->PlayAnimation(DeathAnim_2,false);
+				}
 				break;
 
 				case 2:
 				if(DeathAnim_3)
-					UE_LOG(LogTemp,Warning,TEXT("Inside death anim"));
+				{
+					UE_LOG(LogTemp,Error,TEXT("Inside death anim"));
 					GetMesh()->PlayAnimation(DeathAnim_3,false);
+				}
 				break;
 
 				default:
