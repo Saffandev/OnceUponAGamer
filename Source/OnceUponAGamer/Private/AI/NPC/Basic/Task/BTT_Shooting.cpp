@@ -37,7 +37,7 @@ EBTNodeResult::Type UBTT_Shooting::ExecuteTask(UBehaviorTreeComponent &OwnerComp
         }
         else
         {
-            OwnerComp.GetAIOwner()->ClearFocus(EAIFocusPriority::Default);
+            OwnerComp.GetAIOwner()->ClearFocus(EAIFocusPriority::Gameplay);
             ActionInterface->StopShooting();
         }
     }

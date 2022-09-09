@@ -166,13 +166,21 @@ void ABasicNPCAIController::OnPerceptionUpdated(TArray<AActor*>const& SensedActo
                                 if(UKismetMathLibrary::EqualEqual_ObjectObject(SensedClass,UAISense_Sight::StaticClass()))
                                 {
                                     Blackboard->SetValueAsBool(FName("bCanSeePlayer"),true);
+                                    Blackboard->SetValueAsBool(FName("bIsPlayerVisible"),true);
                                     UE_LOG(LogTemp,Warning,TEXT("PlayerSpotted"));
                                     Blackboard->SetValueAsVector(FName("PlayerLocation"),EnemyTarget->GetActorLocation());
                                     Blackboard->SetValueAsVector(FName("PlayerLastKnownLocation"),EnemyTarget->GetActorLocation());   
+                                    if(MyEncounterSpace)
+                                    {
+                                        if(!MyEncounterSpace->bPlayerSpotted)
+                                        {
+                                            MyEncounterSpace->ICanSeePlayer();
+                                        }
+                                    }
                                 }
                                 //damage sense
-                                else if(UKismetMathLibrary::EqualEqual_ObjectObject(SensedClass,DamageSense->GetSenseImplementation()) ||
-                                UKismetMathLibrary::EqualEqual_ObjectObject(SensedClass,HearingSense->GetSenseImplementation()))
+                                else if(UKismetMathLibrary::EqualEqual_ObjectObject(SensedClass,UAISense_Damage::StaticClass()) ||
+                                UKismetMathLibrary::EqualEqual_ObjectObject(SensedClass,UAISense_Hearing::StaticClass()))
                                 {
                                     SetFocalPoint(AIStimulus.StimulusLocation);
                                     if(!Blackboard->GetValueAsBool(FName("bCanSeePlayer")) && MyEncounterSpace != nullptr && MyEncounterSpace->IsOverlappingActor(PlayerCharacter))

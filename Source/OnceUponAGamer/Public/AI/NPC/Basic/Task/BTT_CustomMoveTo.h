@@ -18,7 +18,7 @@ public:
 	UBTT_CustomMoveTo();
 	virtual EBTNodeResult::Type ExecuteTask(UBehaviorTreeComponent &OwnerComp,uint8* NodeMemory) override;
 	virtual void TickTask(UBehaviorTreeComponent& OwnerComp, uint8* NodeMemory, float DeltaSeconds) override;
-
+	
 
 private:
 	UPROPERTY(EditAnywhere)
@@ -37,7 +37,8 @@ private:
 	float PersonalAngle;
 	UPROPERTY(EditAnywhere)
 	bool bCanDrawDebugSphere;
-	
+	class ABasicNPCAIController* OwnerController;
 	class UAITask_MoveTo* MoveToTask;
 	FVector MoveLocation;
+	EPathFollowingRequestResult::Type MoveToResult;
 };

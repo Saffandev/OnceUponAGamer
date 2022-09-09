@@ -47,6 +47,7 @@ if(AIBp)
 			{
 				UE_LOG(LogTemp,Warning,TEXT("Encounter Space added ---------------"));
 				TempController->MyEncounterSpace = this;
+				OverlappedAIControllers.Add(TempController);
 			}
 		}
 	}
@@ -63,6 +64,7 @@ void AEncounterSpace::AddAI(ACharacter* AI)
 	if(TempController)
 	{	
 		OverlappedAI.Add(AI);
+		OverlappedAIControllers.Add(TempController);
 		TempController->MyEncounterSpace = this;
 		UE_LOG(LogTemp,Warning,TEXT("AI added"));
 	}
@@ -77,16 +79,31 @@ void AEncounterSpace::Tick(float DeltaTime)
 
 bool AEncounterSpace::IsPlayerVisibleToAnyone()
 {
-	for(auto TempActor: OverlappedAI)
+	// for(auto TempActor: OverlappedAI)
+	// {
+	// 	if(TempActor)
+	// 	{
+	// 		ABasicNPCAIController* TempController = Cast<ABasicNPCAIController>(TempActor->GetInstigatorController());
+	// 		if(TempController == nullptr)
+	// 		{
+	// 			return false;
+	// 		}
+	// 		if(TempController->GetBlackboardComponent() && TempController->GetBlackboardComponent()->GetValueAsBool(FName("bIsPlayerVisible")))
+	// 		{
+	// 			return true;
+	// 		}
+	// 	}
+	// }
+	// return false;
+	if(OverlappedAIControllers.Num() <= 0)
 	{
-		if(TempActor)
+		return false;
+	}
+	for(ABasicNPCAIController* TempController : OverlappedAIControllers)
+	{
+		if(TempController && TempController->GetBlackboardComponent())
 		{
-			ABasicNPCAIController* TempController = Cast<ABasicNPCAIController>(TempActor->GetInstigatorController());
-			if(TempController == nullptr)
-			{
-				return false;
-			}
-			if(TempController->GetBlackboardComponent() && TempController->GetBlackboardComponent()->GetValueAsBool(FName("bIsPlayerVisible")))
+			if(TempController->GetBlackboardComponent()->GetValueAsBool(FName("bIsPlayerVisible")))
 			{
 				return true;
 			}
@@ -100,45 +117,78 @@ void AEncounterSpace::AssingInvestigation(FVector SuspectLocation)
 	float tempDistance = 5000;
 	FVector CoverPointLocation;
 	AActor* ClosestActor = nullptr;
+	ABasicNPCAIController* ClosestController = nullptr;
 
-	for(auto TempActor : OverlappedAI)
+	// for(auto TempActor : OverlappedAI)
+	// {
+	// 	ABasicNPCAIController* TempController = Cast<ABasicNPCAIController>(TempActor->GetInstigatorController());
+	// 	if(!TempController)
+	// 	{
+	// 		continue;
+	// 	}
+	// 	if(!TempController->GetBlackboardComponent())
+	// 	{
+	// 		continue;
+	// 	}
+	// 	if(TempController->GetBlackboardComponent()->GetValueAsBool(FName("bCanInvestigate")))
+	// 	{
+	// 		return;
+	// 	}
+	// }
+
+	for(ABasicNPCAIController* TempController : OverlappedAIControllers)
 	{
-		ABasicNPCAIController* TempController = Cast<ABasicNPCAIController>(TempActor->GetInstigatorController());
-		if(!TempController)
+		if(TempController)
 		{
+			if(!TempController->GetBlackboardComponent())
+			{
 			continue;
-		}
-		if(!TempController->GetBlackboardComponent())
-		{
-			continue;
-		}
-		if(TempController->GetBlackboardComponent()->GetValueAsBool(FName("bCanInvestigate")))
-		{
-			return;
+			}
+			if(TempController->GetBlackboardComponent()->GetValueAsBool(FName("bCanInvestigate")))
+			{
+				return;
+			}
 		}
 	}
-	for(auto TempActor : OverlappedAI)
-	{
-		float Distance = UKismetMathLibrary::Vector_Distance(TempActor->GetActorLocation(), SuspectLocation);
+	// for(auto TempActor : OverlappedAI)
+	// {
+	// 	float Distance = UKismetMathLibrary::Vector_Distance(TempActor->GetActorLocation(), SuspectLocation);
 	
-		if(Distance < tempDistance)
+	// 	if(Distance < tempDistance)
+	// 	{
+	// 		tempDistance = Distance;
+	// 		ClosestActor = TempActor;
+	// 	}
+	// 	ABasicNPCAIController* TempController = Cast<ABasicNPCAIController>(TempActor->GetInstigatorController());
+	// 	if(TempController && TempController->GetBlackboardComponent())
+	// 	{
+	// 		TempController->GetBlackboardComponent()->SetValueAsBool("bCanInvestigate",false);
+	// 	}
+	// }	
+	for(ABasicNPCAIController* TempController : OverlappedAIControllers)
+	{
+		if(TempController)
 		{
-			tempDistance = Distance;
-			ClosestActor = TempActor;
+			APawn* AIPawn = TempController->GetControlledPawn();
+			if(AIPawn)
+			{
+				float Distance = UKismetMathLibrary::Vector_Distance(AIPawn->GetActorLocation(),SuspectLocation);
+				if(Distance < tempDistance)
+				{
+					tempDistance = Distance;
+					ClosestController = TempController;
+				}
+			}
 		}
-		ABasicNPCAIController* TempController = Cast<ABasicNPCAIController>(TempActor->GetInstigatorController());
-		if(TempController && TempController->GetBlackboardComponent())
-		{
-			TempController->GetBlackboardComponent()->SetValueAsBool("bCanInvestigate",false);
-		}
-	}	
-	if(ClosestActor != nullptr)
+
+	}
+	if(ClosestController != nullptr)
 	{	
-		ABasicNPCAIController* TempController = Cast<ABasicNPCAIController>(ClosestActor->GetInstigatorController());
-		if(TempController && TempController->GetBlackboardComponent())
+		// ABasicNPCAIController* TempController = Cast<ABasicNPCAIController>(ClosestActor->GetInstigatorController());
+		if(ClosestController->GetBlackboardComponent())
 		{
-			TempController->GetBlackboardComponent()->SetValueAsBool("bCanInvestigate",true);
-			TempController->GetBlackboardComponent()->SetValueAsBool("bIsSomeoneDoingInvestigation",true);
+			ClosestController->GetBlackboardComponent()->SetValueAsBool("bCanInvestigate",true);
+			ClosestController->GetBlackboardComponent()->SetValueAsBool("bIsSomeoneDoingInvestigation",true);
 		}
 	}
 	else
@@ -150,17 +200,25 @@ void AEncounterSpace::AssingInvestigation(FVector SuspectLocation)
 
 void AEncounterSpace::MoveBackToPatrol()
 {
-	for(auto TempActor : OverlappedAI)
+	// for(auto TempActor : OverlappedAI)
+	// {
+	// 	ABasicNPCAIController* TempController = Cast<ABasicNPCAIController>(TempActor->GetInstigatorController());
+	// 	if(TempController)
+	// 	{
+	// 		TempController->GetBlackboardComponent()->SetValueAsBool(FName("bCanSeePlayer"),false);
+    //     	TempController->GetBlackboardComponent()->SetValueAsBool(FName("bCanInvestigate"),false);
+	// 		UE_LOG(LogTemp,Error,TEXT("Move Back To Patrolling Called"));
+	// 		TempController->ToggleSightSense();
+	// 	}
+	// }
+	for(ABasicNPCAIController* TempController : OverlappedAIControllers)
 	{
-		ABasicNPCAIController* TempController = Cast<ABasicNPCAIController>(TempActor->GetInstigatorController());
-		if(TempController)
-		{
-			TempController->GetBlackboardComponent()->SetValueAsBool(FName("bCanSeePlayer"),false);
-        	TempController->GetBlackboardComponent()->SetValueAsBool(FName("bCanInvestigate"),false);
-			UE_LOG(LogTemp,Error,TEXT("Move Back To Patrolling Called"));
-			TempController->ToggleSightSense();
-		}
+		TempController->GetBlackboardComponent()->SetValueAsBool(FName("bCanSeePlayer"),false);
+		TempController->GetBlackboardComponent()->SetValueAsBool(FName("bCanInvestigate"),false);
+		UE_LOG(LogTemp,Error,TEXT("Move Back To Patrolling Called"));
+		TempController->ToggleSightSense();
 	}
+
 }
 
 void AEncounterSpace::IAMDead()
@@ -173,5 +231,17 @@ void AEncounterSpace::IAMDead()
 		//open doors
 		TheratCleared();
 
+	}
+}
+
+void AEncounterSpace::ICanSeePlayer()
+{
+	bPlayerSpotted = true;
+	for(ABasicNPCAIController* TempController : OverlappedAIControllers)
+	{
+		if(TempController && TempController->GetBlackboardComponent())
+		{
+			TempController->GetBlackboardComponent()->SetValueAsBool(FName("bCanSeePlayer"),true);
+		}
 	}
 }

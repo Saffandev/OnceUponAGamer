@@ -24,7 +24,7 @@ EBTNodeResult::Type UBTT_TakeCover::ExecuteTask(UBehaviorTreeComponent &OwnerCom
             if(aCurrentCover)
             {
             OwnerController->SetFocalPoint(aCurrentCover->GetActorLocation());
-            DrawDebugSphere(GetWorld(),aCurrentCover->GetActorLocation(),20,20,FColor::Red,false,5);
+            // DrawDebugSphere(GetWorld(),aCurrentCover->GetActorLocation(),20,20,FColor::Red,false,5);
             }
             if(bCanInvalidateCover)
             {

@@ -27,6 +27,7 @@ public:
 	void RequestAllies(FVector SpawnLocation);
 	UFUNCTION(BlueprintImplementableEvent)
 	void SomeoneIsDead();
+	void ICanSeePlayer();
 protected:
 	// Called when the game starts or when spawned
 	virtual void BeginPlay() override;
@@ -37,6 +38,8 @@ private:
 public:
 	TArray<AActor*> OverlappedCovers;
 	TArray<AActor*> OverlappedAI;
+	TArray<class ABasicNPCAIController*> OverlappedAIControllers;
+	bool bPlayerSpotted;
 
 private:
 	UPROPERTY(VisibleAnywhere,BlueprintReadOnly,meta = (AllowPrivateAccess = "true"))

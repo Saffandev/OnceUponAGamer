@@ -28,9 +28,9 @@ EBTNodeResult::Type UBTT_FindPatrolPoint::ExecuteTask(UBehaviorTreeComponent &Ow
         OwnerComp.GetAIOwner()->GetBlackboardComponent()->SetValueAsVector(PatrolPointLocation.SelectedKeyName, MoveToLocation);
         }
     }
-    if(PatrolPointObj == nullptr)
-    {
-        UE_LOG(LogTemp,Warning,TEXT("No patrol point object in find patrol point"));
-    }
+    // if(PatrolPointObj == nullptr)
+    // {
+    //     // UE_LOG(LogTemp,Warning,TEXT("No patrol point object in find patrol point"));
+    // }
     return EBTNodeResult::Succeeded;
 }

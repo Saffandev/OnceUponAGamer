@@ -135,13 +135,14 @@ void ABasicNPCAI::CanTakeCover(bool bCanTakeCover)
 {
 	if(bCanTakeCover)
 	{
-		GetCharacterMovement()->Crouch();
+		this->GetCharacterMovement()->Crouch();
+		bCanCrouch = true;
 	}
 	else
 	{
-		GetCharacterMovement()->UnCrouch();
+		this->GetCharacterMovement()->UnCrouch();
+		bCanCrouch = false;
 	}
-	bCanCrouch = bCanTakeCover;
 }
 
 void ABasicNPCAI::TakePointDamage(AActor* DamagedActor,float Damage,AController* InstigatedBy, FVector HitLocation,UPrimitiveComponent* HitComp,FName BoneName,FVector ShotDirection,const UDamageType* DamageType,AActor* DamageCauser)
@@ -156,50 +157,67 @@ void ABasicNPCAI::TakePointDamage(AActor* DamagedActor,float Damage,AController*
 		LastHitBoneName = BoneName;	
 		if(LastHitBoneName == "neck_01")
 		{	
-		UMaterialInterface* MeshMat = GetMesh()->GetMaterial(0);
-		GetMesh()->SetSkeletalMesh(HeadlessMesh,true);
-		GetMesh()->SetMaterial(0,MeshMat);
+			UMaterialInterface* MeshMat = GetMesh()->GetMaterial(0);
+			GetMesh()->SetSkeletalMesh(HeadlessMesh,true);
+			GetMesh()->SetMaterial(0,MeshMat);
+
+			if(UKismetMathLibrary::RandomBool())
+			{
+				if(HealthPickup)
+				{
+					AActor* SpawnedHealth = GetWorld()->SpawnActor<AActor>(HealthPickup,GetActorLocation(),GetActorRotation());	
+				}
+			}
+			else
+			{
+				if(ShieldPickup)
+				{
+				AActor* SpawnedHealth = GetWorld()->SpawnActor<AActor>(ShieldPickup,GetActorLocation(),GetActorRotation());
+				}
+			}
 			if(Head)
 			{
 				AActor* SpawnedHead = GetWorld()->SpawnActor<AActor>(Head,GetMesh()->GetSocketLocation(FName("neck_01")),GetMesh()->GetSocketRotation(FName("neck_01")));
 			}
 		}
-		if(GetVelocity().Size() < 10.f)
-		{
-			switch(UKismetMathLibrary::RandomIntegerInRange(0,2))
-			{
-				case 0:
-				if(DeathAnim_1)
-				{
-					UE_LOG(LogTemp,Error,TEXT("Inside death anim"));
-					GetMesh()->PlayAnimation(DeathAnim_1,false);
-				}
-				break;
+		// if(GetVelocity().Size() < 10.f)
+		// {
+		// 	switch(UKismetMathLibrary::RandomIntegerInRange(0,2))
+		// 	{
+		// 		case 0:
+		// 		if(DeathAnim_1)
+		// 		{
+		// 			UE_LOG(LogTemp,Error,TEXT("Inside death anim"));
+		// 			GetMesh()->PlayAnimation(DeathAnim_1,false);
+		// 		}
+		// 		break;
 				
-				case 1:
-				if(DeathAnim_2)
-				{
-					UE_LOG(LogTemp,Error,TEXT("Inside death anim"));
-					GetMesh()->PlayAnimation(DeathAnim_2,false);
-				}
-				break;
+		// 		case 1:
+		// 		if(DeathAnim_2)
+		// 		{
+		// 			UE_LOG(LogTemp,Error,TEXT("Inside death anim"));
+		// 			GetMesh()->PlayAnimation(DeathAnim_2,false);
+		// 		}
+		// 		break;
 
-				case 2:
-				if(DeathAnim_3)
-				{
-					UE_LOG(LogTemp,Error,TEXT("Inside death anim"));
-					GetMesh()->PlayAnimation(DeathAnim_3,false);
-				}
-				break;
+		// 		case 2:
+		// 		if(DeathAnim_3)
+		// 		{
+		// 			UE_LOG(LogTemp,Error,TEXT("Inside death anim"));
+		// 			GetMesh()->PlayAnimation(DeathAnim_3,false);
+		// 		}
+		// 		break;
 
-				default:
-					UE_LOG(LogTemp,Warning,TEXT("Default case"));
-			}
-		}
-		else
-		{
+		// 		default:
+		// 			UE_LOG(LogTemp,Warning,TEXT("Default case"));
+		// 	}
+		// }
+		// else
+		// {
+		// 	GetMesh()->SetSimulatePhysics(true);
+		// }
 			GetMesh()->SetSimulatePhysics(true);
-		}
+
 		DeathRituals(false);
 	}
 }
@@ -256,6 +274,23 @@ void ABasicNPCAI::DeathRituals(bool bIsExplosionDeath)
 	SetCanBeDamaged(false);
 	GetCapsuleComponent()->SetCollisionEnabled(ECollisionEnabled::PhysicsOnly);
 	
+	if(HealthPickup)
+	{
+		if(UKismetMathLibrary::RandomBool())
+		{
+			AActor* SpawnedHealth = GetWorld()->SpawnActor<AActor>(HealthPickup,GetActorLocation(),GetActorRotation());
+		}
+		
+	}
+	if(ShieldPickup)
+	{
+		if(UKismetMathLibrary::RandomBool())
+		{
+			AActor* SpawnedHealth = GetWorld()->SpawnActor<AActor>(ShieldPickup,GetActorLocation(),GetActorRotation());
+		}
+	}
+
+
 	// GetMesh()->SetCollisionEnabled(ECollisionEnabled::PhysicsOnly);
 
 }

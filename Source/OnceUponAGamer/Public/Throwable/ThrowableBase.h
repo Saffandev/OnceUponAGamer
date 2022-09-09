@@ -53,10 +53,10 @@ protected:
 	class APlayerCharacter* PlayerCharacter;
 	UPROPERTY(EditAnywhere)
 	EThrowableName ThrowableName;
-private:
 	
+private:
 	uint32 HitCount;
 	FTimerHandle ThrowTimer;
 	TArray<TEnumAsByte<EObjectTypeQuery>> OverlapActorObjectType;
-	;
+
 };

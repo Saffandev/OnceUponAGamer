@@ -14,5 +14,6 @@ enum class EThrowableName: uint8
 {
 	EWN_None,
 	EWN_Grenade,
-	EWN_EMP
+	EWN_EMP,
+	EWN_ImpactGrenade
 };

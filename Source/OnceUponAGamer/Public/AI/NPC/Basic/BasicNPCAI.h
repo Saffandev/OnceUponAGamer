@@ -65,14 +65,16 @@ protected:
 	AAIGun* Gun;
 	UPROPERTY(EditAnywhere)
 	TSubclassOf<class AWeaponBase> GunDrop;
-	UPROPERTY(EditAnywhere)
+
+	UPROPERTY(EditAnywhere,Category = "Animation")
 	UAnimMontage* MeleeAttackMontage;
-	UPROPERTY(EditAnywhere)
+	UPROPERTY(EditAnywhere,Category = "Animation")
 	UAnimationAsset* DeathAnim_1;
-	UPROPERTY(EditAnywhere)
+	UPROPERTY(EditAnywhere,Category = "Animation")
 	UAnimationAsset* DeathAnim_2;
-	UPROPERTY(EditAnywhere)
+	UPROPERTY(EditAnywhere,Category = "Animation")
 	UAnimationAsset* DeathAnim_3;
+
 	UPROPERTY(EditAnywhere)
 	float Health;
 	FTimerHandle MeleeTimerHandle;
@@ -88,5 +90,8 @@ protected:
 	UParticleSystem* HitParticle;
 	UPROPERTY(EditAnywhere)
 	USoundBase* HitSound;
-
+	UPROPERTY(EditAnywhere)
+	TSubclassOf<AActor> HealthPickup;
+	UPROPERTY(EditAnywhere)
+	TSubclassOf<AActor> ShieldPickup;
 };

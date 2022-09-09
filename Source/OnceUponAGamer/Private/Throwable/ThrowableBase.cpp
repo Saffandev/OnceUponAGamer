@@ -21,11 +21,21 @@ AThrowableBase::AThrowableBase()
 void AThrowableBase::BeginPlay()
 {
 	Super::BeginPlay();
+	UE_LOG(LogTemp,Warning,TEXT("ThrowableSpawned"));
 	ThrowableMesh->OnComponentHit.AddDynamic(this,&AThrowableBase::OnHit);
-	PlayerCharacter = Cast<APlayerCharacter>(UGameplayStatics::GetPlayerCharacter(this,0));
+	ThrowableMesh->SetSimulatePhysics(true);
+	if(GetOwner())
+	{
+		UE_LOG(LogTemp,Warning,TEXT("Owner of the throwable"));
+		ThrowableMesh->SetCollisionResponseToChannel(ECollisionChannel::ECC_Visibility,ECollisionResponse::ECR_Ignore);
+		ThrowableMesh->SetCollisionObjectType(ECollisionChannel::ECC_WorldStatic);
+		ThrowableMesh->SetSimulatePhysics(false);
+	}
+	ThrowableMesh->SetCollisionResponseToChannel(ECollisionChannel::ECC_Pawn,ECollisionResponse::ECR_Ignore);
 	OverlapActorObjectType.Add(UEngineTypes::ConvertToObjectType(ECollisionChannel::ECC_Pawn));
 	OverlapActorObjectType.Add(UEngineTypes::ConvertToObjectType(ECollisionChannel::ECC_WorldDynamic));
 	OverlapActorObjectType.Add(UEngineTypes::ConvertToObjectType(ECollisionChannel::ECC_PhysicsBody));
+	PlayerCharacter = Cast<APlayerCharacter>(UGameplayStatics::GetPlayerCharacter(this,0));
 }
 
 // Called every frame
@@ -52,20 +62,22 @@ if(!PlayerCharacter || !LThrowable)
 	{
 		PlayerCharacter->SecondaryThrowableData.BP_Throwable = LThrowable;
 		PlayerCharacter->SecondaryThrowableData.Count++;
-		PlayerCharacter->PrimaryThrowableData.ThrowableName = ThrowableName;
+		PlayerCharacter->SecondaryThrowableData.ThrowableName = ThrowableName;
 
 	}
 	else
 	{
 		if(PlayerCharacter->ThrowableEquippedSlot == 0)
 		{
+			PlayerCharacter->DropThrowable(true);
 			PlayerCharacter->PrimaryThrowableData.BP_Throwable = LThrowable;
 			PlayerCharacter->PrimaryThrowableData.Count++;
-			PlayerCharacter->SecondaryThrowableData.ThrowableName = ThrowableName;
+			PlayerCharacter->PrimaryThrowableData.ThrowableName = ThrowableName;
 
 		}
 		else if(PlayerCharacter->ThrowableEquippedSlot == 1)
 		{
+			PlayerCharacter->DropThrowable(false);
 			PlayerCharacter->SecondaryThrowableData.BP_Throwable = LThrowable;
 			PlayerCharacter->SecondaryThrowableData.Count++;
 			PlayerCharacter->SecondaryThrowableData.ThrowableName = ThrowableName;
@@ -120,6 +132,14 @@ void AThrowableBase::Initiate()
 
 void AThrowableBase::Explode()
 {	
+	if(PlayerCharacter)
+	{
+		if(PlayerCharacter->GetIsThrowingThrowable())
+		{
+			PlayerCharacter->ReEquipAfterGrenade();
+		}
+	}
+	PlayerCharacter->bIsThrowableExploded = true;
 	if(ExplodeParticle)
 	{
 		UGameplayStatics::SpawnEmitterAtLocation(GetWorld(),ExplodeParticle,GetActorLocation());
@@ -133,7 +153,7 @@ void AThrowableBase::Explode()
 	TArray<AActor*> OverlappedActors;
 	
 	UClass* SeekClass = nullptr;
-	DrawDebugSphere(GetWorld(),GetActorLocation(),DamageRadius,12,FColor::Red,true,5.f);
+	// DrawDebugSphere(GetWorld(),GetActorLocation(),DamageRadius,12,FColor::Red,true,5.f);
 	UKismetSystemLibrary::SphereOverlapActors(this,
 											  GetActorLocation(),
 											  DamageRadius,

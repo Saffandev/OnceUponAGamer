@@ -40,6 +40,7 @@ private:
 	FTimerHandle HandRecallTimerHandle;
 	UPROPERTY(EditAnywhere)
 	float Damage;
+	bool bDamageGiven;
 
 
 };

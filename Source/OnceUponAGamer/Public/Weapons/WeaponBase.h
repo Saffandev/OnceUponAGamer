@@ -20,13 +20,15 @@ public:
 	virtual void StopShooting();
 	virtual void Reload();
 	virtual void ReloadEffect();
-	virtual void DrawWeapon();
+	virtual void DrawWeapon(float Drawspeed = 1.f);
+	virtual void UnDrawWeapon(float DrawSpeed = 1.f);
 	virtual void PickupWeapon() override;
 	virtual void SetPickupWeaponName() override;
 	virtual bool IsPickupGun() override;
 	virtual float DoMeleeAttack();
 	virtual TSubclassOf<AWeaponBase> GetPickupWeapon();
 	void DropGun();
+	void SetCanShoot(bool bLCanShoot);
 
 protected:
 	virtual void BeginPlay() override;
@@ -38,16 +40,20 @@ private:
 	void UpdateWeaponVisuals();
 	void UpdateWeaponVarsInPlayer();
 	void GiveDamage(FHitResult GunHit);
-	void HitSound(FHitResult GunHit);
+	void HitEffect(FHitResult GunHit);
 	float DamagePerBone(FName BoneName);
+	void ImpactEffect(FHitResult GunHit,UParticleSystem* HitParticle,USoundBase* HitSound, UMaterialInterface* HitDecal);
 
 public:
-	UPROPERTY(VisibleAnywhere)
+	UPROPERTY(VisibleAnywhere,BlueprintReadOnly)
 	USkeletalMeshComponent* GunMesh;
 
 protected:
 	UPROPERTY(VisibleAnywhere)
 	USceneComponent* Muzzle;
+
+	UPROPERTY(EditAnywhere)
+	UStaticMeshComponent* SightMesh;
 	
 	UPROPERTY(EditAnywhere,Category = "Animation")
 	UAnimationAsset* GunShootAnim;
@@ -70,6 +76,9 @@ protected:
 	UPROPERTY(EditAnywhere,Category = "Animation")
 	UAnimMontage* WeaponDrawMontage;
 
+	UPROPERTY(EditAnywhere,Category = "Animation")
+	UAnimMontage* WeaponUnDrawMontage;
+	
 	UPROPERTY(EditAnywhere,Category = "Animation")
 	UAnimMontage* MeleeAttackMontage;
 	
@@ -118,7 +127,13 @@ protected:
 	UParticleSystem* MetalHitParticle;
 	UPROPERTY(EditAnywhere,Category = "Weapon Hit Visuals")
 	UParticleSystem* StoneHitParticle;
-
+	UPROPERTY(EditAnywhere,Category = "Weapon Hit Visuals")
+	UMaterialInterface* WoodHitDecal;
+	UPROPERTY(EditAnywhere,Category = "Weapon Hit Visuals")
+	UMaterialInterface* MetalHitDecal;
+	UPROPERTY(EditAnywhere,Category = "Weapon Hit Visuals")
+	UMaterialInterface* StoneHitDecal;
+	
 private:
 	FTimerHandle ShootingTimerHandle;
 	FTimerHandle ShootingCooldownTimerHandle;

@@ -23,10 +23,13 @@ AWeaponBase::AWeaponBase()
 	Muzzle = CreateDefaultSubobject<USceneComponent>(TEXT("Muzzle"));
 	Muzzle->SetupAttachment(GunMesh);
 
+	SightMesh = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("SightMesh"));
+	SightMesh->SetupAttachment(GunMesh,FName("ADS"));
 	GunMesh->SetCollisionEnabled(ECollisionEnabled::QueryAndPhysics);
 	GunMesh->SetCollisionObjectType(ECollisionChannel::ECC_GameTraceChannel2);
 	GunMesh->SetCollisionResponseToChannel(ECollisionChannel::ECC_Visibility,ECollisionResponse::ECR_Ignore);
 	GunMesh->SetCollisionResponseToChannel(ECollisionChannel::ECC_Camera,ECollisionResponse::ECR_Ignore);
+	bIsWeaponShootable = true;
 
 }
 
@@ -38,7 +41,6 @@ void AWeaponBase::BeginPlay()
 	SingleShotAlpha = 1.f;//used to add randomness when firing auto
 	bCanShoot = true;
 	bIsReloading = false;
-	bIsWeaponShootable = true;
 	GunMesh->SetSimulatePhysics(true);
 }
 
@@ -52,24 +54,44 @@ TSubclassOf<AWeaponBase> AWeaponBase::GetPickupWeapon()
 	return WeaponBP;
 }
 
-void AWeaponBase::DrawWeapon()
+void AWeaponBase::DrawWeapon(float Drawspeed)
 {
 	bCanShoot = false;
 	if (WeaponDrawMontage)
 	{
-		float DrawTime = PlayerCharacter->GetMesh()->GetAnimInstance()->Montage_Play(WeaponDrawMontage);
+		float DrawTime = PlayerCharacter->GetMesh()->GetAnimInstance()->Montage_Play(WeaponDrawMontage,Drawspeed) * Drawspeed;
+		SetActorHiddenInGame(true);
 		FTimerHandle DrawTimerHandle;
 
 		GetWorld()->GetTimerManager().SetTimer(
 			DrawTimerHandle, [&]()
 			{ bCanShoot = true; },
 			DrawTime, false);
+		
+		FTimerHandle VisibilityTimerHandle;
+		GetWorld()->GetTimerManager().SetTimer(VisibilityTimerHandle,[&](){SetActorHiddenInGame(false);},0.1f,false);
 	}
 	else
 	{
 		bCanShoot = true;
 	}
 	UpdateWeaponVisuals();
+	
+}
+
+void AWeaponBase::UnDrawWeapon(float DrawSpeed)
+{
+	bCanShoot = false;
+	if(WeaponUnDrawMontage)
+	{
+		PlayerCharacter->GetMesh()->GetAnimInstance()->Montage_Play(WeaponUnDrawMontage,DrawSpeed) ;
+	}
+}
+
+
+void AWeaponBase::SetCanShoot(bool bLCanShoot)
+{
+	bCanShoot = bLCanShoot;
 }
 void AWeaponBase::Shoot()
 {
@@ -94,6 +116,8 @@ void AWeaponBase::StopShooting()
 	};
 	},CoolDownTime,false);
 
+	PlayerCharacter->bIsShooting = false;
+
 	SingleShotAlpha = 0.01f;
 }
 
@@ -104,25 +128,14 @@ void AWeaponBase::ShootingInAction()
 		if (CurrentMagAmmo > 0)
 		{
 			CurrentMagAmmo--;
-			
+			PlayerCharacter->bIsShooting = true;
+
 			if (GunShootAnim)
 				GunMesh->PlayAnimation(GunShootAnim, false);
 
-			if (PlayerCharacter->IsADSButtonDown() && PlayerAdsShootingMontage)
+			if (PlayerShootMontage)
 			{
-				PlayerCharacter->GetMesh()->GetAnimInstance()->Montage_Play(PlayerAdsShootingMontage);
-			}
-
-			else
-			{
-				if (PlayerCrouchShootMontage && ((PlayerCharacter->GetCurrentMovementType() == EMovementType::EMT_Crouching) || PlayerCharacter->GetCurrentMovementType() == EMovementType::EMT_Sliding))
-				{
-					PlayerCharacter->GetMesh()->GetAnimInstance()->Montage_Play(PlayerCrouchShootMontage);
-				}
-				else if (PlayerShootMontage)
-				{
-					PlayerCharacter->GetMesh()->GetAnimInstance()->Montage_Play(PlayerShootMontage);
-				}
+				PlayerCharacter->GetMesh()->GetAnimInstance()->Montage_Play(PlayerShootMontage);
 			}
 
 			if (TracerRound)
@@ -161,7 +174,7 @@ void AWeaponBase::ShootingInAction()
 				
 				if(bIsHit)
 				{
-					HitSound(GunShotHitResult);
+					HitEffect(GunShotHitResult);
 					AActor *HitActor = GunShotHitResult.GetActor();
 					if (HitActor)
 					{
@@ -181,41 +194,57 @@ void AWeaponBase::ShootingInAction()
 	}
 }
 
-void AWeaponBase::HitSound(FHitResult GunHit)
+void AWeaponBase::HitEffect(FHitResult GunHit)
 {
 	EPhysicalSurface SurfaceType = 	UGameplayStatics::GetSurfaceType(GunHit);
 	switch (SurfaceType)
 	{
 		//wood
 	case EPhysicalSurface::SurfaceType1:
-		UE_LOG(LogTemp,Warning,TEXT("Surface 1"));
-		UGameplayStatics::SpawnEmitterAtLocation(this,WoodHitParticle,GunHit.Location,GunHit.Normal.Rotation());
-		UGameplayStatics::PlaySoundAtLocation(this,WoodHit,GunHit.Location);
+		ImpactEffect(GunHit,WoodHitParticle,WoodHit,WoodHitDecal);
 		break;
 
 		//Metal
 	case EPhysicalSurface::SurfaceType2 :
-		UE_LOG(LogTemp,Warning,TEXT("Surface 2"));
-		UGameplayStatics::SpawnEmitterAtLocation(this,MetalHitParticle,GunHit.Location,GunHit.Normal.Rotation());
-		UGameplayStatics::PlaySoundAtLocation(this,MetalHit,GunHit.Location);
+		ImpactEffect(GunHit,MetalHitParticle,MetalHit,MetalHitDecal);
 		break;
 
 		//Stone
 	case EPhysicalSurface::SurfaceType3:
-		UE_LOG(LogTemp,Warning,TEXT("Surface 3"));
-		UGameplayStatics::SpawnEmitterAtLocation(this,StoneHitParticle,GunHit.Location,GunHit.Normal.Rotation());
-		UGameplayStatics::PlaySoundAtLocation(this,StoneHit,GunHit.Location);
+		ImpactEffect(GunHit,StoneHitParticle,StoneHit,StoneHitDecal);
 		break;
 
 		//HeavyMetal
 	case EPhysicalSurface::SurfaceType4 :
-		UE_LOG(LogTemp,Warning,TEXT("Surface 4"));
-		UGameplayStatics::SpawnEmitterAtLocation(this,MetalHitParticle,GunHit.Location,GunHit.Normal.Rotation());
-		UGameplayStatics::PlaySoundAtLocation(this,MetalHit,GunHit.Location);
+		ImpactEffect(GunHit,MetalHitParticle,MetalHit,MetalHitDecal);
+
 		break;
 	
 	default:
 		break;
+	}
+}
+
+void AWeaponBase::ImpactEffect(FHitResult GunHit,UParticleSystem* HitParticle,USoundBase* HitSound, UMaterialInterface* HitDecal)
+{
+	if(HitParticle)
+	{
+		UGameplayStatics::SpawnEmitterAtLocation(this,HitParticle,GunHit.Location,GunHit.Normal.Rotation());
+	}
+	if(HitSound)
+	{
+		UGameplayStatics::PlaySoundAtLocation(this,HitSound,GunHit.Location);
+	}
+	if(HitDecal)
+	{
+	UGameplayStatics::SpawnDecalAttached(HitDecal,
+										 FVector(10,10,10),
+										 GunHit.Component.Get(),
+										 GunHit.BoneName,
+										 GunHit.ImpactPoint,
+										 GunHit.ImpactNormal.Rotation(),
+										 EAttachLocation::KeepWorldPosition,
+										 7.f);
 	}
 }
 
@@ -306,7 +335,17 @@ void AWeaponBase::UpdateWeaponVisuals()
 	float ColorAlpha = (float)CurrentMagAmmo / (float)MagSize;
 	FLinearColor NewColor = FLinearColor::LerpUsingHSV(FLinearColor::Red, FLinearColor::Blue, ColorAlpha);
 	NewColor = UKismetMathLibrary::Multiply_LinearColorFloat(NewColor, 10.f);
-	GunMesh->CreateDynamicMaterialInstance(0)->SetVectorParameterValue(FName("EmissiveColor"), NewColor);
+	UMaterialInstanceDynamic* GunMaterialInstance = GunMesh->CreateDynamicMaterialInstance(0);
+	if(GunMaterialInstance)
+	{
+		GunMaterialInstance->SetVectorParameterValue(FName("EmissiveColor"), NewColor);
+	}
+	// UMaterialInstanceDynamic* SightMaterialInstance = SightMesh->CreateDynamicMaterialInstance(0);
+	// if(SightMaterialInstance)
+	// {
+	// 	SightMaterialInstance->SetVectorParameterValue(FName("EmissiveColor"), NewColor);
+	// }
+
 }
 
 void AWeaponBase::UpdateWeaponVarsInPlayer()//for updating the struct 	 inside the player character to used them in the player hud
@@ -368,6 +407,10 @@ float AWeaponBase::DamagePerBone(FName BoneName)
 //=============================================================Pickup Weapon=============================================//
 void AWeaponBase::PickupWeapon()
 {
+	if(!PlayerCharacter)
+	{
+		return;
+	}
 	//just a cross check to make sure player cannot pickup already holding weapon
 	if (UKismetMathLibrary::EqualEqual_ClassClass(PlayerCharacter->PrimaryWeapon.WeaponClass.Get(), WeaponBP.Get()) &&
 		UKismetMathLibrary::EqualEqual_ClassClass(PlayerCharacter->SecondaryWeapon.WeaponClass.Get(), WeaponBP.Get()))

@@ -11,7 +11,7 @@
 #include "HelperMethods/AngleBetweenActors.h"
 #include "DrawDebugHelpers.h"
 #include "NavigationSystem.h"
-#
+#include "AIController.h"
 
 
 UBTT_CustomMoveTo::UBTT_CustomMoveTo()
@@ -23,7 +23,9 @@ UBTT_CustomMoveTo::UBTT_CustomMoveTo()
 EBTNodeResult::Type UBTT_CustomMoveTo::ExecuteTask(UBehaviorTreeComponent &OwnerComp,uint8* NodeMemory)
 {
     Super::ExecuteTask(OwnerComp,NodeMemory);
-    ABasicNPCAIController* OwnerController = Cast<ABasicNPCAIController>(OwnerComp.GetOwner());
+    OwnerController = Cast<ABasicNPCAIController>(OwnerComp.GetOwner());
+    // OwnerController->ReceiveMoveCompleted.RemoveDynamic(this,&UBTT_CustomMoveTo::OnMoveCompleted);
+    // OwnerController->ReceiveMoveCompleted.AddDynamic(this,&UBTT_CustomMoveTo::OnMoveCompleted);
 
     MoveLocation = OwnerComp.GetBlackboardComponent()->GetValueAsVector(BB_MoveLocation.SelectedKeyName);
     FNavLocation NavLocation;
@@ -41,21 +43,17 @@ EBTNodeResult::Type UBTT_CustomMoveTo::ExecuteTask(UBehaviorTreeComponent &Owner
     else
     {
         
-        MoveToTask = UAITask_MoveTo::AIMoveTo(OwnerComp.GetAIOwner(),
-                                             NavLocation.Location,
-                                              nullptr,
-                                              AcceptanceRadius,
-                                              EAIOptionFlag::Default,
-                                              EAIOptionFlag::Default,
-                                              true,
-                                              true,
-                                              false,
-                                              EAIOptionFlag::Enable);
-        MoveToTask->ConditionalPerformMove();
-
+        // MoveToTask = UAITask_MoveTo::AIMoveTo(OwnerComp.GetAIOwner(),
+        //                                      NavLocation.Location,
+        //                                       nullptr,
+        //                                       AcceptanceRadius
+        //                                       );
+        // MoveToTask->ConditionalPerformMove();
+        if(OwnerController)
+        MoveToResult = OwnerController->MoveToLocation(MoveLocation,AcceptanceRadius);
     }
-    if(bCanDrawDebugSphere)
-        DrawDebugSphere(GetWorld(),OwnerController->GetBlackboardComponent()->GetValueAsVector(BB_MoveLocation.SelectedKeyName),30,20,FColor::Green,false,20);
+    // if(bCanDrawDebugSphere)
+        // DrawDebugSphere(GetWorld(),OwnerController->GetBlackboardComponent()->GetValueAsVector(BB_MoveLocation.SelectedKeyName),30,20,FColor::Green,false,20);
 
     return EBTNodeResult::InProgress;
 }
@@ -64,35 +62,64 @@ void UBTT_CustomMoveTo::TickTask(UBehaviorTreeComponent& OwnerComp, uint8* NodeM
 {
     Super::TickTask(OwnerComp,NodeMemory,DeltaSeconds);
     APawn* PlayerPawn = UGameplayStatics::GetPlayerPawn(this,0);
-    if(MoveToTask !=nullptr)
+    // UE_LOG(LogTemp,Warning,TEXT("Move REsult %i"),OwnerController->GetPathFollowingComponent()->HasReached(MoveLocation,AcceptanceRadius));
+    // if(OwnerController->GetPathFollowingComponent()->HasReached(MoveLocation,AcceptanceRadius))
+    // {
+    //     float d = UKismetMathLibrary::Vector_Distance(OwnerController->GetControlledPawn()->GetActorLocation(),MoveLocation);
+    //     UE_LOG(LogTemp,Warning,TEXT("Distance %f"),d);
+    //     UE_LOG(LogTemp,Warning,TEXT("Reached"));
+    // }
+    if(OwnerController)
     {
-        FNavLocation NavLocation;
-        if(!UNavigationSystemV1::GetCurrent(GetWorld())->ProjectPointToNavigation(MoveLocation,NavLocation))
+        float d = UKismetMathLibrary::Vector_Distance(OwnerController->GetControlledPawn()->GetActorLocation(),MoveLocation);
+        
+        if(d < 100)
         {
-            UE_LOG(LogTemp,Error,TEXT("Move to location is not reachable"));
             FinishLatentTask(OwnerComp,EBTNodeResult::Succeeded);
-            return;
-        }
-        else if(MoveToTask->WasMoveSuccessful())
-        {
-            UE_LOG(LogTemp,Warning,TEXT("Move to successful"));
-            FinishLatentTask(OwnerComp,EBTNodeResult::Succeeded);
-            return;
-        }
-        else if(!MoveToTask->WasMoveSuccessful())
-        {   
-            // UE_LOG(LogTemp,Warning,TEXT("Move to not successful"));
         }
     }
+    // bool bHasReached = UKismetMathLibrary::EqualEqual_VectorVector(OwnerComp.GetAIOwner()->GetPawn()->GetActorLocation(),MoveLocation,10);
+    // UE_LOG(LogTemp,Warning,TEXT("Reached %i"),bHasReached);
+    // if(OwnerController)
+    // {
+    
+    //     if(OwnerController->GetMoveStatus() == EPathFollowingRequestResult::RequestSuccessful)
+    //     {
+    //         FinishLatentTask(OwnerComp,EBTNodeResult::Succeeded);
+    //     }
+    //     else
+    //     {
+    //         UE_LOG(LogTemp,Warning,TEXT("Moving")); 
+    //     }
+    // }
+    // if(MoveToTask !=nullptr)
+    // {
+    //     FNavLocation NavLocation;
+    //     if(!UNavigationSystemV1::GetCurrent(GetWorld())->ProjectPointToNavigation(MoveLocation,NavLocation))
+    //     {
+    //         UE_LOG(LogTemp,Error,TEXT("Move to location is not reachable"));
+    //         FinishLatentTask(OwnerComp,EBTNodeResult::Succeeded);
+    //         return;
+    //     }
+    //     else if(MoveToTask->WasMoveSuccessful())
+    //     {
+    //         UE_LOG(LogTemp,Warning,TEXT("Move to successful"));
+    //         FinishLatentTask(OwnerComp,EBTNodeResult::Succeeded);
+    //         return;
+    //     }
+    //     // else if(!MoveToTask->WasMoveSuccessful())
+    //     // {   
+    //     //     // UE_LOG(LogTemp,Warning,TEXT("Move to not successful"));
+    //     // }
+    // }
 
-    else
-    {
-        UE_LOG(LogTemp,Display,TEXT("No MoveToTask task"));
-    }
+    // else
+    // {
+    //     // UE_LOG(LogTemp,Display,TEXT("No MoveToTask task"));
+    // }
 
     if(bCanMoveToPlayerCheck)
     {
-        ABasicNPCAIController* OwnerController = Cast<ABasicNPCAIController>(OwnerComp.GetOwner());
         float Angle = AngleBetweenActors::AngleBetween(OwnerComp.GetAIOwner()->GetPawn(),PlayerPawn);
         bool bIsAngleInRange = UKismetMathLibrary::InRange_FloatFloat(Angle,0,PersonalAngle);
 
@@ -110,3 +137,4 @@ void UBTT_CustomMoveTo::TickTask(UBehaviorTreeComponent& OwnerComp, uint8* NodeM
         }
     }
 }
+

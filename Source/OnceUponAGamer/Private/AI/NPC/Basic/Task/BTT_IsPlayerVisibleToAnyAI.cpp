@@ -18,11 +18,12 @@ EBTNodeResult::Type UBTT_IsPlayerVisibleToAnyAI::ExecuteTask(UBehaviorTreeCompon
     {
         if(OwnerController->MyEncounterSpace == nullptr)
         {
-            return EBTNodeResult::Failed;
+            return EBTNodeResult::Succeeded;
         }
         
         bool IsPlayerVisible = OwnerController->MyEncounterSpace->IsPlayerVisibleToAnyone();
-        OwnerController->GetBlackboardComponent()->SetValueAsBool(BB_IsPlayerVisibleToAnyAI.SelectedKeyName,IsPlayerVisible);
+        OwnerComp.GetBlackboardComponent()->SetValueAsBool(BB_IsPlayerVisibleToAnyAI.SelectedKeyName,IsPlayerVisible);
+        // OwnerController->GetBlackboardComponent()->SetValueAsBool(BB_IsPlayerVisibleToAnyAI.SelectedKeyName,IsPlayerVisible);
     }
     return EBTNodeResult::Succeeded;
 

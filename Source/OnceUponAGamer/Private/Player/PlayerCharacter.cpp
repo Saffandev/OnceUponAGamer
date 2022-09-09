@@ -28,8 +28,11 @@ APlayerCharacter::APlayerCharacter()
 {
 	PrimaryActorTick.bCanEverTick = true;
 
+	SceneComp = CreateDefaultSubobject<USceneComponent>(TEXT("SceneComp"));
+	SceneComp->SetupAttachment(RootComponent);
+	SceneComp->SetRelativeLocation(FVector(-14.75f, 0.f, 75.f));
 	Camera = CreateDefaultSubobject<UCameraComponent>(TEXT("Camera"));
-	Camera->SetupAttachment(RootComponent);
+	Camera->SetupAttachment(SceneComp);
 	Camera->bUsePawnControlRotation = true;
 	Camera->SetRelativeLocation(FVector(-14.75f, 0.f, 75.f));
 
@@ -81,6 +84,7 @@ void APlayerCharacter::BeginPlay()
 
 	StandingCameraHeight = Camera->GetRelativeLocation().Z;
 	CrouchCameraHeight = StandingCameraHeight * CrouchScale;
+	PlayerMeshTransform = PlayerMesh->GetRelativeTransform();
 
 	PlayerController = GetController();
 
@@ -91,7 +95,7 @@ void APlayerCharacter::BeginPlay()
 	OnTakeRadialDamage.AddDynamic(this,&APlayerCharacter::TakeRadialDamage);
 	
 	CurrentWeapon = GetWorld()->SpawnActor<AWeaponBase>(InitialWeapon);
-	CurrentWeapon->AttachToComponent(PlayerMesh, FAttachmentTransformRules::SnapToTargetNotIncludingScale, FName("WeaponSocket_r"));
+	CurrentWeapon->AttachToComponent(PlayerMesh, FAttachmentTransformRules::SnapToTargetIncludingScale, FName("WeaponSocket_r"));
 	
 	EqPrimaryWeapon = CurrentWeapon;
 	EqSecondaryWeapon = CurrentWeapon;
@@ -298,7 +302,7 @@ void APlayerCharacter::SetHealthShield(float Health,float Shield)
 
 void APlayerCharacter::HealShield(float ShieldHealth)
 {
-	CurrentShield = ShieldHealth;
+	CurrentShield += ShieldHealth;
 	if(CurrentShield > MaxShield)
 	{
 		CurrentShield = MaxShield;
@@ -361,6 +365,10 @@ void APlayerCharacter::LedgeGrab(FVector ImpactPoint)
 					CharacterMovement->StopMovementImmediately();
 					DisablePlayerInput();
 					bIsDoingLedgeGrab = true;
+					if(CurrentWeapon)
+					{
+						CurrentWeapon->UnDrawWeapon(2);
+					}
 					UKismetSystemLibrary::MoveComponentTo(Capsule,
 														  LandingLocation,
 														  GetActorRotation(),
@@ -553,6 +561,10 @@ void APlayerCharacter::EnablePlayerInput()
 {
 	EnableInput(GetWorld()->GetFirstPlayerController());
 	bIsDoingLedgeGrab = false;
+	if(CurrentWeapon)
+	{
+		CurrentWeapon->DrawWeapon(1);
+	}
 }
 
 void APlayerCharacter::DisablePlayerInput()
@@ -576,6 +588,7 @@ void APlayerCharacter::MoveForward(float AxisValue)
 void APlayerCharacter::MoveRight(float AxisValue)
 {
 	RightAxis = AxisValue;
+	HandSway(RightAxis);
 	AddMovementInput(GetActorRightVector(), AxisValue);
 }
 
@@ -583,7 +596,8 @@ void APlayerCharacter::Turn(float AxisValue)
 {
 	SmoothHorizontalLook = UKismetMathLibrary::FInterpTo(SmoothHorizontalLook, AxisValue, UGameplayStatics::GetWorldDeltaSeconds(this), 30.f);
 	AddControllerYawInput(SmoothHorizontalLook);
-
+	float SwayValue = FMath::Clamp<float>(AxisValue,-1.0f,1.0f);
+	HandSway(SwayValue);
 	// weapon sway for more visual smoothness
 	float LTurnInterpSpeed;
 	if (bIsADS)
@@ -594,6 +608,10 @@ void APlayerCharacter::Turn(float AxisValue)
 	{
 		LTurnInterpSpeed = TurnInterpSpeed;
 	}
+	if(bIsADS)
+	{
+		return;
+	}
 	PlayerMesh->SetRelativeRotation(FRotator(PlayerMesh->GetRelativeRotation().Pitch,
 											 PlayerMesh->GetRelativeRotation().Yaw - AxisValue,
 											 PlayerMesh->GetRelativeRotation().Roll));
@@ -602,6 +620,7 @@ void APlayerCharacter::Turn(float AxisValue)
 									Camera->GetRelativeRotation().Yaw - 90,
 									PlayerMesh->GetRelativeRotation().Roll);
 
+	// NewRotation = bIsADS? FRotator(0,0,0): NewRotation;
 	PlayerMesh->SetRelativeRotation(FMath::RInterpTo(PlayerMesh->GetRelativeRotation(),
 													 NewRotation,
 													 UGameplayStatics::GetWorldDeltaSeconds(this),
@@ -613,7 +632,7 @@ void APlayerCharacter::LookUp(float AxisValue)
 	SmoothVerticalLook = UKismetMathLibrary::FInterpTo(SmoothVerticalLook, AxisValue, UGameplayStatics::GetWorldDeltaSeconds(this), 30.f);
 	AddControllerPitchInput(SmoothVerticalLook);
 
-	// weapon sway for more visual smoothness
+	// // weapon sway for more visual smoothness
 	float LLookupInterpSpeed;
 	if (bIsADS)
 	{
@@ -622,6 +641,11 @@ void APlayerCharacter::LookUp(float AxisValue)
 	else
 	{
 		LLookupInterpSpeed = LookInterpSpeed;
+	}
+	
+	if(bIsADS)
+	{
+		return;
 	}
 	PlayerMesh->SetRelativeRotation(FRotator(PlayerMesh->GetRelativeRotation().Pitch - AxisValue,
 											 PlayerMesh->GetRelativeRotation().Yaw,
@@ -636,6 +660,15 @@ void APlayerCharacter::LookUp(float AxisValue)
 													 UGameplayStatics::GetWorldDeltaSeconds(this),
 													 LLookupInterpSpeed));
 }
+
+void APlayerCharacter::HandSway(float AxisValue)
+{
+	float AdsAlpha = bIsADS ? 0 : 1;
+	float SwayValue = AxisValue * AdsAlpha * HandSwayRotationValue;
+	FRotator SwayRotationTarget = FRotator(SwayValue,0,0);
+	SwayRotation = FMath::RInterpTo(SwayRotation,SwayRotationTarget,UGameplayStatics::GetWorldDeltaSeconds(this),SwaySpeed);
+}
+
 //===========================================================Input Axis Section End==========================================//
 
 //========================================================================Jumping==================================//
@@ -994,7 +1027,6 @@ void APlayerCharacter::Shoot()
 		UE_LOG(LogTemp, Warning, TEXT("NO weapon base reference"));
 		return;
 	}
-	bIsShooting = true;
 	CurrentWeapon->Shoot();
 }
 
@@ -1005,43 +1037,76 @@ void APlayerCharacter::StopShooting()
 		UE_LOG(LogTemp, Warning, TEXT("NO weapon base reference"));
 		return;
 	}
-	bIsShooting = false;
 	CurrentWeapon->StopShooting();
 }
 
 void APlayerCharacter::ADSON()
 {
-	bIsADSButtonDown = true;
-	if (!bIsDoingMeleeAttack)
+	if(CurrentWeapon)
 	{
-		SetMovementSpeed(GetCurrentMovementType());
-		ADS_OnTimeline.PlayFromStart();
+		if(CurrentWeapon->bIsWeaponShootable)
+		{
+			bIsADSButtonDown = true;
+			if (!bIsDoingMeleeAttack && !bIsReloading && !bIsThrowing)
+			{
+				SetMovementSpeed(GetCurrentMovementType());
+				ADS_OnTimeline.PlayFromStart();
+			}
+		}	
 	}
+	
 }
 
 void APlayerCharacter::ADSOnInAction()
 {
 	bIsADS = true;
 	float Alpha = CrouchCurve->GetFloatValue(ADS_OnTimeline.GetPlaybackPosition());
+	ADS_Alpha = Alpha;
 	PerformADS(ADSFOV, 1.3f, Alpha);
 }
 
 void APlayerCharacter::ADSOFF()
 {
-	bIsADSButtonDown = false;
-	SetMovementSpeed(GetCurrentMovementType());
-	ADS_OffTimeline.PlayFromStart();
+	if(CurrentWeapon)
+	{
+		if(CurrentWeapon->bIsWeaponShootable)
+		{
+		bIsADSButtonDown = false;
+		if(!bIsReloading && !bIsThrowing)
+		{
+			SetMovementSpeed(GetCurrentMovementType());
+			ADS_OffTimeline.PlayFromStart();
+		}
+		}
+	}
 }
 
 void APlayerCharacter::ADSOffInAction()
 {
 	bIsADS = false;
 	float Alpha = CrouchCurve->GetFloatValue(ADS_OffTimeline.GetPlaybackPosition());
+	ADS_Alpha = Alpha;
 	PerformADS(DefaultFOV, 0.5f, Alpha);
 }
 
 void APlayerCharacter::PerformADS(float FinalAdsFovValue, float NewVignetteIntensity, float Alpha)
 {
+	FTransform NewTransform = UKismetMathLibrary::MakeRelativeTransform(CurrentWeapon->GunMesh->GetSocketTransform(FName("ADS")),PlayerMesh->GetComponentTransform());
+	NewTransform = UKismetMathLibrary::InvertTransform(NewTransform);
+
+	FTransform FinalTransform;
+	if(bIsADS)
+	{
+		FinalTransform = UKismetMathLibrary::TLerp(PlayerMesh->GetRelativeTransform(),NewTransform,Alpha);
+	}
+	else
+	{
+		FinalTransform = UKismetMathLibrary::TLerp(NewTransform,PlayerMeshTransform,Alpha);
+	}
+	// FTransform tempPlayerTransform = bIsADS ? PlayerMesh->GetRelativeTransform() : PlayerMeshTransform;
+	
+	PlayerMesh->SetRelativeTransform(FinalTransform);
+
 	float newFOV = FMath::Lerp(Camera->FieldOfView, FinalAdsFovValue, Alpha);
 	Camera->SetFieldOfView(newFOV);
 	Camera->PostProcessSettings.bOverride_VignetteIntensity = true;
@@ -1049,6 +1114,10 @@ void APlayerCharacter::PerformADS(float FinalAdsFovValue, float NewVignetteInten
 }
 void APlayerCharacter::Reload()
 {
+	if(!(CurrentWeapon->CurrentMagAmmo < CurrentWeapon->MagSize) || bIsThrowing)
+	{
+		return;
+	}
 	bIsShooting = false;
 	if (bIsADSButtonDown)
 	{
@@ -1158,6 +1227,10 @@ void APlayerCharacter::PickupGun(AActor* HitActor)
 			if (PrimaryWeapon.TotalAmmo < PrimaryWeapon.MaxAmmo)//will shift this function to the weaponBase to give different weapons different ammo
 			{
 				PrimaryWeapon.TotalAmmo = FMath::Min(PrimaryWeapon.TotalAmmo + 30, PrimaryWeapon.MaxAmmo);
+				if(GunPickupSound)
+				{
+					UGameplayStatics::PlaySound2D(this,GunPickupSound);
+				}
 				CurrentWeapon->TotalAmmo = PrimaryWeapon.TotalAmmo;
 				HitActor->Destroy();
 			}
@@ -1167,6 +1240,10 @@ void APlayerCharacter::PickupGun(AActor* HitActor)
 			if (SecondaryWeapon.TotalAmmo < SecondaryWeapon.MaxAmmo)
 			{
 				SecondaryWeapon.TotalAmmo = FMath::Min((SecondaryWeapon.TotalAmmo + 30), SecondaryWeapon.MaxAmmo);
+				if(GunPickupSound)
+				{
+					UGameplayStatics::PlaySound2D(this,GunPickupSound);
+				}
 				CurrentWeapon->TotalAmmo = SecondaryWeapon.TotalAmmo;
 				HitActor->Destroy();
 			}
@@ -1187,6 +1264,10 @@ void APlayerCharacter::PickupThrowable(AActor* HitActor)
 			bCanPickup = false;
 			bIsWeaponHit = false;
 			PickupWeaponInterface->PickupWeapon();
+			if(ThrowablePickupSound)
+				{
+					UGameplayStatics::PlaySound2D(this,ThrowablePickupSound);
+				}
 		}
 	}
 	else
@@ -1197,6 +1278,10 @@ void APlayerCharacter::PickupThrowable(AActor* HitActor)
 			if (PrimaryThrowableData.Count < ThrowableMaxCount)
 			{
 				PrimaryThrowableData.Count++;
+				if(ThrowablePickupSound)
+				{
+					UGameplayStatics::PlaySound2D(this,ThrowablePickupSound);
+				}
 				HitActor->Destroy();
 			}
 		}
@@ -1205,11 +1290,16 @@ void APlayerCharacter::PickupThrowable(AActor* HitActor)
 			if (SecondaryThrowableData.Count < ThrowableMaxCount)
 			{
 				SecondaryThrowableData.Count++;
-				HitActor->Destroy();
+				if(ThrowablePickupSound)
+				{
+					UGameplayStatics::PlaySound2D(this,ThrowablePickupSound);
+				}
 			}
+				HitActor->Destroy();
 		}
 	}
 }
+
 
 void APlayerCharacter::EquipPrimaryWeapon()
 {
@@ -1302,9 +1392,10 @@ void APlayerCharacter::SetWeaponVars(FWeaponData NewWeaponData, bool bIsPrimaryW
 		}
 		UE_LOG(LogTemp,Warning,TEXT("Pickup Weapon Name = %s"),*PickupHitWeapon->GetName());
 		//Also we are not spawning the weapon, as the pickup weapon and firing weapons are same, this way we can get away from spawning 
-		PickupHitWeapon->AttachToComponent(PlayerMesh, FAttachmentTransformRules::SnapToTargetNotIncludingScale, FName("WeaponSocket_r"));
+		PickupHitWeapon->AttachToComponent(PlayerMesh, FAttachmentTransformRules::SnapToTargetIncludingScale, FName("WeaponSocket_r"));
 		CurrentWeapon->bIsPrimaryWeapon = bIsPrimaryWeapon;
 		CurrentWeapon->SetOwner(this);
+		CurrentWeapon->SetActorHiddenInGame(false);
 		CurrentWeapon->DrawWeapon();
 	}
 	else
@@ -1317,19 +1408,37 @@ void APlayerCharacter::DropWeapon(bool bIsPrimaryDrop)
 {
 	if(bIsPrimaryDrop)
 	{
-		EqPrimaryWeapon->DetachFromActor(FDetachmentTransformRules::KeepWorldTransform);
-		EqPrimaryWeapon->DropGun();
+		if(EqPrimaryWeapon)
+		{
+			EqPrimaryWeapon->DetachFromActor(FDetachmentTransformRules::KeepWorldTransform);
+			EqPrimaryWeapon->DropGun();
+			EqPrimaryWeapon->SetActorScale3D(EqPrimaryWeapon->GetActorScale3D()/SceneComp->GetComponentScale());
+		}
 	}
 	else
 	{
-		EqSecondaryWeapon->DetachFromActor(FDetachmentTransformRules::KeepWorldTransform);
-		EqSecondaryWeapon->DropGun();
+		if(EqSecondaryWeapon)
+		{
+			EqSecondaryWeapon->DetachFromActor(FDetachmentTransformRules::KeepWorldTransform);
+			EqSecondaryWeapon->DropGun();
+			EqSecondaryWeapon->SetActorScale3D(EqPrimaryWeapon->GetActorScale3D()/SceneComp->GetComponentScale());
+		}
+
+	}
+}
+
+
+void APlayerCharacter::ReEquipAfterGrenade()
+{
+	if(CurrentWeapon)
+	{
+		CurrentWeapon->DrawWeapon();
 	}
 }
 
 void APlayerCharacter::MeleeAttack()
 {
-	if (!bIsDoingMeleeAttack && !bIsReloading && !bIsADS)
+	if (!bIsDoingMeleeAttack && !bIsReloading && !bIsADS && !bIsThrowing)
 	{
 		bIsDoingMeleeAttack = true;
 		float MeleeEndTime = CurrentWeapon->DoMeleeAttack();
@@ -1423,29 +1532,86 @@ void APlayerCharacter::SetThrowableData(FThrowableData ThrowableData, bool bIsSe
 	bIsSecondaryThrowable ? (SecondaryThrowableData = ThrowableData) : (PrimaryThrowableData = ThrowableData);
 }
 
+void APlayerCharacter::DropThrowable(bool IsPrimary)
+{
+	if(IsPrimary)
+	{
+		PrimaryThrowableData.Count = 0;
+		GetWorld()->SpawnActor<AThrowableBase>(PrimaryThrowableData.BP_Throwable,GetActorTransform());
+		PrimaryThrowableData.BP_Throwable = nullptr;
+	}
+	else
+	{
+		SecondaryThrowableData.Count = 0;
+		GetWorld()->SpawnActor<AThrowableBase>(SecondaryThrowableData.BP_Throwable,GetActorTransform());
+		SecondaryThrowableData.BP_Throwable = nullptr;
+	}
+}
 
 void APlayerCharacter::PrimaryThrowStart()
 {
-	
+	bIsThrowableExploded = false;
 	if (ThrowableEquippedSlot == 0 && PrimaryThrowableData.Count > 0)
 	{
-		PrimaryThrowableData.Count--;
+		bIsThrowing = true;
 		PrimaryThrowable = StartThrow(PrimaryThrowableData.BP_Throwable);
+		if(CurrentWeapon)
+		{
+			CurrentWeapon->SetActorHiddenInGame(true);
+			CurrentWeapon->SetCanShoot(false);
+		}
+		PlayerMesh->GetAnimInstance()->Montage_Play(GrenadeHoldMontage);
+		UE_LOG(LogTemp,Warning,TEXT("Throwing Primary"));
 	}
 	else if (ThrowableEquippedSlot == 1 && SecondaryThrowableData.Count > 0)
 	{
-		SecondaryThrowableData.Count--;
+		bIsThrowing = true;
 		SecondaryThrowable = StartThrow(SecondaryThrowableData.BP_Throwable);
+		if(CurrentWeapon)
+		{
+			CurrentWeapon->SetActorHiddenInGame(true);
+			CurrentWeapon->SetCanShoot(false);
+		}
+		PlayerMesh->GetAnimInstance()->Montage_Play(GrenadeHoldMontage);
+		UE_LOG(LogTemp,Warning,TEXT("Throwing Primary"));
+
 	}
 }
 
 void APlayerCharacter::PrimaryThrowEnd()
 {
-	if (ThrowableEquippedSlot == 0)
+	FTimerHandle ThrowTimer;
+	if (ThrowableEquippedSlot == 0 && PrimaryThrowableData.Count > 0)
+	{
+		PrimaryThrowableData.Count--;
+		// EndThrow(PrimaryThrowable);
+		if(!bIsThrowableExploded)
+		{
+			float Time = PlayerMesh->GetAnimInstance()->Montage_Play(ThrowMontage);
+			GetWorld()->GetTimerManager().SetTimer(ThrowTimer,this,&APlayerCharacter::ReEquipAfterGrenade,Time-0.2,false);
+		}
+	}
+	else if (ThrowableEquippedSlot == 1 && SecondaryThrowableData.Count > 0)
+	{
+		SecondaryThrowableData.Count--;
+		// EndThrow(SecondaryThrowable);
+		if(!bIsThrowableExploded)
+		{
+			float Time = PlayerMesh->GetAnimInstance()->Montage_Play(ThrowMontage);
+			GetWorld()->GetTimerManager().SetTimer(ThrowTimer,this,&APlayerCharacter::ReEquipAfterGrenade,Time-0.2,false);
+		}
+	}
+}
+
+
+void APlayerCharacter::InitiateEndThrow()
+{
+	bIsThrowing = false;
+	if(ThrowableEquippedSlot == 0)
 	{
 		EndThrow(PrimaryThrowable);
 	}
-	else if (ThrowableEquippedSlot == 1)
+	else
 	{
 		EndThrow(SecondaryThrowable);
 	}
@@ -1456,8 +1622,10 @@ AThrowableBase *APlayerCharacter::StartThrow(TSubclassOf<AThrowableBase> Throwab
 	AThrowableBase *SpawnedThrowable = nullptr;
 	if (Throwable)
 	{
-		SpawnedThrowable = GetWorld()->SpawnActor<AThrowableBase>(Throwable, PlayerMesh->GetSocketLocation(FName("WeaponSocket_r")), FRotator::ZeroRotator);
-		SpawnedThrowable->AttachToComponent(PlayerMesh,FAttachmentTransformRules::SnapToTargetNotIncludingScale,FName("WeaponSocket_r"));
+		FActorSpawnParameters GrenadeSpawnParemeters;
+		GrenadeSpawnParemeters.Owner = this;
+		SpawnedThrowable = GetWorld()->SpawnActor<AThrowableBase>(Throwable, PlayerMesh->GetSocketLocation(FName("WeaponSocket_r")), FRotator::ZeroRotator,GrenadeSpawnParemeters);
+		SpawnedThrowable->AttachToComponent(PlayerMesh,FAttachmentTransformRules::SnapToTargetIncludingScale,FName("WeaponSocket_r"));
 		SpawnedThrowable->Initiate();
 		bCanPredictPath = true;
 	}

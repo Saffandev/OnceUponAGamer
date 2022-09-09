@@ -97,13 +97,18 @@ public:
 	FWeaponData GetWeaponData(bool bIsSecondaryWeapon);
 	UFUNCTION(BlueprintCallable)
 	void SetWeaponData(bool bIsSecondaryWeapon, FWeaponData WeaponData);//used by the save game to set the weapon equipped before quiting the game
-
+	
 	//===============================Throwables==========================//
+	void ReEquipAfterGrenade();
+	void DropThrowable(bool bIsPrimary);
 	UFUNCTION(BlueprintCallable)
 	FThrowableData GetThrowableData(bool bIsSecondaryThrowable);
 	UFUNCTION(BlueprintCallable)
 	void SetThrowableData(FThrowableData ThrowableData, bool bIsSecondaryThrowable);
-
+	bool GetIsThrowingThrowable()
+	{
+		return bIsThrowing;
+	}
 	//==============================Health/Sheild=====================//
 	UFUNCTION(BlueprintCallable)
 	void Heal(float Health);
@@ -123,6 +128,7 @@ private:
 	void MoveRight(float AxisValue);
 	void Turn(float AxisValue);
 	void LookUp(float AxisValue);
+	void HandSway(float AxisValue);
 	void Jump();
 	void StopJump();
 	void Sprint();
@@ -181,10 +187,13 @@ private:
 	void PickupGun(AActor* HitActor);
 	void PickupThrowable(AActor* HitActor);
 	void MeleeAttack();
+
 	void PrimaryThrowStart();
 	void PrimaryThrowEnd();
 	void SwitchThrowable();
 	void EndThrow(AThrowableBase* CurrentThrowable);
+	UFUNCTION(BlueprintCallable)
+	void InitiateEndThrow();
 	void ThrowPredection();
 	void SetWeaponVars(FWeaponData NewWeaponData,bool bIsPrimaryWeapon,bool bIsPickupWeapon);
 	AThrowableBase* StartThrow(TSubclassOf<AThrowableBase> Throwable);
@@ -216,7 +225,11 @@ private:
 	
 
 private:
+
 	UPROPERTY(VisibleAnywhere)
+	USceneComponent* SceneComp;
+
+	UPROPERTY(VisibleAnywhere,BlueprintReadOnly,meta = (AllowPrivateAccess = "true"))
 	UCameraComponent* Camera;
 
 	UPROPERTY(VisibleAnywhere,BlueprintReadOnly,meta = (AllowPrivateAccess = "true"))
@@ -228,7 +241,7 @@ private:
 	UCharacterMovementComponent* CharacterMovement;
 	AController* PlayerController;
 	UCapsuleComponent* Capsule;
-
+	FTransform PlayerMeshTransform;
 	//======================================== Curves =========================================//
 	UPROPERTY(EditAnywhere,Category = "Curves")
 	UCurveFloat* CrouchCurve;
@@ -271,19 +284,28 @@ private:
 	float ADSFOV;
 	UPROPERTY(EditAnywhere,Category = "Weapon")
 	TSubclassOf<AWeaponBase> InitialWeapon;
+	UPROPERTY(EditAnywhere,Category = "Weapon")
+	USoundBase* GunPickupSound;
 
-	bool bIsShooting;
 	bool bIsADSButtonDown;
 	bool bCanPickup;
 	AActor* PickupHitWeapon;
 	class IPickupWeaponInterface *PickupWeaponInterface;
 	//======================================== Throwable =========================================//
 	UPROPERTY(EditAnywhere,Category = "Throwable")
+	UAnimMontage* GrenadeHoldMontage;
+	UPROPERTY(EditAnywhere,Category = "Throwable")
+	UAnimMontage* ThrowMontage;
+	UPROPERTY(EditAnywhere,Category = "Throwable")
 	int32 ThrowableMaxCount;
 	UPROPERTY(EditAnywhere,Category = "Throwable")
 	TSubclassOf<AThrowableBase> BPThrowable;
 	UPROPERTY(EditAnywhere,BlueprintReadOnly,Category = "Throwable",meta = (AllowPrivateAccess = "true"))
 	float ThrowSpeed;
+	UPROPERTY(VisibleAnywhere,BlueprintReadonly,meta = (AllowPrivateAccess = "true"))
+	bool bIsThrowing;
+	UPROPERTY(EditAnywhere,Category = "Throwable")
+	USoundBase* ThrowablePickupSound;
 
 	FVector ThrowVelocity;
 	AThrowableBase* PrimaryThrowable;
@@ -324,6 +346,10 @@ private:
 	float LookInterpSpeed;
 	UPROPERTY(EditAnywhere,Category = "Movement")
 	float LookInterpSpeedADS;
+	UPROPERTY(EditAnywhere,Category = "Movement")
+	float HandSwayRotationValue;
+	UPROPERTY(EditAnywhere,Category = "Movement")
+	float SwaySpeed;
 	int32 JumpsLeft;
 	UPROPERTY(VisibleAnywhere,BlueprintReadOnly,Category = "Movement",meta = (AllowPrivateAccess = "true"))
 	EMovementType CurrentMovementType;//used for driving animation in anim bp
@@ -352,6 +378,9 @@ private:
 	FTimerHandle ShieldRechargeTimer;
 
 public:
+
+	UPROPERTY(VisibleAnywhere,BlueprintReadOnly,Category = "Movement")
+	FRotator SwayRotation;
 	//======================================== Weapons =========================================//
 	UPROPERTY(VisibleAnywhere,BlueprintReadOnly,Category = "Weapon")
 	FWeaponData PrimaryWeapon;
@@ -362,6 +391,7 @@ public:
 	UPROPERTY(VisibleAnywhere,BlueprintReadOnly,Category = "Weapon")
 	int32 WeaponEquippedSlot;
 
+	UPROPERTY(VisibleAnywhere,BlueprintReadOnly)
 	AWeaponBase* CurrentWeapon;
 	AWeaponBase* EqPrimaryWeapon;
 	AWeaponBase* EqSecondaryWeapon;
@@ -369,6 +399,10 @@ public:
 	UPROPERTY(VisibleAnywhere,BlueprintReadOnly)
 	EWeaponName PickupWeaponName;
 	
+	UPROPERTY(VisibleAnywhere,BlueprintReadOnly)
+	float ADS_Alpha;
+
+	bool bIsShooting;
 	//======================================== Throwable =========================================//
 	UPROPERTY(VisibleAnywhere,BlueprintReadOnly,Category = "Throwable")
 	FThrowableData PrimaryThrowableData;
@@ -379,9 +413,12 @@ public:
 	UPROPERTY(VisibleAnywhere,BlueprintReadOnly,Category = "Throwable")
 	EThrowableName ThrowableName;
 
-	UPROPERTY(VisibleAnywhere)
+	UPROPERTY(VisibleAnywhere,BlueprintReadOnly,Category = "Throwable")
 	int32 ThrowableEquippedSlot;
 
+	bool bIsThrowableExploded;
+
 	bool bIsDoingMeleeAttack;
+	UPROPERTY(VisibleAnywhere,BlueprintReadOnly)
 	bool bIsReloading;
 };
