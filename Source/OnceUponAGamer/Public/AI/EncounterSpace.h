@@ -19,7 +19,7 @@ public:
 	void AssingInvestigation(FVector SuspectLocation);
 	void MoveBackToPatrol();
 	void AddAI(class ACharacter* AI);
-	void IAMDead();
+	void IAMDead(class ACharacter* DeadAI);
 	UFUNCTION(BlueprintImplementableEvent)
 	void TheratCleared();
 	UFUNCTION(BlueprintImplementableEvent)

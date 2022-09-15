@@ -91,6 +91,8 @@ protected:
 	UPROPERTY(EditAnywhere)
 	USoundBase* HitSound;
 	UPROPERTY(EditAnywhere)
+	USoundBase* HeadShotSound;
+	UPROPERTY(EditAnywhere)
 	TSubclassOf<AActor> HealthPickup;
 	UPROPERTY(EditAnywhere)
 	TSubclassOf<AActor> ShieldPickup;

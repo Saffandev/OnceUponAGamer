@@ -119,7 +119,7 @@ void AThrowableBase::OnHit(UPrimitiveComponent* HitComponent,AActor* OtherActor,
 
 void AThrowableBase::Throw(FVector ThrowVelocity)
 {
-	UE_LOG(LogTemp,Warning,TEXT("ThrowVelocity = %s"),*ThrowVelocity.ToString());
+	// UE_LOG(LogTemp,Warning,TEXT("ThrowVelocity = %s"),*ThrowVelocity.ToString());
 	ThrowableMesh->SetSimulatePhysics(true);
 	ThrowableMesh->AddImpulse(ThrowVelocity,NAME_None,true);
 	ThrowableMesh->SetCollisionEnabled(ECollisionEnabled::PhysicsOnly);
@@ -162,15 +162,23 @@ void AThrowableBase::Explode()
 											  ActorsToIgnore,
 											  OverlappedActors);
 	UE_LOG(LogTemp,Warning,TEXT("%i"),OverlappedActors.Num());
-	UE_LOG(LogTemp,Warning,TEXT("Overlap object type count %i"),OverlapActorObjectType.Num());
+	// UE_LOG(LogTemp,Warning,TEXT("Overlap object type count %i"),OverlapActorObjectType.Num());
 
+	if(PlayerCharacter)
+	{
+		float Distance = this->GetDistanceTo(PlayerCharacter);
+		UE_LOG(LogTemp,Warning,TEXT("Grenade Distance %f"),Distance);
+		float CameraShakeValue = (1 - Distance/ShakeDistance) * CameraShakeScale;
+		UE_LOG(LogTemp,Warning,TEXT("Camera shake value %f"),CameraShakeValue);
+		PlayerCharacter->PlayCameraShake(CameraShake,CameraShakeValue);
+	}
 	for(AActor* HitActor:OverlappedActors)
 	{	
-		if(HitActor )
+		if(HitActor)
 		{
-			UE_LOG(LogTemp,Warning,TEXT("%s"),*(HitActor->GetName()));			
+			// UE_LOG(LogTemp,Warning,TEXT("%s"),*(HitActor->GetName()));			
 			UGameplayStatics::ApplyRadialDamage(this,Damage,GetActorLocation(),DamageRadius,ExplosionDamageType,ActorsToIgnore);
-			UE_LOG(LogTemp,Warning,TEXT("Radial Damage applied"));
+			// UE_LOG(LogTemp,Warning,TEXT("Radial Damage applied"));
 		}
 	}
 	Destroy();

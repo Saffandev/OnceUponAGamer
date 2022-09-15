@@ -103,6 +103,7 @@ bool AEncounterSpace::IsPlayerVisibleToAnyone()
 	{
 		if(TempController && TempController->GetBlackboardComponent())
 		{
+			UE_LOG(LogTemp,Warning,TEXT("Controller Name : %s"),*TempController->GetName());
 			if(TempController->GetBlackboardComponent()->GetValueAsBool(FName("bIsPlayerVisible")))
 			{
 				return true;
@@ -221,11 +222,17 @@ void AEncounterSpace::MoveBackToPatrol()
 
 }
 
-void AEncounterSpace::IAMDead()
+void AEncounterSpace::IAMDead( ACharacter* DeadAI)
 {
 	NoOfAiAlive--;
 	// SomeoneIsDead();
+	UE_LOG(LogTemp,Warning,TEXT("Dead controller %s"),*DeadAI->GetInstigatorController()->GetName());
 	UE_LOG(LogTemp,Warning,TEXT("Ai count = %i"),NoOfAiAlive);
+	ABasicNPCAIController* DeadController = Cast<ABasicNPCAIController>(DeadAI->GetInstigatorController());
+	if(DeadController)
+	{
+		OverlappedAIControllers.Remove(DeadController);
+	}
 	if(NoOfAiAlive <= 0)
 	{
 		//open doors

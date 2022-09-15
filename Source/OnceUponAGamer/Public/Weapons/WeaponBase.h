@@ -92,6 +92,9 @@ protected:
 	float CameraShakeScale;
 	
 	UPROPERTY(EditAnywhere,Category = "Weapon Vars")
+	float CameraShakeScaleADS;
+	
+	UPROPERTY(EditAnywhere,Category = "Weapon Vars")
 	TSubclassOf<AWeaponBase> WeaponBP;
 	
 	UPROPERTY(EditAnywhere,Category = "Weapon Vars")

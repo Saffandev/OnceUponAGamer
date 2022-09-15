@@ -147,7 +147,8 @@ void AWeaponBase::ShootingInAction()
 
 			if (CameraShake)
 			{
-				PlayerCharacter->PlayCameraShake(CameraShake, CameraShakeScale);
+				float CameraShakeValue = PlayerCharacter->IsADSButtonDown() ? CameraShakeScaleADS : CameraShakeScale;
+				PlayerCharacter->PlayCameraShake(CameraShake, CameraShakeValue	);
 			}
 
 			SingleShotAlpha = 1.f;
@@ -407,6 +408,7 @@ float AWeaponBase::DamagePerBone(FName BoneName)
 //=============================================================Pickup Weapon=============================================//
 void AWeaponBase::PickupWeapon()
 {
+
 	if(!PlayerCharacter)
 	{
 		return;
@@ -431,17 +433,15 @@ void AWeaponBase::PickupWeapon()
 	WeaponData.CurrentMagAmmo = CurrentMagAmmo;
 	
 	//first we will check of the empty slot and assign the weapon to it
-	if (PlayerCharacter->PrimaryWeapon.WeaponClass->IsChildOf(AKnifeWeapon::StaticClass()))
+	if (PlayerCharacter->PrimaryWeapon.WeaponClass == nullptr)
 	{
 		PlayerCharacter->WeaponEquippedSlot = 0;
-		PlayerCharacter->DropWeapon(true);
 		PlayerCharacter->PrimaryWeapon = WeaponData;
 	}
 
-	else if (PlayerCharacter->SecondaryWeapon.WeaponClass->IsChildOf(AKnifeWeapon::StaticClass()))
+	else if (PlayerCharacter->SecondaryWeapon.WeaponClass == nullptr)
 	{
 		PlayerCharacter->WeaponEquippedSlot = 1;
-		PlayerCharacter->DropWeapon(false);
 		PlayerCharacter->SecondaryWeapon = WeaponData;
 	}
 

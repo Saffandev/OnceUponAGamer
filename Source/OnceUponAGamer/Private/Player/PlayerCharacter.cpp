@@ -94,13 +94,13 @@ void APlayerCharacter::BeginPlay()
 	OnTakePointDamage.AddDynamic(this,&APlayerCharacter::TakePointDamage);
 	OnTakeRadialDamage.AddDynamic(this,&APlayerCharacter::TakeRadialDamage);
 	
-	CurrentWeapon = GetWorld()->SpawnActor<AWeaponBase>(InitialWeapon);
-	CurrentWeapon->AttachToComponent(PlayerMesh, FAttachmentTransformRules::SnapToTargetIncludingScale, FName("WeaponSocket_r"));
+	// CurrentWeapon = GetWorld()->SpawnActor<AWeaponBase>(InitialWeapon);
+	// CurrentWeapon->AttachToComponent(PlayerMesh, FAttachmentTransformRules::SnapToTargetIncludingScale, FName("WeaponSocket_r"));
 	
-	EqPrimaryWeapon = CurrentWeapon;
-	EqSecondaryWeapon = CurrentWeapon;
-	PrimaryWeapon.WeaponClass = InitialWeapon;//Here initial weapon is knife(can also be null but for that some code need to be changed)
-	SecondaryWeapon.WeaponClass = InitialWeapon;
+	// EqPrimaryWeapon = CurrentWeapon;
+	// EqSecondaryWeapon = CurrentWeapon;
+	// PrimaryWeapon.WeaponClass = InitialWeapon;//Here initial weapon is knife(can also be null but for that some code need to be changed)
+	// SecondaryWeapon.WeaponClass = InitialWeapon;
 
 	JumpsLeft = MaxJumps;
 	WalkSpeed = CharacterMovement->MaxWalkSpeed;
@@ -1114,6 +1114,10 @@ void APlayerCharacter::PerformADS(float FinalAdsFovValue, float NewVignetteInten
 }
 void APlayerCharacter::Reload()
 {
+	if(!CurrentWeapon)
+	{
+		return;
+	}
 	if(!(CurrentWeapon->CurrentMagAmmo < CurrentWeapon->MagSize) || bIsThrowing)
 	{
 		return;
@@ -1305,7 +1309,7 @@ void APlayerCharacter::EquipPrimaryWeapon()
 {
 	if (WeaponEquippedSlot == 1)
 	{
-		if (!(PrimaryWeapon.WeaponClass->IsChildOf(AKnifeWeapon::StaticClass())))//will not switch to this weapon if its empty(or has knife)
+		if (!(PrimaryWeapon.WeaponClass == nullptr))//will not switch to this weapon if its empty(or has knife)
 		{
 			UE_LOG(LogTemp,Warning,TEXT("Eqiup Primary Weapon call"));
 			WeaponEquippedSlot = 0;
@@ -1318,7 +1322,7 @@ void APlayerCharacter::EquipSecondaryWeapon()
 {
 	if (WeaponEquippedSlot == 0)
 	{
-		if (!(SecondaryWeapon.WeaponClass->IsChildOf(AKnifeWeapon::StaticClass())))
+		if (!(SecondaryWeapon.WeaponClass == nullptr))
 		{
 			UE_LOG(LogTemp,Warning,TEXT("Eqiup Secondary Weapon call"));
 			WeaponEquippedSlot = 1;
@@ -1332,6 +1336,7 @@ void APlayerCharacter::SwitchWeapon(bool bIsPickupWeapon)
 	if (WeaponEquippedSlot == 0)
 	{
 		SetWeaponVars(PrimaryWeapon, true,bIsPickupWeapon);
+
 	}
 
 	else if (WeaponEquippedSlot == 1)
@@ -1358,7 +1363,10 @@ void APlayerCharacter::SetWeaponVars(FWeaponData NewWeaponData, bool bIsPrimaryW
 				UE_LOG(LogTemp,Warning,TEXT("Equipping the primary Weapon"));
 				EqPrimaryWeapon = Cast<AWeaponBase>(PickupHitWeapon);
 				CurrentWeapon = EqPrimaryWeapon;
-				EqSecondaryWeapon->SetActorHiddenInGame(true);
+				if(EqSecondaryWeapon)
+				{
+					EqSecondaryWeapon->SetActorHiddenInGame(true);
+				}
 			}
 			else
 			{
@@ -1366,7 +1374,10 @@ void APlayerCharacter::SetWeaponVars(FWeaponData NewWeaponData, bool bIsPrimaryW
 				UE_LOG(LogTemp,Warning,TEXT("Equipping the secondary Weapon"));
 				EqSecondaryWeapon = Cast<AWeaponBase>(PickupHitWeapon);
 				CurrentWeapon = EqSecondaryWeapon;
-				EqPrimaryWeapon->SetActorHiddenInGame(true);
+				if(EqPrimaryWeapon)
+				{
+					EqPrimaryWeapon->SetActorHiddenInGame(true);
+				}
 
 			}
 		}
@@ -1438,6 +1449,10 @@ void APlayerCharacter::ReEquipAfterGrenade()
 
 void APlayerCharacter::MeleeAttack()
 {
+	if(!CurrentWeapon)
+	{
+		return;
+	}
 	if (!bIsDoingMeleeAttack && !bIsReloading && !bIsADS && !bIsThrowing)
 	{
 		bIsDoingMeleeAttack = true;
@@ -1480,6 +1495,11 @@ FWeaponData APlayerCharacter::GetWeaponData(bool bIsSecondaryWeapon)//function u
 //function used by the save data, here we will spawn the saved gun and then attach it to the player
 void APlayerCharacter::SetWeaponData(bool bIsSecondaryWeapon,FWeaponData WeaponData)
 {
+	if(WeaponData.WeaponClass == nullptr)
+	{
+		UE_LOG(LogTemp,Warning,TEXT("No Weapon Class"));
+		return;
+	}
 	FActorSpawnParameters GunSpawnParams;
 	GunSpawnParams.Owner = this;
 	AWeaponBase* TempWeapon = GetWorld()->SpawnActor<AWeaponBase>(WeaponData.WeaponClass,

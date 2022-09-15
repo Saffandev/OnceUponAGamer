@@ -36,24 +36,42 @@ private:
 protected:
 	UPROPERTY(EditAnywhere)
 	float ExplodeTimer;
+
 	UPROPERTY(EditAnywhere)
 	float DamageRadius;
+
 	UPROPERTY(EditAnywhere)
 	float Damage;
+
 	UPROPERTY(EditAnywhere)
 	UParticleSystem* ExplodeParticle;
+
 	UPROPERTY(EditAnywhere)
 	USoundBase* ExplodeSound;
+
 	UPROPERTY(EditAnywhere)
 	TSubclassOf<UDamageType> ExplosionDamageType;
+
 	UPROPERTY(EditAnywhere)
 	UStaticMeshComponent* ThrowableMesh;
+
 	UPROPERTY(EditAnywhere)
 	TSubclassOf<AThrowableBase> BP_Throwable;
-	class APlayerCharacter* PlayerCharacter;
+
 	UPROPERTY(EditAnywhere)
 	EThrowableName ThrowableName;
 	
+	UPROPERTY(EditAnywhere)
+	TSubclassOf<UCameraShakeBase> CameraShake;
+	
+	UPROPERTY(EditAnywhere)
+	float CameraShakeScale;
+
+	UPROPERTY(EditAnywhere)
+	float ShakeDistance;
+	
+	class APlayerCharacter* PlayerCharacter;
+
 private:
 	uint32 HitCount;
 	FTimerHandle ThrowTimer;

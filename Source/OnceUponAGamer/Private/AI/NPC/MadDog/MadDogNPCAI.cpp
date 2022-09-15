@@ -262,7 +262,7 @@ void AMadDogNPCAI::DeathRituals(bool bIsExplosionDeath)
 	SetCanBeDamaged(false);
 	if(MyEncounterSpace)
 	{
-		MyEncounterSpace->IAMDead();
+		MyEncounterSpace->IAMDead(this);
 	}
 	int timer = GetVelocity().Size() > 10 || bIsExplosionDeath? 0:1;
 	FTimerHandle DeathTimer;

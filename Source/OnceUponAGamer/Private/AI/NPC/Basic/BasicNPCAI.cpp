@@ -178,6 +178,7 @@ void ABasicNPCAI::TakePointDamage(AActor* DamagedActor,float Damage,AController*
 			if(Head)
 			{
 				AActor* SpawnedHead = GetWorld()->SpawnActor<AActor>(Head,GetMesh()->GetSocketLocation(FName("neck_01")),GetMesh()->GetSocketRotation(FName("neck_01")));
+				UGameplayStatics::PlaySoundAtLocation(GetWorld(),HeadShotSound,GetMesh()->GetSocketLocation(FName("neck_01")));
 			}
 		}
 		// if(GetVelocity().Size() < 10.f)
@@ -250,7 +251,7 @@ void ABasicNPCAI::DeathRituals(bool bIsExplosionDeath)
 	StopShooting();
 	FTimerHandle DeathTimer;
 	if(MyEncounterSpace)
-		MyEncounterSpace->IAMDead();
+		MyEncounterSpace->IAMDead(this);
 	else
 		UE_LOG(LogTemp,Warning,TEXT("No Encounter Space"));
 	if(bIsExplosionDeath)
