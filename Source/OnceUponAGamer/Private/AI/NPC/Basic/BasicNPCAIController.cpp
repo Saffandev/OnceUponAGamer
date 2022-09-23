@@ -56,8 +56,8 @@ void ABasicNPCAIController::BeginPlay()
    
     FTimerHandle OwnerAIHandle;
     GetWorld()->GetTimerManager().SetTimer(OwnerAIHandle,this,&ABasicNPCAIController::InitOwner,0.2,false);
-    if(!OwnerAI)
-        UE_LOG(LogTemp,Error,TEXT("No owner Ai "));
+    // if(!OwnerAI)
+    //     UE_LOG(LogTemp,Error,TEXT("No owner Ai "));
     PlayerCharacter = Cast<APlayerCharacter>(UGameplayStatics::GetPlayerCharacter(this,0));
     bIsOwnerAlive = true;
 
@@ -69,7 +69,7 @@ void ABasicNPCAIController::BeginPlay()
 
 void ABasicNPCAIController::InitOwner()
 {
-    UE_LOG(LogTemp,Warning,TEXT("Init Owner-------"));
+    // UE_LOG(LogTemp,Warning,TEXT("Init Owner-------"));
     OwnerAI = Cast<ABasicNPCAI>(GetPawn());
     OwnerAI->MyEncounterSpace = MyEncounterSpace;
     if(OwnerAI && OwnerAI->bCanAutoActivate)
@@ -83,7 +83,7 @@ void ABasicNPCAIController::InitOwner()
 }
 void ABasicNPCAIController::Activate()
 {
-    UE_LOG(LogTemp,Warning,TEXT("Activated"));
+    // UE_LOG(LogTemp,Warning,TEXT("Activated"));
     if(OwnerAI)
     {
         if(BehaviorTree)
@@ -101,16 +101,16 @@ void ABasicNPCAIController::Activate()
             }
         }
         
-        else
-        {
-            UE_LOG(LogTemp,Warning,TEXT("No BehaviorTree"));
-        }
+        // else
+        // {
+        //     UE_LOG(LogTemp,Warning,TEXT("No BehaviorTree"));
+        // }
     
     }
-    else
-    {
-        UE_LOG(LogTemp,Warning,TEXT("No Owner"));
-    }
+    // else
+    // {
+    //     UE_LOG(LogTemp,Warning,TEXT("No Owner"));
+    // }
    
 
     
@@ -136,7 +136,7 @@ void ABasicNPCAIController::OnPerceptionUpdated(TArray<AActor*>const& SensedActo
     }
     if(AIPerceptionComponent && Blackboard)
     {
-        UE_LOG(LogTemp,Warning,TEXT("%i"),SensedActors.Num());
+        // UE_LOG(LogTemp,Warning,TEXT("%i"),SensedActors.Num());
         for(AActor* SensedActor:SensedActors)
         {
         if(SensedActor)
@@ -160,14 +160,14 @@ void ABasicNPCAIController::OnPerceptionUpdated(TArray<AActor*>const& SensedActo
                                 //sight sense
                                 if(!SightSense)
                                 {
-                                    UE_LOG(LogTemp,Error,TEXT("No Sight Sense"));
+                                    // UE_LOG(LogTemp,Error,TEXT("No Sight Sense"));
                                     return;
                                 }
                                 if(UKismetMathLibrary::EqualEqual_ObjectObject(SensedClass,UAISense_Sight::StaticClass()))
                                 {
                                     Blackboard->SetValueAsBool(FName("bCanSeePlayer"),true);
                                     Blackboard->SetValueAsBool(FName("bIsPlayerVisible"),true);
-                                    UE_LOG(LogTemp,Warning,TEXT("PlayerSpotted"));
+                                    // UE_LOG(LogTemp,Warning,TEXT("PlayerSpotted"));
                                     Blackboard->SetValueAsVector(FName("PlayerLocation"),EnemyTarget->GetActorLocation());
                                     Blackboard->SetValueAsVector(FName("PlayerLastKnownLocation"),EnemyTarget->GetActorLocation());   
                                     if(MyEncounterSpace)
@@ -193,7 +193,7 @@ void ABasicNPCAIController::OnPerceptionUpdated(TArray<AActor*>const& SensedActo
 
                                 else
                                 {
-                                    UE_LOG(LogTemp,Warning,TEXT("No sense sensed"));
+                                    // UE_LOG(LogTemp,Warning,TEXT("No sense sensed"));
                                 }
                             }
                             
@@ -226,7 +226,7 @@ void ABasicNPCAIController::CoverRequest()
             ACover* TempCover = Cast<ACover>(TempCoverActor);
             if(TempCover == nullptr)
             {
-                UE_LOG(LogTemp,Warning,TEXT("No Temp Cover"));
+                // UE_LOG(LogTemp,Warning,TEXT("No Temp Cover"));
                 continue;
             }
             else if(TempCover->bIsAcquired)
@@ -276,9 +276,9 @@ void ABasicNPCAIController::CoverRequest()
     {
         if(!OwnerAI)
         {
-            UE_LOG(LogTemp,Warning,TEXT("No Owner"));
+            // UE_LOG(LogTemp,Warning,TEXT("No Owner"));
         }
-        UE_LOG(LogTemp,Error,TEXT("No Encounter space"));
+        // UE_LOG(LogTemp,Error,TEXT("No Encounter space"));
 
     }
     return;

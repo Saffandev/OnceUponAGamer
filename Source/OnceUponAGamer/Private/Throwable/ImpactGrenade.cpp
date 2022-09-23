@@ -5,6 +5,6 @@
 
 void AImpactGrenade::PickupWeapon()
 {
-    UE_LOG(LogTemp,Warning,TEXT("Inside the throwable"));
+    // UE_LOG(LogTemp,Warning,TEXT("Inside the throwable"));
     SetupPickupThrowable(BP_Throwable);
 }

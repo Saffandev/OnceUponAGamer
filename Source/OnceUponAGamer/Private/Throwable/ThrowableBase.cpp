@@ -21,12 +21,12 @@ AThrowableBase::AThrowableBase()
 void AThrowableBase::BeginPlay()
 {
 	Super::BeginPlay();
-	UE_LOG(LogTemp,Warning,TEXT("ThrowableSpawned"));
+	// UE_LOG(LogTemp,Warning,TEXT("ThrowableSpawned"));
 	ThrowableMesh->OnComponentHit.AddDynamic(this,&AThrowableBase::OnHit);
 	ThrowableMesh->SetSimulatePhysics(true);
 	if(GetOwner())
 	{
-		UE_LOG(LogTemp,Warning,TEXT("Owner of the throwable"));
+		// UE_LOG(LogTemp,Warning,TEXT("Owner of the throwable"));
 		ThrowableMesh->SetCollisionResponseToChannel(ECollisionChannel::ECC_Visibility,ECollisionResponse::ECR_Ignore);
 		ThrowableMesh->SetCollisionObjectType(ECollisionChannel::ECC_WorldStatic);
 		ThrowableMesh->SetSimulatePhysics(false);
@@ -161,15 +161,15 @@ void AThrowableBase::Explode()
 											  SeekClass,
 											  ActorsToIgnore,
 											  OverlappedActors);
-	UE_LOG(LogTemp,Warning,TEXT("%i"),OverlappedActors.Num());
+	// UE_LOG(LogTemp,Warning,TEXT("%i"),OverlappedActors.Num());
 	// UE_LOG(LogTemp,Warning,TEXT("Overlap object type count %i"),OverlapActorObjectType.Num());
 
 	if(PlayerCharacter)
 	{
 		float Distance = this->GetDistanceTo(PlayerCharacter);
-		UE_LOG(LogTemp,Warning,TEXT("Grenade Distance %f"),Distance);
+		// UE_LOG(LogTemp,Warning,TEXT("Grenade Distance %f"),Distance);
 		float CameraShakeValue = (1 - Distance/ShakeDistance) * CameraShakeScale;
-		UE_LOG(LogTemp,Warning,TEXT("Camera shake value %f"),CameraShakeValue);
+		// UE_LOG(LogTemp,Warning,TEXT("Camera shake value %f"),CameraShakeValue);
 		PlayerCharacter->PlayCameraShake(CameraShake,CameraShakeValue);
 	}
 	for(AActor* HitActor:OverlappedActors)

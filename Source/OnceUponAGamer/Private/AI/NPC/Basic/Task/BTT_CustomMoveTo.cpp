@@ -31,7 +31,7 @@ EBTNodeResult::Type UBTT_CustomMoveTo::ExecuteTask(UBehaviorTreeComponent &Owner
     FNavLocation NavLocation;
     if(!UNavigationSystemV1::GetCurrent(GetWorld())->ProjectPointToNavigation(MoveLocation,NavLocation))
     {
-        UE_LOG(LogTemp,Warning,TEXT("MOveToFailed"));
+        // UE_LOG(LogTemp,Warning,TEXT("MOveToFailed"));
         return EBTNodeResult::Succeeded;
     }
     

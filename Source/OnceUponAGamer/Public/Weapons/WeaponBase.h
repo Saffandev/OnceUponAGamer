@@ -30,6 +30,7 @@ public:
 	void DropGun();
 	void SetCanShoot(bool bLCanShoot);
 
+
 protected:
 	virtual void BeginPlay() override;
 	virtual void Recoil();
@@ -136,6 +137,8 @@ protected:
 	UMaterialInterface* MetalHitDecal;
 	UPROPERTY(EditAnywhere,Category = "Weapon Hit Visuals")
 	UMaterialInterface* StoneHitDecal;
+	UPROPERTY(EditAnywhere,Category = "Weapon Hit Visuals")
+	UParticleSystem* TrailsFX;
 	
 private:
 	FTimerHandle ShootingTimerHandle;
@@ -172,6 +175,8 @@ public:
 	UPROPERTY(EditAnywhere,Category = "Weapon Vars")
 	bool bIsWeaponShootable;
 
+	UPROPERTY(EditAnywhere,Category = "Weapon Vars")
+	int32 PickupAmmoCount;
 	bool bIsPrimaryWeapon;
 	bool bIsPlayerHoldingTheWeapon;
 

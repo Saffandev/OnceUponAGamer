@@ -13,7 +13,7 @@ UBTT_CoverPointTest::UBTT_CoverPointTest()
 EBTNodeResult::Type UBTT_CoverPointTest::ExecuteTask(UBehaviorTreeComponent &OwnerComp,uint8* NodeMemory)
 {
     ABasicNPCAIController* OwnerController = Cast<ABasicNPCAIController>(OwnerComp.GetOwner());
-    UE_LOG(LogTemp,Display,TEXT("Cover Request Called"));
+    // UE_LOG(LogTemp,Display,TEXT("Cover Request Called"));
     if(OwnerController != nullptr)
     {
         OwnerController->CoverRequest();

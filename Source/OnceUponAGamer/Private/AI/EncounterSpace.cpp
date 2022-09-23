@@ -45,7 +45,7 @@ if(AIBp)
 			ABasicNPCAIController* TempController = Cast<ABasicNPCAIController>(tempActor->GetInstigatorController());
 			if(TempController)
 			{
-				UE_LOG(LogTemp,Warning,TEXT("Encounter Space added ---------------"));
+				// UE_LOG(LogTemp,Warning,TEXT("Encounter Space added ---------------"));
 				TempController->MyEncounterSpace = this;
 				OverlappedAIControllers.Add(TempController);
 			}
@@ -66,7 +66,7 @@ void AEncounterSpace::AddAI(ACharacter* AI)
 		OverlappedAI.Add(AI);
 		OverlappedAIControllers.Add(TempController);
 		TempController->MyEncounterSpace = this;
-		UE_LOG(LogTemp,Warning,TEXT("AI added"));
+		// UE_LOG(LogTemp,Warning,TEXT("AI added"));
 	}
 }
 
@@ -103,7 +103,7 @@ bool AEncounterSpace::IsPlayerVisibleToAnyone()
 	{
 		if(TempController && TempController->GetBlackboardComponent())
 		{
-			UE_LOG(LogTemp,Warning,TEXT("Controller Name : %s"),*TempController->GetName());
+			// UE_LOG(LogTemp,Warning,TEXT("Controller Name : %s"),*TempController->GetName());
 			if(TempController->GetBlackboardComponent()->GetValueAsBool(FName("bIsPlayerVisible")))
 			{
 				return true;
@@ -192,10 +192,10 @@ void AEncounterSpace::AssingInvestigation(FVector SuspectLocation)
 			ClosestController->GetBlackboardComponent()->SetValueAsBool("bIsSomeoneDoingInvestigation",true);
 		}
 	}
-	else
-	{
-		UE_LOG(LogTemp,Warning,TEXT("Null closest actor"));
-	}
+	// else
+	// {
+	// 	// UE_LOG(LogTemp,Warning,TEXT("Null closest actor"));
+	// }
 	tempDistance = 5000;
 }
 
@@ -216,7 +216,7 @@ void AEncounterSpace::MoveBackToPatrol()
 	{
 		TempController->GetBlackboardComponent()->SetValueAsBool(FName("bCanSeePlayer"),false);
 		TempController->GetBlackboardComponent()->SetValueAsBool(FName("bCanInvestigate"),false);
-		UE_LOG(LogTemp,Error,TEXT("Move Back To Patrolling Called"));
+		// UE_LOG(LogTemp,Error,TEXT("Move Back To Patrolling Called"));
 		TempController->ToggleSightSense();
 	}
 
@@ -226,8 +226,8 @@ void AEncounterSpace::IAMDead( ACharacter* DeadAI)
 {
 	NoOfAiAlive--;
 	// SomeoneIsDead();
-	UE_LOG(LogTemp,Warning,TEXT("Dead controller %s"),*DeadAI->GetInstigatorController()->GetName());
-	UE_LOG(LogTemp,Warning,TEXT("Ai count = %i"),NoOfAiAlive);
+	// UE_LOG(LogTemp,Warning,TEXT("Dead controller %s"),*DeadAI->GetInstigatorController()->GetName());
+	// UE_LOG(LogTemp,Warning,TEXT("Ai count = %i"),NoOfAiAlive);
 	ABasicNPCAIController* DeadController = Cast<ABasicNPCAIController>(DeadAI->GetInstigatorController());
 	if(DeadController)
 	{

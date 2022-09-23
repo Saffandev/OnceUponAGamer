@@ -14,10 +14,10 @@ void AAIShotGun::BeginPlay()
 }
 void AAIShotGun::ShootingInAction()
 {
-    UE_LOG(LogTemp,Warning,TEXT("Shooting"));
+    // UE_LOG(LogTemp,Warning,TEXT("Shooting"));
     if(GetOwner() == nullptr)
 	{
-		UE_LOG(LogTemp,Warning,TEXT("No Owner"));
+		// UE_LOG(LogTemp,Warning,TEXT("No Owner"));
 		return;
 	}
 	ShootingInActionContinues();
@@ -71,7 +71,7 @@ void AAIShotGun::ShootingInActionContinues()
 
 		if(OwnerMesh && CharacterShootMontage)
 		{
-			UE_LOG(LogTemp,Warning,TEXT("Inside the owner shooting condition"));
+			// UE_LOG(LogTemp,Warning,TEXT("Inside the owner shooting condition"));
 			OwnerMesh->GetAnimInstance()->Montage_Play(CharacterShootMontage);
 		}
 		CurrentAmmo--;
@@ -79,13 +79,13 @@ void AAIShotGun::ShootingInActionContinues()
 
 	if (AbilityTimer.IsValid() && CurrentAbilityBulletCount <= 0)
 		{
-			UE_LOG(LogTemp,Error,TEXT("Ability Count 0"));
+			// UE_LOG(LogTemp,Error,TEXT("Ability Count 0"));
 			GetWorld()->GetTimerManager().ClearTimer(AbilityTimer);
 		}
 }
 void AAIShotGun::ReleaseAbility()
 {
-			UE_LOG(LogTemp,Warning,TEXT("ReleaseAbility Called"));
+			// UE_LOG(LogTemp,Warning,TEXT("ReleaseAbility Called"));
 	CurrentAbilityBulletCount = AbilityBulletCount;
 	if(CurrentAbilityBulletCount > 0)
 	{

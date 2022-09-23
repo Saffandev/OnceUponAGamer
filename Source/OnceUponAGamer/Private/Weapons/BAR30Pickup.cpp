@@ -6,5 +6,5 @@
 void ABAR30Pickup::PickupWeapon() 
 {
     PickupWeaponSetup(WeaponName, WeaponClass, PickupBP, TotalAmmo, MaxAmmo, MagSize, CurrentMagAmmo, FireRate);
-    UE_LOG(LogTemp,Warning,TEXT("Pickup weapon"));
+    // UE_LOG(LogTemp,Warning,TEXT("Pickup weapon"));
 }

@@ -77,7 +77,7 @@ void ABasicNPCAI::OnOverlap(UPrimitiveComponent* OverlappedComp,AActor* OtherAct
 		MyEncounterSpace = Cast<AEncounterSpace>(OtherActor);
 		if(MyEncounterSpace)
 		{
-			UE_LOG(LogTemp,Warning,TEXT("Encounterspace overlappaed"));
+			// UE_LOG(LogTemp,Warning,TEXT("Encounterspace overlappaed"));
 			MyEncounterSpace->AddAI(this);
 			
 		}
@@ -147,7 +147,7 @@ void ABasicNPCAI::CanTakeCover(bool bCanTakeCover)
 
 void ABasicNPCAI::TakePointDamage(AActor* DamagedActor,float Damage,AController* InstigatedBy, FVector HitLocation,UPrimitiveComponent* HitComp,FName BoneName,FVector ShotDirection,const UDamageType* DamageType,AActor* DamageCauser)
 {
-	UE_LOG(LogTemp,Warning,TEXT("Damage Taken %f"),Damage);
+	// UE_LOG(LogTemp,Warning,TEXT("Damage Taken %f"),Damage);
 	Health -= Damage;
 	UGameplayStatics::SpawnEmitterAtLocation(GetWorld(),HitParticle,HitLocation);
 	UGameplayStatics::PlaySoundAtLocation(GetWorld(),HitSound,HitLocation);
@@ -246,14 +246,14 @@ void ABasicNPCAI::DeathRituals(bool bIsExplosionDeath)
 	{
 		GetWorld()->SpawnActor<AWeaponBase>(GunDrop,GetMesh()->GetSocketLocation(FName("Weapon")),GetMesh()->GetSocketRotation(FName()));
 	}
-	UE_LOG(LogTemp,Error,TEXT("I am deaddddddd"));
+	// UE_LOG(LogTemp,Error,TEXT("I am deaddddddd"));
 	bIsDead = true;
 	StopShooting();
 	FTimerHandle DeathTimer;
 	if(MyEncounterSpace)
 		MyEncounterSpace->IAMDead(this);
-	else
-		UE_LOG(LogTemp,Warning,TEXT("No Encounter Space"));
+	// else
+	// 	UE_LOG(LogTemp,Warning,TEXT("No Encounter Space"));
 	if(bIsExplosionDeath)
 	{
 		GetMesh()->SetSimulatePhysics(true);

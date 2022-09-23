@@ -18,10 +18,10 @@ EBTNodeResult::Type UBTT_AttackMadDog::ExecuteTask(UBehaviorTreeComponent &Owner
     OwnerComp.GetAIOwner()->StopMovement();
     OwnerComp.GetAIOwner()->SetFocus(UGameplayStatics::GetPlayerPawn(OwnerPawn,0)); 
     OwnerPawn->bCanThrowHand = bIsThisThrowHandTask;
-    if(bIsThisThrowHandTask)
-    {
-        UE_LOG(LogTemp,Error,TEXT("------------------------------Throw hand task"));
-    }
+    // if(bIsThisThrowHandTask)
+    // {
+    //     // UE_LOG(LogTemp,Error,TEXT("------------------------------Throw hand task"));
+    // }
     OwnerComp.GetBlackboardComponent()->SetValueAsBool(BB_bIsHoldingHand.SelectedKeyName,!bIsThisThrowHandTask);
 
     if(OwnerPawn)
@@ -61,7 +61,7 @@ void UBTT_AttackMadDog::TickTask(UBehaviorTreeComponent &OwnerComp,uint8 *NodeMe
         UBehaviorTreeComponent &Tree = OwnerComp;
         // FTimerDelegate AttackDelegate;
         // AttackDelegate.BindUFunction(this,FName("AttackEnded"),Tree);
-        UE_LOG(LogTemp,Error,TEXT("Attack Time %f"),AttackTime);
+        // UE_LOG(LogTemp,Error,TEXT("Attack Time %f"),AttackTime);
         if(!GetWorld()->GetTimerManager().TimerExists(EndHandle))
         {
         GetWorld()->GetTimerManager().SetTimer(EndHandle,[&](){OwnerComp.GetBlackboardComponent()->SetValueAsBool(BB_bCanThrowHand.SelectedKeyName,!bIsThisThrowHandTask);

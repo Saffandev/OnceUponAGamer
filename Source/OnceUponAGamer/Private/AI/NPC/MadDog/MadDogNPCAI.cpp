@@ -111,7 +111,7 @@ void AMadDogNPCAI::BeginOverlap(UPrimitiveComponent* OverlappedComponent, AActor
 		MyEncounterSpace = Cast<AEncounterSpace>(OtherActor);
 		if(MyEncounterSpace)
 		{
-			UE_LOG(LogTemp,Warning,TEXT("Overlapped the encounter space-------------------------"));
+			// UE_LOG(LogTemp,Warning,TEXT("Overlapped the encounter space-------------------------"));
 			MyEncounterSpace->AddAI(this);
 		}
 	}	
@@ -193,7 +193,7 @@ void AMadDogNPCAI::TakePointDamage(AActor* DamagedActor,float Damage,AController
 	else
 	{
 		Health -= Damage;
-		UE_LOG(LogTemp,Error,TEXT("Health = %f"),Health);
+		// UE_LOG(LogTemp,Error,TEXT("Health = %f"),Health);
 		//Shield Damage visuals
 		// body hit visuals
 		//

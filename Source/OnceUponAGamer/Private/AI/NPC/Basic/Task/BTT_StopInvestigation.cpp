@@ -16,7 +16,7 @@ EBTNodeResult::Type UBTT_StopInvestigation::ExecuteTask(UBehaviorTreeComponent &
     ABasicNPCAIController* OwnerController = Cast<ABasicNPCAIController>(OwnerComp.GetOwner());
     if(OwnerController)
     {
-        UE_LOG(LogTemp,Error,TEXT("Inside of Stop Investigating"));
+        // UE_LOG(LogTemp,Error,TEXT("Inside of Stop Investigating"));
         OwnerController->GetBlackboardComponent()->SetValueAsBool("bIsSomeoneDoingInvestigation",false);
     //    OwnerController->MyEncounterSpace->MoveBackToPatrol();
     }

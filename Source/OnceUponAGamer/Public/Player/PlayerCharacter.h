@@ -50,7 +50,6 @@ USTRUCT(BlueprintType)
 		int32 TotalAmmo;
 		UPROPERTY(VisibleAnywhere,BlueprintReadOnly)
 		int32 CurrentMagAmmo;
-		//remove below vars
 	};
 
 USTRUCT(BlueprintType)
@@ -70,9 +69,6 @@ class ONCEUPONAGAMER_API APlayerCharacter : public ACharacter
 {
 	GENERATED_BODY()
 
-private:
-	//============================================Structs=======================================//
-
 public:
 	APlayerCharacter();
 	virtual void Tick(float DeltaTime) override;
@@ -87,6 +83,7 @@ public:
 	{
 		return bIsWallRunning;
 	}
+	
 	//================================Weapons=============================//
 	bool IsADSButtonDown();
 	void ADSON();
@@ -118,11 +115,19 @@ public:
 	void HealShield(float ShieldHeal);
 	void RegainShield();
 	
+	UFUNCTION(BlueprintImplementableEvent)
+	void HitMarker();
+	UFUNCTION(BlueprintImplementableEvent)
+	void DamageMarker(AActor* DamageCauser);
+	UFUNCTION(BlueprintImplementableEvent)
+	void Dead();
+	
 protected:
 	virtual void BeginPlay() override;
 	// void OnConstruction(const FTransform &Transform) override;
 				 
 private:
+
 	//======================================== Movement=========================================//
 	void MoveForward(float AxisValue);
 	void MoveRight(float AxisValue);
@@ -350,11 +355,13 @@ private:
 	float HandSwayRotationValue;
 	UPROPERTY(EditAnywhere,Category = "Movement")
 	float SwaySpeed;
+	UPROPERTY(EditAnywhere,Category = "Movement")
+	USoundBase* DeathSound;
 	int32 JumpsLeft;
 	UPROPERTY(VisibleAnywhere,BlueprintReadOnly,Category = "Movement",meta = (AllowPrivateAccess = "true"))
 	EMovementType CurrentMovementType;//used for driving animation in anim bp
 	FVector SlideDirection;
-
+	
 	
 	// UPROPERTY(EditAnywhere)
 	// class USplineComponent* PredictionSpline;

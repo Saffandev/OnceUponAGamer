@@ -32,7 +32,7 @@ EBTNodeResult::Type UBTT_Shooting::ExecuteTask(UBehaviorTreeComponent &OwnerComp
             OwnerComp.GetAIOwner()->SetFocus(UGameplayStatics::GetPlayerPawn(this,0));
             bIsDoingMeleeAttack = true;
             bNotifyTick = true;
-            UE_LOG(LogTemp,Display,TEXT("Melee Attacking"));
+            // UE_LOG(LogTemp,Display,TEXT("Melee Attacking"));
             return EBTNodeResult::InProgress;
         }
         else
@@ -43,7 +43,7 @@ EBTNodeResult::Type UBTT_Shooting::ExecuteTask(UBehaviorTreeComponent &OwnerComp
     }
     else 
     {
-        UE_LOG(LogTemp,Warning,TEXT("No Action Interface"));
+        // UE_LOG(LogTemp,Warning,TEXT("No Action Interface"));
     }
     return EBTNodeResult::Succeeded;
 
@@ -53,9 +53,8 @@ void UBTT_Shooting::TickTask(UBehaviorTreeComponent& OwnerComp, uint8* NodeMemor
 {
     if(!bIsDoingMeleeAttack)
     {
-        UE_LOG(LogTemp,Error,TEXT("%f"),AttackTime);
+        // UE_LOG(LogTemp,Error,TEXT("%f"),AttackTime);
         GetWorld()->GetTimerManager().SetTimer(MeleeTimerHandle,[&](){bIsDoingMeleeAttack = false;
-                                                                      UE_LOG(LogTemp,Error,TEXT("Inside the lambda of melee"));
                                                                       FinishLatentTask(OwnerComp,EBTNodeResult::Succeeded);
                                                                       },
                                                                       0.1,

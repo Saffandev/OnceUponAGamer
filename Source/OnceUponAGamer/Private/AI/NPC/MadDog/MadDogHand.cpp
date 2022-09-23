@@ -40,7 +40,7 @@ void AMadDogHand::Tick(float DeltaTime)
 	Super::Tick(DeltaTime);
 	if(OwnerAI)
 	{
-		UE_LOG(LogTemp,Warning,TEXT("Inside the tick of the hand"));
+		// UE_LOG(LogTemp,Warning,TEXT("Inside the tick of the hand"));
 		FTransform WeaponSocketTransform = OwnerAI->GetMesh()->GetSocketTransform(FName("MeleeWeapon"));
 		SetActorTransform(UKismetMathLibrary::TInterpTo(GetActorTransform(),WeaponSocketTransform,DeltaTime,10));
 		if(WeaponSocketTransform.GetLocation().Equals(GetActorLocation(),20))
@@ -53,7 +53,7 @@ void AMadDogHand::Tick(float DeltaTime)
 
 	else
 	{
-		UE_LOG(LogTemp,Warning,TEXT("no owner"));
+		// UE_LOG(LogTemp,Warning,TEXT("no owner"));
 	}
 }
 
@@ -62,7 +62,7 @@ void AMadDogHand::BeginOverlap(UPrimitiveComponent* OverlappedComponent, AActor*
 	
 	if(OtherActor == UGameplayStatics::GetPlayerPawn(this,0))
 	{
-		UE_LOG(LogTemp,Warning,TEXT("Player Hitted"));
+		// UE_LOG(LogTemp,Warning,TEXT("Player Hitted"));
 		if(GetOwner() && !bDamageGiven)
 		{
 			UGameplayStatics::ApplyPointDamage(OtherActor,
@@ -80,7 +80,7 @@ void AMadDogHand::BeginOverlap(UPrimitiveComponent* OverlappedComponent, AActor*
 
 void AMadDogHand::HandRecallInAction()
 {
-	UE_LOG(LogTemp,Warning,TEXT("Recall hand inside the hand"));
+	// UE_LOG(LogTemp,Warning,TEXT("Recall hand inside the hand"));
 	HandMesh->SetSimulatePhysics(false);
 	HandMesh->SetCollisionEnabled(ECollisionEnabled::NoCollision);
 	HandMesh->SetLinearDamping(1.f);

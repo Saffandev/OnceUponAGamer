@@ -227,10 +227,12 @@ void APlayerCharacter::OnHit(UPrimitiveComponent *HitComponent, AActor *OtherAct
 void APlayerCharacter::TakeAnyDamage(AActor* DamagedActor,float Damage,const UDamageType* DamageType,AController* InstigatedBy, AActor* DamageCauser)
 {
 	TakeDamage(Damage);
+	DamageMarker(DamageCauser);
 }
 
 void APlayerCharacter::TakePointDamage(AActor* DamagedActor,float Damage,AController* InstigatedBy, FVector HitLocation,UPrimitiveComponent* HitComp,FName BoneName,FVector ShotDirection,const UDamageType* DamageType,AActor* DamageCauser)
 {
+	DamageMarker(DamageCauser);
 	TakeDamage(Damage);
 }
 
@@ -252,7 +254,11 @@ void APlayerCharacter::TakeDamage(float Damage)
 			if(CurrentHealth <= 0)
 			{
 				CurrentHealth = 0;
-				DisablePlayerInput();	
+				DisablePlayerInput();
+				Dead();
+				// UGameplayStatics::PlaySoundAtLocation(this,DeathSound,GetActorLocation());
+
+				// UGameplayStatics::OpenLevel(this,FName("MainLevel1"));
 			}
 		}
 		else
@@ -471,7 +477,7 @@ void APlayerCharacter::WallRunInAction()
 {
 	if (bCanEndWallRun)
 	{
-		UE_LOG(LogTemp, Warning, TEXT("Delay timer runs out"));
+		// UE_LOG(LogTemp, Warning, TEXT("Delay timer runs out"));
 		EndWallRun(EWallRunEndReason::EWRER_FallOfWall); // End wallrun(fall of wall)
 	}
 	UpdateWallRun();
@@ -481,7 +487,7 @@ void APlayerCharacter::WallRunOutOfAction()
 {
 	if (bIsWallRunning)
 	{
-		UE_LOG(LogTemp, Warning, TEXT("Timeline finished"));
+		// UE_LOG(LogTemp, Warning, TEXT("Timeline finished"));
 		EndWallRun(EWallRunEndReason::EWRER_FallOfWall);
 	}
 }
@@ -490,7 +496,7 @@ void APlayerCharacter::UpdateWallRun()
 {
 	if (!(ForwardAxis > 0 && UKismetMathLibrary::VSize(GetVelocity()) > 100.f))//will stop the wall run if player release the forward input key or got stuck onto something
 	{
-		UE_LOG(LogTemp, Warning, TEXT("Required keys not down || Got Stuck with something"));
+		// UE_LOG(LogTemp, Warning, TEXT("Required keys not down || Got Stuck with something"));
 		EndWallRun(EWallRunEndReason::EWRER_FallOfWall); // End wallrun Fall of from wall
 		return;//we don't want below code if the condition satisfies
 	}
@@ -514,7 +520,7 @@ void APlayerCharacter::UpdateWallRun()
 															true);//using sphere trace so ingore small gaps between walls
 	if (!bIsWallHit)
 	{
-		UE_LOG(LogTemp, Warning, TEXT("No wall hit"));
+		// UE_LOG(LogTemp, Warning, TEXT("No wall hit"));
 		EndWallRun(EWallRunEndReason::EWRER_FallOfWall); // end wall run fall of from wall
 		return;
 	}
@@ -525,7 +531,7 @@ void APlayerCharacter::UpdateWallRun()
 										 : EWallRunDirection::EWRD_Left;
 	if (LWallRunSide != WallRunSide)
 	{
-		UE_LOG(LogTemp, Warning, TEXT("Wall run side not equal"));
+		// UE_LOG(LogTemp, Warning, TEXT("Wall run side not equal"));
 		EndWallRun(EWallRunEndReason::EWRER_FallOfWall); // end wall run fall of from wall
 		return;
 	}
@@ -538,7 +544,7 @@ void APlayerCharacter::UpdateWallRun()
 
 void APlayerCharacter::EndWallRun(EWallRunEndReason WallRunEndReason)
 {
-	UE_LOG(LogTemp, Warning, TEXT("End wall run"));
+	// UE_LOG(LogTemp, Warning, TEXT("End wall run"));
 	bIsWallRunning = false;
 	SetMovementSpeed(EMovementType::EMT_Walking);
 	JumpsLeft = (WallRunEndReason == EWallRunEndReason::EWRER_FallOfWall) ? 1 : MaxJumps;
@@ -750,7 +756,7 @@ void APlayerCharacter::Crouch()//right now its a toggle funciton,
 		bIsCrouched = false;
 		SlideTimeline.Stop();
 		CrouchTimeline.Reverse();
-		UE_LOG(LogTemp, Warning, TEXT("Uncrouch"));
+		// UE_LOG(LogTemp, Warning, TEXT("Uncrouch"));
 		if (bIsSprintKeyDown)
 		{
 			Sprint();
@@ -810,7 +816,7 @@ bool APlayerCharacter::CanUncrouch(float CapsuleHeightAlpha) const
 
 void APlayerCharacter::Slide(FVector LSlideDirection, FString Caller)
 {
-	UE_LOG(LogTemp, Warning, TEXT("Caller = %s"), *Caller);//just for testing by whome this function is getting called
+	// UE_LOG(LogTemp, Warning, TEXT("Caller = %s"), *Caller);//just for testing by whome this function is getting called
 	if (LSlideDirection == FVector::ZeroVector)
 	{
 		return;
@@ -833,7 +839,7 @@ void APlayerCharacter::PerformSlide()
 	{
 		SlideTimeline.Stop();
 		SetMovementSpeed(EMovementType::EMT_Crouching);
-		UE_LOG(LogTemp, Warning, TEXT("Sliding stopped due to 0 velocity"));
+		// UE_LOG(LogTemp, Warning, TEXT("Sliding stopped due to 0 velocity"));
 	}
 }
 
@@ -1024,7 +1030,7 @@ void APlayerCharacter::Shoot()
 {
 	if (CurrentWeapon == nullptr)
 	{
-		UE_LOG(LogTemp, Warning, TEXT("NO weapon base reference"));
+		// UE_LOG(LogTemp, Warning, TEXT("NO weapon base reference"));
 		return;
 	}
 	CurrentWeapon->Shoot();
@@ -1034,7 +1040,7 @@ void APlayerCharacter::StopShooting()
 {
 	if (CurrentWeapon == nullptr)
 	{
-		UE_LOG(LogTemp, Warning, TEXT("NO weapon base reference"));
+		// UE_LOG(LogTemp, Warning, TEXT("NO weapon base reference"));
 		return;
 	}
 	CurrentWeapon->StopShooting();
@@ -1193,14 +1199,14 @@ void APlayerCharacter::PickupInAction()
 
 			else
 			{
-				UE_LOG(LogTemp, Warning, TEXT("Pickup weapon has no interface"));
+				// UE_LOG(LogTemp, Warning, TEXT("Pickup weapon has no interface"));
 				PickupWeaponName = EWeaponName::EWN_None;
 			}
 		}
-		else
-		{
-			UE_LOG(LogTemp, Warning, TEXT("PickupWeaponNull"));
-		}
+		// else
+		// {
+			// UE_LOG(LogTemp, Warning, TEXT("PickupWeaponNull"));
+		// }
 	}
 	else
 	{
@@ -1230,12 +1236,16 @@ void APlayerCharacter::PickupGun(AActor* HitActor)
 		{
 			if (PrimaryWeapon.TotalAmmo < PrimaryWeapon.MaxAmmo)//will shift this function to the weaponBase to give different weapons different ammo
 			{
-				PrimaryWeapon.TotalAmmo = FMath::Min(PrimaryWeapon.TotalAmmo + 30, PrimaryWeapon.MaxAmmo);
+				if(!EqPrimaryWeapon)
+				{
+					return;
+				}
+				PrimaryWeapon.TotalAmmo = FMath::Min(PrimaryWeapon.TotalAmmo + EqPrimaryWeapon->PickupAmmoCount, PrimaryWeapon.MaxAmmo);
 				if(GunPickupSound)
 				{
 					UGameplayStatics::PlaySound2D(this,GunPickupSound);
 				}
-				CurrentWeapon->TotalAmmo = PrimaryWeapon.TotalAmmo;
+				EqPrimaryWeapon->TotalAmmo = PrimaryWeapon.TotalAmmo;
 				HitActor->Destroy();
 			}
 		}
@@ -1243,12 +1253,16 @@ void APlayerCharacter::PickupGun(AActor* HitActor)
 		{
 			if (SecondaryWeapon.TotalAmmo < SecondaryWeapon.MaxAmmo)
 			{
-				SecondaryWeapon.TotalAmmo = FMath::Min((SecondaryWeapon.TotalAmmo + 30), SecondaryWeapon.MaxAmmo);
+				if(!EqSecondaryWeapon)
+				{
+					return;
+				}
+				SecondaryWeapon.TotalAmmo = FMath::Min((SecondaryWeapon.TotalAmmo + EqSecondaryWeapon->PickupAmmoCount), SecondaryWeapon.MaxAmmo);
 				if(GunPickupSound)
 				{
 					UGameplayStatics::PlaySound2D(this,GunPickupSound);
 				}
-				CurrentWeapon->TotalAmmo = SecondaryWeapon.TotalAmmo;
+				EqSecondaryWeapon->TotalAmmo = SecondaryWeapon.TotalAmmo;
 				HitActor->Destroy();
 			}
 		}
@@ -1311,7 +1325,7 @@ void APlayerCharacter::EquipPrimaryWeapon()
 	{
 		if (!(PrimaryWeapon.WeaponClass == nullptr))//will not switch to this weapon if its empty(or has knife)
 		{
-			UE_LOG(LogTemp,Warning,TEXT("Eqiup Primary Weapon call"));
+			// UE_LOG(LogTemp,Warning,TEXT("Eqiup Primary Weapon call"));
 			WeaponEquippedSlot = 0;
 			SwitchWeapon(false);
 		}
@@ -1324,7 +1338,7 @@ void APlayerCharacter::EquipSecondaryWeapon()
 	{
 		if (!(SecondaryWeapon.WeaponClass == nullptr))
 		{
-			UE_LOG(LogTemp,Warning,TEXT("Eqiup Secondary Weapon call"));
+			// UE_LOG(LogTemp,Warning,TEXT("Eqiup Secondary Weapon call"));
 			WeaponEquippedSlot = 1;
 			SwitchWeapon(false);
 		}
@@ -1347,7 +1361,7 @@ void APlayerCharacter::SwitchWeapon(bool bIsPickupWeapon)
 
 void APlayerCharacter::SetWeaponVars(FWeaponData NewWeaponData, bool bIsPrimaryWeapon,bool bIsPickupWeapon)//function called by the weapon base when picking the weapon 
 {
-	UE_LOG(LogTemp,Warning,TEXT("Setting weapon vars for %i"),bIsPrimaryWeapon);
+	// UE_LOG(LogTemp,Warning,TEXT("Setting weapon vars for %i"),bIsPrimaryWeapon);
 	if (NewWeaponData.WeaponClass != nullptr)
 	{
 		/*this check is here to check if we are manually switch the weapon(false) or 
@@ -1360,7 +1374,7 @@ void APlayerCharacter::SetWeaponVars(FWeaponData NewWeaponData, bool bIsPrimaryW
 			if(bIsPrimaryWeapon)
 			{
 				//change the primary weapon
-				UE_LOG(LogTemp,Warning,TEXT("Equipping the primary Weapon"));
+				// UE_LOG(LogTemp,Warning,TEXT("Equipping the primary Weapon"));
 				EqPrimaryWeapon = Cast<AWeaponBase>(PickupHitWeapon);
 				CurrentWeapon = EqPrimaryWeapon;
 				if(EqSecondaryWeapon)
@@ -1371,7 +1385,7 @@ void APlayerCharacter::SetWeaponVars(FWeaponData NewWeaponData, bool bIsPrimaryW
 			else
 			{
 				//change the secondary weapon
-				UE_LOG(LogTemp,Warning,TEXT("Equipping the secondary Weapon"));
+				// UE_LOG(LogTemp,Warning,TEXT("Equipping the secondary Weapon"));
 				EqSecondaryWeapon = Cast<AWeaponBase>(PickupHitWeapon);
 				CurrentWeapon = EqSecondaryWeapon;
 				if(EqPrimaryWeapon)
@@ -1398,10 +1412,10 @@ void APlayerCharacter::SetWeaponVars(FWeaponData NewWeaponData, bool bIsPrimaryW
 		}
 		if (CurrentWeapon == nullptr)
 		{
-			UE_LOG(LogTemp, Warning, TEXT("NO weapon reference"));
+			// UE_LOG(LogTemp, Warning, TEXT("NO weapon reference"));
 			return;
 		}
-		UE_LOG(LogTemp,Warning,TEXT("Pickup Weapon Name = %s"),*PickupHitWeapon->GetName());
+		// UE_LOG(LogTemp,Warning,TEXT("Pickup Weapon Name = %s"),*PickupHitWeapon->GetName());
 		//Also we are not spawning the weapon, as the pickup weapon and firing weapons are same, this way we can get away from spawning 
 		PickupHitWeapon->AttachToComponent(PlayerMesh, FAttachmentTransformRules::SnapToTargetIncludingScale, FName("WeaponSocket_r"));
 		CurrentWeapon->bIsPrimaryWeapon = bIsPrimaryWeapon;
@@ -1411,7 +1425,7 @@ void APlayerCharacter::SetWeaponVars(FWeaponData NewWeaponData, bool bIsPrimaryW
 	}
 	else
 	{
-		UE_LOG(LogTemp, Warning, TEXT("New weapon data has a null weapon class"));
+		// UE_LOG(LogTemp, Warning, TEXT("New weapon data has a null weapon class"));
 	}
 }
 
@@ -1497,7 +1511,7 @@ void APlayerCharacter::SetWeaponData(bool bIsSecondaryWeapon,FWeaponData WeaponD
 {
 	if(WeaponData.WeaponClass == nullptr)
 	{
-		UE_LOG(LogTemp,Warning,TEXT("No Weapon Class"));
+		// UE_LOG(LogTemp,Warning,TEXT("No Weapon Class"));
 		return;
 	}
 	FActorSpawnParameters GunSpawnParams;
@@ -1512,7 +1526,7 @@ void APlayerCharacter::SetWeaponData(bool bIsSecondaryWeapon,FWeaponData WeaponD
 
 	TempWeapon->CurrentMagAmmo = WeaponData.CurrentMagAmmo;
 	TempWeapon->TotalAmmo = WeaponData.TotalAmmo;
-	UE_LOG(LogTemp,Error,TEXT("Max Ammo = %i"),WeaponData.MaxAmmo);
+	// UE_LOG(LogTemp,Error,TEXT("Max Ammo = %i"),WeaponData.MaxAmmo);
 	PickupHitWeapon = TempWeapon;
 	if(bIsSecondaryWeapon)
 	{
@@ -1581,7 +1595,7 @@ void APlayerCharacter::PrimaryThrowStart()
 			CurrentWeapon->SetCanShoot(false);
 		}
 		PlayerMesh->GetAnimInstance()->Montage_Play(GrenadeHoldMontage);
-		UE_LOG(LogTemp,Warning,TEXT("Throwing Primary"));
+		// UE_LOG(LogTemp,Warning,TEXT("Throwing Primary"));
 	}
 	else if (ThrowableEquippedSlot == 1 && SecondaryThrowableData.Count > 0)
 	{
@@ -1593,7 +1607,7 @@ void APlayerCharacter::PrimaryThrowStart()
 			CurrentWeapon->SetCanShoot(false);
 		}
 		PlayerMesh->GetAnimInstance()->Montage_Play(GrenadeHoldMontage);
-		UE_LOG(LogTemp,Warning,TEXT("Throwing Primary"));
+		// UE_LOG(LogTemp,Warning,TEXT("Throwing Primary"));
 
 	}
 }
@@ -1659,6 +1673,7 @@ void APlayerCharacter::EndThrow(AThrowableBase *CurrentThrowable)
 	{
 		CurrentThrowable->DetachFromActor(FDetachmentTransformRules::KeepWorldTransform);
 		CurrentThrowable->Throw(ThrowVelocity);
+		CurrentThrowable->SetActorScale3D(CurrentThrowable->GetActorScale3D()/SceneComp->GetComponentScale());
 	}
 }
 

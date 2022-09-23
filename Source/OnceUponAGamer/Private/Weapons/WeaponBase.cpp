@@ -11,7 +11,7 @@
 #include "Weapons/KnifeWeapon.h"
 #include "Math/Color.h"
 #include "PhysicalMaterials/PhysicalMaterial.h"
-
+#include "Particles/ParticleSystemComponent.h"
 AWeaponBase::AWeaponBase()
 {
 	PrimaryActorTick.bCanEverTick = false;
@@ -173,6 +173,15 @@ void AWeaponBase::ShootingInAction()
 																	GunShotHitResult,
 																	true);
 				
+				if(TrailsFX)
+				{
+					UParticleSystemComponent* TrailsFXComp = UGameplayStatics::SpawnEmitterAtLocation(GetWorld(),TrailsFX,Muzzle->GetComponentLocation());
+					if(TrailsFXComp)
+					{
+						FVector EndPoint = bIsHit ? GunShotHitResult.ImpactPoint : EndTrace;
+						TrailsFXComp->SetVectorParameter(FName("ShockBeamEnd"),EndPoint);
+					}
+				}
 				if(bIsHit)
 				{
 					HitEffect(GunShotHitResult);
@@ -385,6 +394,7 @@ void AWeaponBase::GiveDamage(FHitResult GunHit)
 									   this,
 									   UDamageType::StaticClass());
 
+	PlayerCharacter->HitMarker();
 	// UE_LOG(LogTemp,Warning,TEXT("Damage Given %f"),FinalDamage);
 	UAISense_Damage::ReportDamageEvent(this, GunHit.GetActor(), PlayerCharacter, FinalDamage, GunHit.TraceStart, GunHit.Location);
 }

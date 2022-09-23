@@ -14,7 +14,7 @@ void UBTS_CoverRequest::TickNode(UBehaviorTreeComponent &OwnerComp,uint8* NodeMe
     ABasicNPCAIController* OwnerController = Cast<ABasicNPCAIController>(OwnerComp.GetOwner());
     if(OwnerController != nullptr)
     {
-        UE_LOG(LogTemp,Warning,TEXT("Cover service"));
+        // UE_LOG(LogTemp,Warning,TEXT("Cover service"));
         OwnerController->CoverRequest();
     }
 

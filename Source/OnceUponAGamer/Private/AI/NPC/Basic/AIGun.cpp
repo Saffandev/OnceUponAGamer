@@ -41,7 +41,7 @@ void AAIGun::ShootingInAction()
 {
 	if(GetOwner() == nullptr)
 	{
-		UE_LOG(LogTemp,Warning,TEXT("No Owner"));
+		// UE_LOG(LogTemp,Warning,TEXT("No Owner"));
 		return;
 	}
 	

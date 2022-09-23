@@ -33,7 +33,7 @@ void UBTS_ThrowHandCheck::TickNode(UBehaviorTreeComponent &OwnerComp, uint8 *Nod
                             AngleBetween < ThrowAngleCheck;
         OwnerComp.GetBlackboardComponent()->SetValueAsBool(BB_bCanThrowHand.SelectedKeyName,bCanThrowHand);
         bCanThrowAgain = false;
-        UE_LOG(LogTemp,Warning,TEXT("Inside the throw hand check "));
+        // UE_LOG(LogTemp,Warning,TEXT("Inside the throw hand check "));
         if(!GetWorld()->GetTimerManager().TimerExists(ThrowTimerHandle))
         {
             GetWorld()->GetTimerManager().SetTimer(ThrowTimerHandle,[&](){bCanThrowAgain = true;},0.1f,false,6.f);

@@ -17,7 +17,7 @@ void AHeavyAI::StartShooting()
 {
     Super::StartShooting();
 	bIsShooting = true;
-    UE_LOG(LogTemp,Warning,TEXT("Heavy shooting function"));
+    // UE_LOG(LogTemp,Warning,TEXT("Heavy shooting function"));
     if(!GetWorld()->GetTimerManager().IsTimerActive(AbilityReleaseTimer))
     {
         if(AIController)
