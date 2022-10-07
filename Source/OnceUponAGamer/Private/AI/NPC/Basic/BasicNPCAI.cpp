@@ -50,6 +50,7 @@ void ABasicNPCAI::BeginPlay()
 		Gun->AttachToComponent(GetMesh(),FAttachmentTransformRules::SnapToTargetNotIncludingScale,FName("Weapon"));
 		Gun->OwnerMesh = GetMesh();
 	}
+	CurrentHealth = Health;
 }
 
 // Called every frame
@@ -148,10 +149,11 @@ void ABasicNPCAI::CanTakeCover(bool bCanTakeCover)
 void ABasicNPCAI::TakePointDamage(AActor* DamagedActor,float Damage,AController* InstigatedBy, FVector HitLocation,UPrimitiveComponent* HitComp,FName BoneName,FVector ShotDirection,const UDamageType* DamageType,AActor* DamageCauser)
 {
 	// UE_LOG(LogTemp,Warning,TEXT("Damage Taken %f"),Damage);
-	Health -= Damage;
+	CurrentHealth -= Damage;
+	HealthVisuals();
 	UGameplayStatics::SpawnEmitterAtLocation(GetWorld(),HitParticle,HitLocation);
 	UGameplayStatics::PlaySoundAtLocation(GetWorld(),HitSound,HitLocation);
-	if(Health <= 0 && bIsDead == false)
+	if(CurrentHealth <= 0 && bIsDead == false)
 	{
 		//death;
 		LastHitBoneName = BoneName;	
@@ -178,7 +180,6 @@ void ABasicNPCAI::TakePointDamage(AActor* DamagedActor,float Damage,AController*
 			if(Head)
 			{
 				AActor* SpawnedHead = GetWorld()->SpawnActor<AActor>(Head,GetMesh()->GetSocketLocation(FName("neck_01")),GetMesh()->GetSocketRotation(FName("neck_01")));
-				UGameplayStatics::PlaySoundAtLocation(GetWorld(),HeadShotSound,GetMesh()->GetSocketLocation(FName("neck_01")));
 			}
 		}
 		// if(GetVelocity().Size() < 10.f)
@@ -225,17 +226,27 @@ void ABasicNPCAI::TakePointDamage(AActor* DamagedActor,float Damage,AController*
 
 void ABasicNPCAI::TakeRadialDamage(AActor* DamagedActor,float Damage,const UDamageType* DamageType,FVector Origin,FHitResult Hit,AController* InstigatedBy,AActor* DamageCauser)
 {
-	Health -= Damage;
-	if(Health <= 0 && bIsDead == false)
+	CurrentHealth -= Damage;
+	HealthVisuals();
+	if(CurrentHealth <= 0 && bIsDead == false)
 	{
 		LastHitBoneName = Hit.BoneName;	
 		DeathRituals(true);
 	}
 }
 
+void ABasicNPCAI::HealthVisuals()
+{
+	float HelathPercent = CurrentHealth/Health;
+	UMaterialInstanceDynamic* HealthVisMat = GetMesh()->CreateDynamicMaterialInstance(2);
+	if(HealthVisMat)
+	{
+		HealthVisMat->SetScalarParameterValue(FName("Health"),HelathPercent);
+	}
+}
 void ABasicNPCAI::DeathRituals(bool bIsExplosionDeath)
 {
-	Health = 0;
+	CurrentHealth = 0;
 	if(Gun)
 	{
 		Gun->DetachFromActor(FDetachmentTransformRules::KeepRelativeTransform);
@@ -248,6 +259,7 @@ void ABasicNPCAI::DeathRituals(bool bIsExplosionDeath)
 	}
 	// UE_LOG(LogTemp,Error,TEXT("I am deaddddddd"));
 	bIsDead = true;
+	SetCanBeDamaged(false);
 	StopShooting();
 	FTimerHandle DeathTimer;
 	if(MyEncounterSpace)

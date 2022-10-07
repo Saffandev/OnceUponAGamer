@@ -29,11 +29,11 @@ public:
 	virtual TSubclassOf<AWeaponBase> GetPickupWeapon();
 	void DropGun();
 	void SetCanShoot(bool bLCanShoot);
-
+	void BackToHolster();
 
 protected:
 	virtual void BeginPlay() override;
-	virtual void Recoil();
+	virtual FVector Recoil();
 
 private:
 	UFUNCTION()
@@ -112,6 +112,10 @@ protected:
 	
 	UPROPERTY(EditAnywhere,Category = "Weapon Vars")
 	float CoolDownTime = 0.f;
+
+	UPROPERTY(EditAnywhere,Category = "Weapon Vars")
+	TSubclassOf<UDamageType> GunDamage;
+	
 	float ReloadTime;
 	bool bIsReloading;
 	float SingleShotAlpha;
@@ -149,6 +153,7 @@ private:
 	float CriticalDamage;
 	UPROPERTY(EditAnywhere)
 	float HeadshotDamage;
+	FTimerHandle ReloadTimerHandle;
 
 public:
 	UPROPERTY(EditAnywhere,Category = "Weapon Vars")
@@ -165,7 +170,10 @@ public:
 
 	UPROPERTY(EditAnywhere,Category = "Weapon Vars")
 	float Accuracy;
-
+	
+	UPROPERTY(EditAnywhere,Category = "Weapon Vars")
+	float Accuracy_ADS;
+	
 	UPROPERTY(EditAnywhere,Category = "Weapon Vars")
 	float FireRate;
 

@@ -111,7 +111,9 @@ void APlayerCharacter::BeginPlay()
 
 	CurrentHealth = MaxHealth;
 	CurrentShield = MaxShield;
-
+	bCanThrowAgain = true;
+	bCanSwitchWeapon = true;
+	bCanPickupWeapon = true;
 	//=========================================================================timeline setup==========================================//
 
 	if (CrouchCurve)
@@ -238,6 +240,7 @@ void APlayerCharacter::TakePointDamage(AActor* DamagedActor,float Damage,AContro
 
 void APlayerCharacter::TakeRadialDamage(AActor* DamagedActor,float Damage,const UDamageType* DamageType,FVector Origin,FHitResult Hit,AController* InstigatedBy,AActor* DamageCauser)
 {
+	DamageMarker(DamageCauser);
 	TakeDamage(Damage);
 }
 
@@ -601,7 +604,8 @@ void APlayerCharacter::MoveRight(float AxisValue)
 void APlayerCharacter::Turn(float AxisValue)
 {
 	SmoothHorizontalLook = UKismetMathLibrary::FInterpTo(SmoothHorizontalLook, AxisValue, UGameplayStatics::GetWorldDeltaSeconds(this), 30.f);
-	AddControllerYawInput(SmoothHorizontalLook);
+	float FinalTurn = bIsADS ? SmoothHorizontalLook/2 : SmoothHorizontalLook;
+	AddControllerYawInput(FinalTurn);
 	float SwayValue = FMath::Clamp<float>(AxisValue,-1.0f,1.0f);
 	HandSway(SwayValue);
 	// weapon sway for more visual smoothness
@@ -636,7 +640,8 @@ void APlayerCharacter::Turn(float AxisValue)
 void APlayerCharacter::LookUp(float AxisValue)
 {
 	SmoothVerticalLook = UKismetMathLibrary::FInterpTo(SmoothVerticalLook, AxisValue, UGameplayStatics::GetWorldDeltaSeconds(this), 30.f);
-	AddControllerPitchInput(SmoothVerticalLook);
+	float FinalLook = bIsADS ? SmoothVerticalLook/2 : SmoothVerticalLook;
+	AddControllerPitchInput(FinalLook);
 
 	// // weapon sway for more visual smoothness
 	float LLookupInterpSpeed;
@@ -831,6 +836,28 @@ void APlayerCharacter::Slide(FVector LSlideDirection, FString Caller)
 
 void APlayerCharacter::PerformSlide()
 {
+
+	//Calculaing the angle between the player and the walking surface to increase/decrease the sliding timing based on the surface angle
+	float ZPoint = GetActorLocation().Z - Capsule->GetUnscaledCapsuleHalfHeight();
+	FVector StartTrace = FVector(GetActorLocation().X, GetActorLocation().Y , ZPoint + 20.f );
+	FVector EndTrace = FVector(GetActorLocation().X, GetActorLocation().Y , ZPoint - 40.f );
+	TArray<AActor*> ActorsToIgnore;
+	FHitResult SlideHitResult;
+	bool bSlideTraceHit = UKismetSystemLibrary::LineTraceSingle(this,
+																StartTrace, 
+																EndTrace, 
+																UEngineTypes::ConvertToTraceType(ECollisionChannel::ECC_Visibility),
+																false,
+																ActorsToIgnore,
+																EDrawDebugTrace::ForDuration,
+																SlideHitResult,
+																true);
+	if(bSlideTraceHit)
+	{
+		float DotProduct = 1 + FVector::DotProduct(GetActorForwardVector(),SlideHitResult.ImpactNormal) * SlideTimelinePlaybackAlpha ;
+		SlideTimeline.SetPlayRate(DotProduct);
+	}
+	UE_LOG(LogTemp,Warning,TEXT("Slidetimeline playrate : %f"),SlideTimeline.GetPlayRate());
 	float Alpha = SlideCurve->GetFloatValue(SlideTimeline.GetPlaybackPosition());
 	CharacterMovement->MaxWalkSpeed = FMath::Lerp(SlideSpeed, CrouchSpeed, Alpha);
 	//UE_LOG(LogTemp, Warning, TEXT("Slide Direction = %s"), *SlideDirection.ToString());
@@ -1071,8 +1098,12 @@ void APlayerCharacter::ADSOnInAction()
 	PerformADS(ADSFOV, 1.3f, Alpha);
 }
 
-void APlayerCharacter::ADSOFF()
+void APlayerCharacter::	ADSOFF()
 {
+	if(!bIsADSButtonDown)
+	{
+		return;
+	}
 	if(CurrentWeapon)
 	{
 		if(CurrentWeapon->bIsWeaponShootable)
@@ -1139,7 +1170,7 @@ void APlayerCharacter::Reload()
 	}
 }
 
-void APlayerCharacter::PlayCameraShake(TSubclassOf<UCameraShakeBase> ShakeClass, float Scale)
+void APlayerCharacter::	PlayCameraShake(TSubclassOf<UCameraShakeBase> ShakeClass, float Scale)
 {
 	APlayerCameraManager *PlayerCameraManager = UGameplayStatics::GetPlayerCameraManager(this, 0);
 	PlayerCameraManager->StartCameraShake(ShakeClass, Scale);
@@ -1157,6 +1188,11 @@ void APlayerCharacter::NoPickup()
 
 void APlayerCharacter::PickupInAction()
 {
+	if(bIsThrowing)
+	{
+		bIsWeaponHit = false;
+		return;
+	}
 	FVector EndTrace = GetActorLocation() + GetActorUpVector() * -100;
 	FHitResult PickupHit;
 	TArray<AActor *> ActorsToIgnore;
@@ -1203,10 +1239,6 @@ void APlayerCharacter::PickupInAction()
 				PickupWeaponName = EWeaponName::EWN_None;
 			}
 		}
-		// else
-		// {
-			// UE_LOG(LogTemp, Warning, TEXT("PickupWeaponNull"));
-		// }
 	}
 	else
 	{
@@ -1224,6 +1256,12 @@ void APlayerCharacter::PickupGun(AActor* HitActor)
 		bIsWeaponHit = true;//for the Hud to display pickup text
 		if (bCanPickup)
 		{
+			if(!bCanPickupWeapon)
+			{
+				return;
+			}
+				GetWorld()->GetTimerManager().SetTimer(WeaponPickupTimerHandle,[&](){bCanPickupWeapon = true;},.5,false);
+			bCanPickupWeapon = false;
 			bIsWeaponHit = false;
 			PickupHitWeapon = HitActor;
 			bCanPickup = false;
@@ -1321,11 +1359,17 @@ void APlayerCharacter::PickupThrowable(AActor* HitActor)
 
 void APlayerCharacter::EquipPrimaryWeapon()
 {
+	if(!bCanSwitchWeapon)
+	{
+		return;
+	}
+	GetWorld()->GetTimerManager().SetTimer(WeaponSwitchTimerHandle,[&](){bCanSwitchWeapon = true;},.1,false);
+	bCanSwitchWeapon = false;
+
 	if (WeaponEquippedSlot == 1)
 	{
-		if (!(PrimaryWeapon.WeaponClass == nullptr))//will not switch to this weapon if its empty(or has knife)
+		if (!(PrimaryWeapon.WeaponClass == nullptr))//will not switch to this weapon if its empty
 		{
-			// UE_LOG(LogTemp,Warning,TEXT("Eqiup Primary Weapon call"));
 			WeaponEquippedSlot = 0;
 			SwitchWeapon(false);
 		}
@@ -1334,11 +1378,17 @@ void APlayerCharacter::EquipPrimaryWeapon()
 
 void APlayerCharacter::EquipSecondaryWeapon()
 {
+	if(!bCanSwitchWeapon)
+	{
+		return;
+	}
+	GetWorld()->GetTimerManager().SetTimer(WeaponSwitchTimerHandle,[&](){bCanSwitchWeapon = true;},.1,false);
+	bCanSwitchWeapon = false;
+
 	if (WeaponEquippedSlot == 0)
 	{
 		if (!(SecondaryWeapon.WeaponClass == nullptr))
 		{
-			// UE_LOG(LogTemp,Warning,TEXT("Eqiup Secondary Weapon call"));
 			WeaponEquippedSlot = 1;
 			SwitchWeapon(false);
 		}
@@ -1347,12 +1397,17 @@ void APlayerCharacter::EquipSecondaryWeapon()
 
 void APlayerCharacter::SwitchWeapon(bool bIsPickupWeapon)
 {
+	if(bIsADSButtonDown)
+	{
+		ADSOFF();
+	}
+	UE_LOG(LogTemp,Warning,TEXT(" weapon switch"));
+
+
 	if (WeaponEquippedSlot == 0)
 	{
 		SetWeaponVars(PrimaryWeapon, true,bIsPickupWeapon);
-
 	}
-
 	else if (WeaponEquippedSlot == 1)
 	{
 		SetWeaponVars(SecondaryWeapon, false,bIsPickupWeapon);
@@ -1379,7 +1434,7 @@ void APlayerCharacter::SetWeaponVars(FWeaponData NewWeaponData, bool bIsPrimaryW
 				CurrentWeapon = EqPrimaryWeapon;
 				if(EqSecondaryWeapon)
 				{
-					EqSecondaryWeapon->SetActorHiddenInGame(true);
+					EqSecondaryWeapon->BackToHolster();
 				}
 			}
 			else
@@ -1390,7 +1445,7 @@ void APlayerCharacter::SetWeaponVars(FWeaponData NewWeaponData, bool bIsPrimaryW
 				CurrentWeapon = EqSecondaryWeapon;
 				if(EqPrimaryWeapon)
 				{
-					EqPrimaryWeapon->SetActorHiddenInGame(true);
+					EqPrimaryWeapon->BackToHolster();
 				}
 
 			}
@@ -1399,13 +1454,13 @@ void APlayerCharacter::SetWeaponVars(FWeaponData NewWeaponData, bool bIsPrimaryW
 		{
 			if(bIsPrimaryWeapon)
 			{
-				EqSecondaryWeapon->SetActorHiddenInGame(true);
+				EqSecondaryWeapon->BackToHolster();
 				EqPrimaryWeapon->SetActorHiddenInGame(false);
 				CurrentWeapon = EqPrimaryWeapon;	
 			}
 			else
 			{
-				EqPrimaryWeapon->SetActorHiddenInGame(true);
+				EqPrimaryWeapon->BackToHolster();
 				EqSecondaryWeapon->SetActorHiddenInGame(false);
 				CurrentWeapon = EqSecondaryWeapon;
 			}
@@ -1417,6 +1472,10 @@ void APlayerCharacter::SetWeaponVars(FWeaponData NewWeaponData, bool bIsPrimaryW
 		}
 		// UE_LOG(LogTemp,Warning,TEXT("Pickup Weapon Name = %s"),*PickupHitWeapon->GetName());
 		//Also we are not spawning the weapon, as the pickup weapon and firing weapons are same, this way we can get away from spawning 
+		if(bIsADSButtonDown)
+		{
+			ADSOFF();
+		}
 		PickupHitWeapon->AttachToComponent(PlayerMesh, FAttachmentTransformRules::SnapToTargetIncludingScale, FName("WeaponSocket_r"));
 		CurrentWeapon->bIsPrimaryWeapon = bIsPrimaryWeapon;
 		CurrentWeapon->SetOwner(this);
@@ -1436,8 +1495,13 @@ void APlayerCharacter::DropWeapon(bool bIsPrimaryDrop)
 		if(EqPrimaryWeapon)
 		{
 			EqPrimaryWeapon->DetachFromActor(FDetachmentTransformRules::KeepWorldTransform);
-			EqPrimaryWeapon->DropGun();
 			EqPrimaryWeapon->SetActorScale3D(EqPrimaryWeapon->GetActorScale3D()/SceneComp->GetComponentScale());
+			if(PickupHitWeapon)
+			{
+				EqPrimaryWeapon->SetActorLocation(PickupHitWeapon->GetActorLocation());
+				EqPrimaryWeapon->SetActorRotation(PickupHitWeapon->GetActorRotation());
+			}
+			EqPrimaryWeapon->DropGun();
 		}
 	}
 	else
@@ -1445,8 +1509,13 @@ void APlayerCharacter::DropWeapon(bool bIsPrimaryDrop)
 		if(EqSecondaryWeapon)
 		{
 			EqSecondaryWeapon->DetachFromActor(FDetachmentTransformRules::KeepWorldTransform);
-			EqSecondaryWeapon->DropGun();
 			EqSecondaryWeapon->SetActorScale3D(EqPrimaryWeapon->GetActorScale3D()/SceneComp->GetComponentScale());
+			if(PickupHitWeapon)
+			{
+				EqSecondaryWeapon->SetActorLocation(PickupHitWeapon->GetActorLocation());
+				EqSecondaryWeapon->SetActorRotation(PickupHitWeapon->GetActorRotation());
+			}
+			EqSecondaryWeapon->DropGun();
 		}
 
 	}
@@ -1455,6 +1524,11 @@ void APlayerCharacter::DropWeapon(bool bIsPrimaryDrop)
 
 void APlayerCharacter::ReEquipAfterGrenade()
 {
+	bCanPredictPath = false;
+	if(GetMesh()->GetAnimInstance()->Montage_IsPlaying(GrenadeHoldMontage))
+	{
+	GetMesh()->GetAnimInstance()->Montage_Stop(0,GrenadeHoldMontage);
+	}	
 	if(CurrentWeapon)
 	{
 		CurrentWeapon->DrawWeapon();
@@ -1546,6 +1620,10 @@ void APlayerCharacter::SetWeaponData(bool bIsSecondaryWeapon,FWeaponData WeaponD
 
 void APlayerCharacter::SwitchThrowable()//flipflop funciton for switching the throwables
 {
+	if(bIsThrowing)
+	{
+		return;
+	}
 	if (ThrowableEquippedSlot == 0)
 	{
 		ThrowableEquippedSlot = 1;
@@ -1570,20 +1648,32 @@ void APlayerCharacter::DropThrowable(bool IsPrimary)
 {
 	if(IsPrimary)
 	{
+		if(PrimaryThrowableData.Count > 0)
+		{
+			GetWorld()->SpawnActor<AThrowableBase>(PrimaryThrowableData.BP_Throwable,GetActorTransform());
+		}
 		PrimaryThrowableData.Count = 0;
-		GetWorld()->SpawnActor<AThrowableBase>(PrimaryThrowableData.BP_Throwable,GetActorTransform());
 		PrimaryThrowableData.BP_Throwable = nullptr;
 	}
 	else
 	{
+		if(SecondaryThrowableData.Count > 0)
+		{
+			GetWorld()->SpawnActor<AThrowableBase>(SecondaryThrowableData.BP_Throwable,GetActorTransform());
+		}
 		SecondaryThrowableData.Count = 0;
-		GetWorld()->SpawnActor<AThrowableBase>(SecondaryThrowableData.BP_Throwable,GetActorTransform());
 		SecondaryThrowableData.BP_Throwable = nullptr;
 	}
 }
 
 void APlayerCharacter::PrimaryThrowStart()
 {
+	if(!bCanThrowAgain)
+	{
+		UE_LOG(LogTemp,Warning,TEXT("Cancel throw"));
+		return;
+	}
+	bCanThrowAgain = false;
 	bIsThrowableExploded = false;
 	if (ThrowableEquippedSlot == 0 && PrimaryThrowableData.Count > 0)
 	{
@@ -1591,7 +1681,11 @@ void APlayerCharacter::PrimaryThrowStart()
 		PrimaryThrowable = StartThrow(PrimaryThrowableData.BP_Throwable);
 		if(CurrentWeapon)
 		{
-			CurrentWeapon->SetActorHiddenInGame(true);
+			if(bIsADSButtonDown)
+			{
+				ADSOFF();
+			}
+			CurrentWeapon->BackToHolster();
 			CurrentWeapon->SetCanShoot(false);
 		}
 		PlayerMesh->GetAnimInstance()->Montage_Play(GrenadeHoldMontage);
@@ -1603,6 +1697,10 @@ void APlayerCharacter::PrimaryThrowStart()
 		SecondaryThrowable = StartThrow(SecondaryThrowableData.BP_Throwable);
 		if(CurrentWeapon)
 		{
+			if(bIsADSButtonDown)
+			{
+				ADSOFF();
+			}
 			CurrentWeapon->SetActorHiddenInGame(true);
 			CurrentWeapon->SetCanShoot(false);
 		}
@@ -1614,22 +1712,32 @@ void APlayerCharacter::PrimaryThrowStart()
 
 void APlayerCharacter::PrimaryThrowEnd()
 {
-	FTimerHandle ThrowTimer;
-	if (ThrowableEquippedSlot == 0 && PrimaryThrowableData.Count > 0)
+	if(!bIsThrowableSpawned)
 	{
+		UE_LOG(LogTemp,Warning,TEXT("Cancel throw"));
+		return;
+	}
+	bIsThrowableSpawned = false;
+
+	FTimerHandle ThrowTimer;
+	if (PrimaryThrowable && ThrowableEquippedSlot == 0 && PrimaryThrowableData.Count > 0)
+	{
+		UE_LOG(LogTemp,Warning,TEXT("End Throw"));
 		PrimaryThrowableData.Count--;
 		// EndThrow(PrimaryThrowable);
-		if(!bIsThrowableExploded)
+		if(!PrimaryThrowable->bIsExploded)
 		{
 			float Time = PlayerMesh->GetAnimInstance()->Montage_Play(ThrowMontage);
 			GetWorld()->GetTimerManager().SetTimer(ThrowTimer,this,&APlayerCharacter::ReEquipAfterGrenade,Time-0.2,false);
 		}
 	}
-	else if (ThrowableEquippedSlot == 1 && SecondaryThrowableData.Count > 0)
+	else if (SecondaryThrowable && ThrowableEquippedSlot == 1 && SecondaryThrowableData.Count > 0)
 	{
 		SecondaryThrowableData.Count--;
+		UE_LOG(LogTemp,Warning,TEXT("End Throw"));
+
 		// EndThrow(SecondaryThrowable);
-		if(!bIsThrowableExploded)
+		if(!SecondaryThrowable->bIsExploded)
 		{
 			float Time = PlayerMesh->GetAnimInstance()->Montage_Play(ThrowMontage);
 			GetWorld()->GetTimerManager().SetTimer(ThrowTimer,this,&APlayerCharacter::ReEquipAfterGrenade,Time-0.2,false);
@@ -1640,7 +1748,6 @@ void APlayerCharacter::PrimaryThrowEnd()
 
 void APlayerCharacter::InitiateEndThrow()
 {
-	bIsThrowing = false;
 	if(ThrowableEquippedSlot == 0)
 	{
 		EndThrow(PrimaryThrowable);
@@ -1662,6 +1769,7 @@ AThrowableBase *APlayerCharacter::StartThrow(TSubclassOf<AThrowableBase> Throwab
 		SpawnedThrowable->AttachToComponent(PlayerMesh,FAttachmentTransformRules::SnapToTargetIncludingScale,FName("WeaponSocket_r"));
 		SpawnedThrowable->Initiate();
 		bCanPredictPath = true;
+		bIsThrowableSpawned = true;
 	}
 	return SpawnedThrowable;
 }
@@ -1675,47 +1783,46 @@ void APlayerCharacter::EndThrow(AThrowableBase *CurrentThrowable)
 		CurrentThrowable->Throw(ThrowVelocity);
 		CurrentThrowable->SetActorScale3D(CurrentThrowable->GetActorScale3D()/SceneComp->GetComponentScale());
 	}
+	bIsThrowing = false;
+
 }
 
-void APlayerCharacter::ThrowPredection()
-{
-	FVector EndPoint = GetActorLocation() + ((GetActorForwardVector() + GetControlRotation().Vector()) * FMath::Pow(ThrowSpeed, 1.1));
-	UGameplayStatics::SuggestProjectileVelocity_CustomArc(this,
-														  ThrowVelocity,
-														  PlayerMesh->GetSocketLocation(FName("WeaponSocket_r")),
-														  EndPoint,
-														  0.f,
-														  0.9);
-	// FPredictProjectilePathParams ProjectilePathParams;
-	// ProjectilePathParams.StartLocation = PlayerMesh->GetSocketLocation(FName("WeaponSocket_r"));
-	// ProjectilePathParams.LaunchVelocity = ThrowVelocity;
-	// ProjectilePathParams.ProjectileRadius = 10.f;
-	// ProjectilePathParams.bTraceWithChannel = true;
-	// ProjectilePathParams.bTraceWithCollision = true;
-	// ProjectilePathParams.TraceChannel = ECollisionChannel::ECC_WorldStatic;
-	// ProjectilePathParams.ActorsToIgnore.Add(this);
-	// ProjectilePathParams.ActorsToIgnore.Add(PrimaryThrowable);
-	// ProjectilePathParams.ActorsToIgnore.Add(SecondaryThrowable);
-	// ProjectilePathParams.DrawDebugType = EDrawDebugTrace::ForOneFrame;
-	// ProjectilePathParams.SimFrequency = 30;
-	// FPredictProjectilePathResult ProjectilePathResult;
-	// bool bIsHit = UGameplayStatics::PredictProjectilePath(this,ProjectilePathParams,ProjectilePathResult);
+// void APlayerCharacter::ThrowPredection()
+// {
+// 	FVector EndPoint = GetActorLocation() + ((GetActorForwardVector() + GetControlRotation().Vector()) * FMath::Pow(ThrowSpeed, 1.1));
+// 	UGameplayStatics::SuggestProjectileVelocity_CustomArc(this,
+// 														  ThrowVelocity,
+// 														  PlayerMesh->GetSocketLocation(FName("WeaponSocket_r")),
+// 														  EndPoint,
+// 														  0.f,
+// 														  0.9);
+// 	// FPredictProjectilePathParams ProjectilePathParams;
+// 	// ProjectilePathParams.StartLocation = PlayerMesh->GetSocketLocation(FName("WeaponSocket_r"));
+// 	// ProjectilePathParams.LaunchVelocity = ThrowVelocity;
+// 	// ProjectilePathParams.ProjectileRadius = 10.f;
+// 	// ProjectilePathParams.bTraceWithChannel = true;
+// 	// ProjectilePathParams.bTraceWithCollision = true;
+// 	// ProjectilePathParams.TraceChannel = ECollisionChannel::ECC_WorldStatic;
+// 	// ProjectilePathParams.ActorsToIgnore.Add(this);
+// 	// ProjectilePathParams.ActorsToIgnore.Add(PrimaryThrowable);
+// 	// ProjectilePathParams.ActorsToIgnore.Add(SecondaryThrowable);
+// 	// ProjectilePathParams.DrawDebugType = EDrawDebugTrace::ForOneFrame;
+// 	// ProjectilePathParams.SimFrequency = 30;
+// 	// FPredictProjectilePathResult ProjectilePathResult;
+// 	// bool bIsHit = UGameplayStatics::PredictProjectilePath(this,ProjectilePathParams,ProjectilePathResult);
 	
-	// for(int32 i = 0 ;i<ProjectilePathResult.PathData.Num();i++)
-	// {
-	// 	PredictionSpline->AddSplinePointAtIndex(ProjectilePathResult.PathData[i].Location,i,ESplineCoordinateSpace::World);
-	// 	// PredectionSplineMesh.Add(NewObject<USplineMeshComponent>(this,USplineMeshComponent::StaticClass));
-	// 	// PredectionSplineMesh[i]->M
-	// }
-	// // PredictionSpline->AddSplinePointAtIndex()
-	// if(bIsHit)
-	// {
-	// 	//show the end point
-	// }
-}
-
-
-
+// 	// for(int32 i = 0 ;i<ProjectilePathResult.PathData.Num();i++)
+// 	// {
+// 	// 	PredictionSpline->AddSplinePointAtIndex(ProjectilePathResult.PathData[i].Location,i,ESplineCoordinateSpace::World);
+// 	// 	// PredectionSplineMesh.Add(NewObject<USplineMeshComponent>(this,USplineMeshComponent::StaticClass));
+// 	// 	// PredectionSplineMesh[i]->M
+// 	// }
+// 	// // PredictionSpline->AddSplinePointAtIndex()
+// 	// if(bIsHit)
+// 	// {
+// 	// 	//show the end point
+// 	// }
+// }
 
 // void APlayerCharacter::OnConstruction(const FTransform &Transform)
 // {

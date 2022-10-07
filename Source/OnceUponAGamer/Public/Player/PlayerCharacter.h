@@ -106,6 +106,8 @@ public:
 	{
 		return bIsThrowing;
 	}
+	UFUNCTION(BlueprintImplementableEvent)
+	void ThrowPredection();
 	//==============================Health/Sheild=====================//
 	UFUNCTION(BlueprintCallable)
 	void Heal(float Health);
@@ -192,17 +194,6 @@ private:
 	void PickupGun(AActor* HitActor);
 	void PickupThrowable(AActor* HitActor);
 	void MeleeAttack();
-
-	void PrimaryThrowStart();
-	void PrimaryThrowEnd();
-	void SwitchThrowable();
-	void EndThrow(AThrowableBase* CurrentThrowable);
-	UFUNCTION(BlueprintCallable)
-	void InitiateEndThrow();
-	void ThrowPredection();
-	void SetWeaponVars(FWeaponData NewWeaponData,bool bIsPrimaryWeapon,bool bIsPickupWeapon);
-	AThrowableBase* StartThrow(TSubclassOf<AThrowableBase> Throwable);
-
 	UFUNCTION()
 	void ADSOnInAction();
 	
@@ -211,6 +202,17 @@ private:
 
 	UFUNCTION()
 	void ADSOffInAction();
+	//===========================================Throwable================================//
+	void PrimaryThrowStart();
+	void PrimaryThrowEnd();
+	void SwitchThrowable();
+	void EndThrow(AThrowableBase* CurrentThrowable);
+	UFUNCTION(BlueprintCallable)
+	void InitiateEndThrow();
+	
+	void SetWeaponVars(FWeaponData NewWeaponData,bool bIsPrimaryWeapon,bool bIsPickupWeapon);
+	AThrowableBase* StartThrow(TSubclassOf<AThrowableBase> Throwable);
+
 	
 	//======================================== Hit/Damage =========================================//
 	UFUNCTION()
@@ -226,8 +228,6 @@ private:
 	void TakeRadialDamage(AActor* DamagedActor,float Damage,const UDamageType* DamageType,FVector Origin,FHitResult Hit,AController* InstigatedBy,AActor* DamageCauser);
 	
 	void TakeDamage(float Damage);
-
-	
 
 private:
 
@@ -294,8 +294,13 @@ private:
 
 	bool bIsADSButtonDown;
 	bool bCanPickup;
+	bool bCanSwitchWeapon;
+	bool bCanPickupWeapon;
+	FTimerHandle WeaponSwitchTimerHandle;
+	FTimerHandle WeaponPickupTimerHandle;
 	AActor* PickupHitWeapon;
 	class IPickupWeaponInterface *PickupWeaponInterface;
+	
 	//======================================== Throwable =========================================//
 	UPROPERTY(EditAnywhere,Category = "Throwable")
 	UAnimMontage* GrenadeHoldMontage;
@@ -307,16 +312,18 @@ private:
 	TSubclassOf<AThrowableBase> BPThrowable;
 	UPROPERTY(EditAnywhere,BlueprintReadOnly,Category = "Throwable",meta = (AllowPrivateAccess = "true"))
 	float ThrowSpeed;
-	UPROPERTY(VisibleAnywhere,BlueprintReadonly,meta = (AllowPrivateAccess = "true"))
+	UPROPERTY(VisibleAnywhere,BlueprintReadonly,meta = (AllowPrivateAccess = "true"),Category = "Throwable")
 	bool bIsThrowing;
 	UPROPERTY(EditAnywhere,Category = "Throwable")
 	USoundBase* ThrowablePickupSound;
 
+	UPROPERTY(EditAnywhere,BlueprintReadWrite,meta = (AllowPrivateAccess = "true"),Category = "Throwable")
 	FVector ThrowVelocity;
 	AThrowableBase* PrimaryThrowable;
 	AThrowableBase* SecondaryThrowable;
+	UPROPERTY(EditAnywhere,BlueprintReadOnly,meta = (AllowPrivateAccess = "true"),Category = "Throwable")
 	bool bCanPredictPath;
-	
+	bool bIsThrowableSpawned;
 	//======================================== Movement =========================================//
 	bool bIsDoingLedgeGrab;
 	float CrouchCapsuleHeight;
@@ -341,6 +348,8 @@ private:
 	float SlideSpeed;
 	UPROPERTY(EditAnywhere,Category = "Movement")
 	float WallRunSpeed;
+	UPROPERTY(EditAnywhere,Category = "Movement")
+	float SlideTimelinePlaybackAlpha;
 	UPROPERTY(EditAnywhere,Category = "Movement")
 	int32 MaxJumps = 2;;
 	UPROPERTY(EditAnywhere,Category = "Movement")
@@ -370,17 +379,17 @@ private:
 	// UStaticMesh* SplineMesh;
 
 	//======================================== Health/Shield =========================================//
-	UPROPERTY(EditAnywhere)
+	UPROPERTY(EditAnywhere,Category = "Life")
 	float MaxHealth;
-	UPROPERTY(VisibleAnywhere,BlueprintReadOnly,meta = (AllowPrivateAccess = "true"))
+	UPROPERTY(VisibleAnywhere,BlueprintReadOnly,meta = (AllowPrivateAccess = "true"),Category = "Life")
 	float CurrentHealth;
-	UPROPERTY(EditAnywhere)
+	UPROPERTY(EditAnywhere,Category = "Life")
 	float MaxShield;
-	UPROPERTY(VisibleAnywhere,BlueprintReadOnly,meta = (AllowPrivateAccess = "true"))
+	UPROPERTY(VisibleAnywhere,BlueprintReadOnly,meta = (AllowPrivateAccess = "true"),Category = "Life")
 	float CurrentShield;
-	UPROPERTY(EditAnywhere)
+	UPROPERTY(EditAnywhere,Category = "Life")
 	float TimeForShieldRecharge;
-	UPROPERTY(EditAnywhere)
+	UPROPERTY(EditAnywhere,Category = "Life"	)
 	float ShieldRechargeRate;
 	FTimerHandle ShieldRechargeTimer;
 
@@ -398,17 +407,20 @@ public:
 	UPROPERTY(VisibleAnywhere,BlueprintReadOnly,Category = "Weapon")
 	int32 WeaponEquippedSlot;
 
-	UPROPERTY(VisibleAnywhere,BlueprintReadOnly)
+	UPROPERTY(VisibleAnywhere,BlueprintReadOnly,Category = "Weapon")
 	AWeaponBase* CurrentWeapon;
 	AWeaponBase* EqPrimaryWeapon;
 	AWeaponBase* EqSecondaryWeapon;
 
-	UPROPERTY(VisibleAnywhere,BlueprintReadOnly)
+	UPROPERTY(VisibleAnywhere,BlueprintReadOnly,Category = "Weapon")
 	EWeaponName PickupWeaponName;
 	
-	UPROPERTY(VisibleAnywhere,BlueprintReadOnly)
+	UPROPERTY(VisibleAnywhere,BlueprintReadOnly,Category = "Weapon")
 	float ADS_Alpha;
-
+	
+	UPROPERTY(VisibleAnywhere,BlueprintReadOnly,Category = "Weapon")
+	bool bIsReloading;
+	
 	bool bIsShooting;
 	//======================================== Throwable =========================================//
 	UPROPERTY(VisibleAnywhere,BlueprintReadOnly,Category = "Throwable")
@@ -423,9 +435,10 @@ public:
 	UPROPERTY(VisibleAnywhere,BlueprintReadOnly,Category = "Throwable")
 	int32 ThrowableEquippedSlot;
 
+	UPROPERTY(EditAnywhere,BlueprintReadWrite,Category = "Throwable")
+	bool bCanThrowAgain;
 	bool bIsThrowableExploded;
 
 	bool bIsDoingMeleeAttack;
-	UPROPERTY(VisibleAnywhere,BlueprintReadOnly)
-	bool bIsReloading;
+	
 };

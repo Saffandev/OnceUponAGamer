@@ -38,7 +38,7 @@ protected:
 	UFUNCTION()
 	void OnOverlap(UPrimitiveComponent* OverlappedComp,AActor* OtherActor,UPrimitiveComponent* OtherComp,int32 OtherBodyIndex, bool bFromSweep ,const FHitResult &SweepResult);	
 	virtual void DeathRituals(bool bIsExplosionDeath);
-	
+	void HealthVisuals();
 public:
 	TArray<FVector> PatrolPoint;
 	UPROPERTY(EditAnywhere,BlueprintReadOnly,meta = (ExposeOnSpawn = "true"))
@@ -77,6 +77,7 @@ protected:
 
 	UPROPERTY(EditAnywhere)
 	float Health;
+	float CurrentHealth;
 	FTimerHandle MeleeTimerHandle;
 	class AAIController* AIController;
 	UPROPERTY(EditAnywhere)
@@ -90,8 +91,6 @@ protected:
 	UParticleSystem* HitParticle;
 	UPROPERTY(EditAnywhere)
 	USoundBase* HitSound;
-	UPROPERTY(EditAnywhere)
-	USoundBase* HeadShotSound;
 	UPROPERTY(EditAnywhere)
 	TSubclassOf<AActor> HealthPickup;
 	UPROPERTY(EditAnywhere)

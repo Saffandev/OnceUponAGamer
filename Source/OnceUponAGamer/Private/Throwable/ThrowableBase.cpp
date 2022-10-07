@@ -36,6 +36,8 @@ void AThrowableBase::BeginPlay()
 	OverlapActorObjectType.Add(UEngineTypes::ConvertToObjectType(ECollisionChannel::ECC_WorldDynamic));
 	OverlapActorObjectType.Add(UEngineTypes::ConvertToObjectType(ECollisionChannel::ECC_PhysicsBody));
 	PlayerCharacter = Cast<APlayerCharacter>(UGameplayStatics::GetPlayerCharacter(this,0));
+	bIsExploded = false;
+
 }
 
 // Called every frame
@@ -127,11 +129,13 @@ void AThrowableBase::Throw(FVector ThrowVelocity)
 
 void AThrowableBase::Initiate()
 {
-	GetWorld()->GetTimerManager().SetTimer(ThrowTimer,this,&AThrowableBase::Explode,0.01,false,ExplodeTimer);
+	UE_LOG(LogTemp,Warning,TEXT("Timer Initiated"));
+	GetWorld()->GetTimerManager().SetTimer(ThrowTimer,this,&AThrowableBase::Explode,ExplodeTimer,false);
 }
 
 void AThrowableBase::Explode()
 {	
+	UE_LOG(LogTemp,Warning,TEXT("Explode"));
 	if(PlayerCharacter)
 	{
 		if(PlayerCharacter->GetIsThrowingThrowable())
@@ -140,6 +144,7 @@ void AThrowableBase::Explode()
 		}
 	}
 	PlayerCharacter->bIsThrowableExploded = true;
+	bIsExploded = true;
 	if(ExplodeParticle)
 	{
 		UGameplayStatics::SpawnEmitterAtLocation(GetWorld(),ExplodeParticle,GetActorLocation());

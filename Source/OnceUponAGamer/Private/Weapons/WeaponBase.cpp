@@ -38,7 +38,7 @@ void AWeaponBase::BeginPlay()
 	Super::BeginPlay();
 	PlayerCharacter = Cast<APlayerCharacter>(UGameplayStatics::GetPlayerCharacter(this, 0));
 	PlayerCamera = PlayerCharacter->GetCamera();
-	SingleShotAlpha = 1.f;//used to add randomness when firing auto
+	SingleShotAlpha = 0.f;//used to add randomness when firing auto
 	bCanShoot = true;
 	bIsReloading = false;
 	GunMesh->SetSimulatePhysics(true);
@@ -118,7 +118,7 @@ void AWeaponBase::StopShooting()
 
 	PlayerCharacter->bIsShooting = false;
 
-	SingleShotAlpha = 0.01f;
+	SingleShotAlpha = 0.0f;
 }
 
 void AWeaponBase::ShootingInAction()
@@ -143,7 +143,6 @@ void AWeaponBase::ShootingInAction()
 				GetWorld()->SpawnActor<AActor>(TracerRound, Muzzle->GetComponentLocation(), PlayerCamera->GetForwardVector().Rotation())->SetLifeSpan(1.0f);
 			}
 
-			Recoil();
 
 			if (CameraShake)
 			{
@@ -151,14 +150,14 @@ void AWeaponBase::ShootingInAction()
 				PlayerCharacter->PlayCameraShake(CameraShake, CameraShakeValue	);
 			}
 
-			SingleShotAlpha = 1.f;
 			UpdateWeaponVarsInPlayer();
 			UpdateWeaponVisuals();
 			UAISense_Hearing::ReportNoiseEvent(this, GetActorLocation(), 1.f, PlayerCharacter, 2000.f);
+
 			for(int i = 0 ; i < PalletCount; i++)
 			{
 				FVector RandomVector = FVector(UKismetMathLibrary::RandomFloatInRange(-TraceOffset,TraceOffset),UKismetMathLibrary::RandomFloatInRange(-TraceOffset,TraceOffset),UKismetMathLibrary::RandomFloatInRange(-TraceOffset,TraceOffset));
-				FVector EndTrace = PlayerCamera->GetComponentLocation() + PlayerCamera->GetForwardVector() * Range + RandomVector;
+				FVector EndTrace = PlayerCamera->GetComponentLocation() + PlayerCamera->GetForwardVector() * Range + RandomVector + Recoil();
 				TArray<AActor *> ActorsToIgnore;
 				ActorsToIgnore.Add(UGameplayStatics::GetPlayerCharacter(this, 0));
 				FHitResult GunShotHitResult;
@@ -195,6 +194,8 @@ void AWeaponBase::ShootingInAction()
 					}
 				}
 			}
+			SingleShotAlpha = 1.f;
+
 		}
 		else
 		{
@@ -258,7 +259,7 @@ void AWeaponBase::ImpactEffect(FHitResult GunHit,UParticleSystem* HitParticle,US
 	}
 }
 
-void AWeaponBase::Recoil()
+FVector AWeaponBase::Recoil()
 {
 	FVector PlayerVelocity = PlayerCharacter->GetVelocity();
 	float MovementRecoilAlpha = 1.f;
@@ -266,18 +267,18 @@ void AWeaponBase::Recoil()
 
 	if (MovementType != EMovementType::EMT_WallRun && PlayerCharacter->IsInAir())
 	{
-		MovementRecoilAlpha = 2.f;
+		MovementRecoilAlpha = 1.5f;
 	}
 	else if (PlayerVelocity.Size() > 2.f)
 	{
 		switch (MovementType)
 		{
 		case EMovementType::EMT_Walking:
-			MovementRecoilAlpha = 1.2f;
+			MovementRecoilAlpha = 1.1f;
 			break;
 
 		case EMovementType::EMT_Sprinting:
-			MovementRecoilAlpha = 1.6f;
+			MovementRecoilAlpha = 1.2f;
 			break;
 
 		case EMovementType::EMT_Crouching:
@@ -285,14 +286,20 @@ void AWeaponBase::Recoil()
 			break;
 
 		case EMovementType::EMT_WallRun:
-			MovementRecoilAlpha = 1.8f;
+			MovementRecoilAlpha = 1.4f;
 			break;
 		}
 	}
 
-	float RecoilValue = SingleShotAlpha * MovementRecoilAlpha * UKismetMathLibrary::RandomFloatInRange(-0.2, 0.2) * Accuracy;
-	PlayerCharacter->AddControllerYawInput(RecoilValue);
-	PlayerCharacter->AddControllerPitchInput(RecoilValue);
+	FVector RecoilVector;
+	float FinalAccuracy = PlayerCharacter->IsADSButtonDown() ? Accuracy_ADS : Accuracy;
+	RecoilVector.X = SingleShotAlpha * MovementRecoilAlpha * UKismetMathLibrary::RandomFloatInRange(-0.2, 0.2) * FinalAccuracy;
+	RecoilVector.Y = SingleShotAlpha * MovementRecoilAlpha * UKismetMathLibrary::RandomFloatInRange(-0.2, 0.2) * FinalAccuracy;
+	RecoilVector.Z = SingleShotAlpha * MovementRecoilAlpha * UKismetMathLibrary::RandomFloatInRange(-0.2, 0.2) * FinalAccuracy;
+	// UE_LOG(LogTemp,Warning,TEXT("%f"),RecoilValue);
+	return RecoilVector;
+	// PlayerCharacter->AddControllerYawInput(RecoilValue);
+	// PlayerCharacter->AddControllerPitchInput(RecoilValue);
 }
 void AWeaponBase::Reload()
 {
@@ -307,7 +314,6 @@ void AWeaponBase::Reload()
 				PlayerCharacter->bIsReloading = true;
 				GunMesh->PlayAnimation(GunReloadAnim, false);
 				ReloadTime = PlayerCharacter->GetMesh()->GetAnimInstance()->Montage_Play(PlayerReloadMontage);
-				FTimerHandle ReloadTimerHandle;
 				GetWorld()->GetTimerManager().SetTimer(ReloadTimerHandle, this, &AWeaponBase::ReloadEffect, ReloadTime, false);
 			}
 		}
@@ -392,7 +398,7 @@ void AWeaponBase::GiveDamage(FHitResult GunHit)
 									   GunHit,
 									   PlayerCharacter->GetInstigatorController(),
 									   this,
-									   UDamageType::StaticClass());
+									   GunDamage);
 
 	PlayerCharacter->HitMarker();
 	// UE_LOG(LogTemp,Warning,TEXT("Damage Given %f"),FinalDamage);
@@ -487,4 +493,13 @@ void AWeaponBase::DropGun()
 {
 	GunMesh->SetSimulatePhysics(true);
 	GunMesh->SetCollisionEnabled(ECollisionEnabled::QueryAndPhysics);
+}
+
+void AWeaponBase::BackToHolster()
+{
+	GunMesh->PlayAnimation(nullptr,false);
+	SetActorHiddenInGame(true);
+	GetWorld()->GetTimerManager().ClearTimer(ReloadTimerHandle);
+	StopShooting();
+	
 }

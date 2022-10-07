@@ -80,7 +80,7 @@ void AAIGun::ShootingInAction()
 		{
 			if(HitActor->CanBeDamaged())
 			{
-				UGameplayStatics::ApplyPointDamage(HitActor,Damage,GunTraceHit.TraceStart,GunTraceHit,GetOwner()->GetInstigatorController(),this,UDamageType::StaticClass());
+				UGameplayStatics::ApplyPointDamage(HitActor,Damage,GunTraceHit.TraceStart,GunTraceHit,GetOwner()->GetInstigatorController(),GetOwner(),UDamageType::StaticClass());
 				// UE_LOG(LogTemp,Warning,TEXT("Damaged"));
 			}
 		}
