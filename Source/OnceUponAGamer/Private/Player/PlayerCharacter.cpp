@@ -5,6 +5,7 @@
 #include "Components/SkeletalMeshComponent.h"
 #include "Components/CapsuleComponent.h"
 #include "Components/SplineComponent.h"
+#include "Components/AudioComponent.h"
 #include "Components/SplineMeshComponent.h"
 #include "Kismet/KismetSystemLibrary.h"
 #include "Kismet/KismetMathLibrary.h"
@@ -250,6 +251,11 @@ void APlayerCharacter::TakeDamage(float Damage)
 		{
 			CurrentShield = 0;
 			CurrentHealth -= Damage;
+			if(BreathingSoundComp == nullptr)
+			{
+				BreathingSoundComp = UGameplayStatics::SpawnSoundAttached(BreathingSound,Capsule);
+			}
+			BreathingSoundComp->SetVolumeMultiplier(1 - (CurrentHealth/100));
 			if(ShieldRechargeTimer.IsValid())
 			{
 				GetWorld()->GetTimerManager().ClearTimer(ShieldRechargeTimer);
@@ -259,9 +265,6 @@ void APlayerCharacter::TakeDamage(float Damage)
 				CurrentHealth = 0;
 				DisablePlayerInput();
 				Dead();
-				// UGameplayStatics::PlaySoundAtLocation(this,DeathSound,GetActorLocation());
-
-				// UGameplayStatics::OpenLevel(this,FName("MainLevel1"));
 			}
 		}
 		else
@@ -290,8 +293,17 @@ void APlayerCharacter::Heal(float Health)
 {
 
 	CurrentHealth += Health;
+	if(BreathingSoundComp)
+	{
+		BreathingSoundComp->SetVolumeMultiplier(1 - (CurrentHealth/100));
+	}
 	if(CurrentHealth > MaxHealth)
 	{
+		if(BreathingSoundComp)
+		{
+			BreathingSoundComp->SetVolumeMultiplier(0);
+			BreathingSoundComp->Stop();
+		}
 		CurrentHealth = MaxHealth;
 	}
 }
@@ -301,6 +313,7 @@ void APlayerCharacter::SetHealthShield(float Health,float Shield)
 	if(Health <= MaxHealth)
 	{
 		CurrentHealth = Health;
+		Heal(0);
 	}
 
 	if(Shield <= MaxShield)
@@ -463,6 +476,7 @@ void APlayerCharacter::BeginWallRun()
 	CharacterMovement->GravityScale = 0.f;
 	CharacterMovement->AirControl = 1.f;
 	CharacterMovement->SetPlaneConstraintNormal(FVector(0, 0, 3));
+	WallRunSoundComp = UGameplayStatics::SpawnSoundAttached(WallRunSound,Capsule,FName(NAME_None));
 	CameraTiltTimeline.Play();
 	WallRunUpdateTimeline.PlayFromStart();
 }
@@ -538,7 +552,7 @@ void APlayerCharacter::UpdateWallRun()
 		EndWallRun(EWallRunEndReason::EWRER_FallOfWall); // end wall run fall of from wall
 		return;
 	}
-
+	WallRunSoundComp->SetWorldLocation(WallRunOutHit.Location);
 	WallRunDirection = FVector::CrossProduct(WallRunOutHit.ImpactNormal, FVector(0, 0, (WallRunSide == EWallRunDirection::EWRD_Left ? -1 : 1)));
 	FVector WallRunVelocity = FVector(WallRunDirection * CharacterMovement->GetMaxSpeed());
 	WallRunVelocity.Z = 0;
@@ -548,6 +562,10 @@ void APlayerCharacter::UpdateWallRun()
 void APlayerCharacter::EndWallRun(EWallRunEndReason WallRunEndReason)
 {
 	// UE_LOG(LogTemp, Warning, TEXT("End wall run"));
+	if(WallRunSoundComp)
+	{
+		WallRunSoundComp->Stop();
+	}
 	bIsWallRunning = false;
 	SetMovementSpeed(EMovementType::EMT_Walking);
 	JumpsLeft = (WallRunEndReason == EWallRunEndReason::EWRER_FallOfWall) ? 1 : MaxJumps;
@@ -695,12 +713,26 @@ void APlayerCharacter::Jump()
 		SlideDirection = GetActorForwardVector();//cancle the slide if player is sliding
 		if (SlideTimeline.IsPlaying())
 		{
-			SlideTimeline.Stop();
-			SetMovementSpeed(EMovementType::EMT_Walking);
-			if (bIsCrouched)
+			StopSliding();
+			if(CanUncrouch(CrouchCapsuleHeight))
 			{
+				SetMovementSpeed(EMovementType::EMT_Walking);
 				Crouch();
 			}
+			else
+			{
+				SetMovementSpeed(EMovementType::EMT_Crouching);
+				return;
+			}
+			
+		}
+		if(JumpsLeft == 1)
+		{
+			UGameplayStatics::PlaySoundAtLocation(this,JumpJetPackSound,GetActorLocation());
+		}
+		if(JumpsLeft == 2)
+		{
+			UGameplayStatics::PlaySoundAtLocation(this,JumpSound,GetActorLocation());
 		}
 		if (bIsWallRunning)
 		{
@@ -759,7 +791,7 @@ void APlayerCharacter::Crouch()//right now its a toggle funciton,
 	if (bIsCrouched && CanUncrouch(CrouchCapsuleHeight))
 	{
 		bIsCrouched = false;
-		SlideTimeline.Stop();
+		StopSliding();
 		CrouchTimeline.Reverse();
 		// UE_LOG(LogTemp, Warning, TEXT("Uncrouch"));
 		if (bIsSprintKeyDown)
@@ -832,6 +864,7 @@ void APlayerCharacter::Slide(FVector LSlideDirection, FString Caller)
 	CrouchTimeline.Play();
 	SlideDirection = LSlideDirection;
 	SlideTimeline.PlayFromStart();
+	SlideSoundComp = UGameplayStatics::SpawnSoundAttached(SlideSound,Capsule);
 }
 
 void APlayerCharacter::PerformSlide()
@@ -857,14 +890,18 @@ void APlayerCharacter::PerformSlide()
 		float DotProduct = 1 + FVector::DotProduct(GetActorForwardVector(),SlideHitResult.ImpactNormal) * SlideTimelinePlaybackAlpha ;
 		SlideTimeline.SetPlayRate(DotProduct);
 	}
-	UE_LOG(LogTemp,Warning,TEXT("Slidetimeline playrate : %f"),SlideTimeline.GetPlayRate());
+
 	float Alpha = SlideCurve->GetFloatValue(SlideTimeline.GetPlaybackPosition());
+	if(SlideSoundComp)
+	{
+		SlideSoundComp->VolumeMultiplier = 1 - Alpha;
+	}
 	CharacterMovement->MaxWalkSpeed = FMath::Lerp(SlideSpeed, CrouchSpeed, Alpha);
 	//UE_LOG(LogTemp, Warning, TEXT("Slide Direction = %s"), *SlideDirection.ToString());
 	AddMovementInput(SlideDirection, 1);
 	if (GetVelocity().Size() < 10)
 	{
-		SlideTimeline.Stop();
+		StopSliding();
 		SetMovementSpeed(EMovementType::EMT_Crouching);
 		// UE_LOG(LogTemp, Warning, TEXT("Sliding stopped due to 0 velocity"));
 	}
@@ -873,6 +910,19 @@ void APlayerCharacter::PerformSlide()
 void APlayerCharacter::EndSlide()
 {
 	SetMovementSpeed(EMovementType::EMT_Crouching);//end result of the slide...
+	if(SlideSoundComp)
+	{
+		SlideSoundComp->Stop();
+	}
+}
+
+void APlayerCharacter::StopSliding()
+{
+	SlideTimeline.Stop();
+	if(SlideSoundComp)
+	{
+		SlideSoundComp->Stop();
+	}
 }
 //======================================================================Slide End================================================//
 
@@ -981,7 +1031,7 @@ bool APlayerCharacter::CanPerformCertainMovement(EMovementType Movement)
 				{
 					return false;
 				}
-				SlideTimeline.Stop();
+				StopSliding();
 				Crouch();
 			}
 			SetMovementSpeed(Movement);

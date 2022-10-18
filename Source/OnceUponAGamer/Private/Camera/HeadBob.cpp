@@ -29,7 +29,7 @@ bool UHeadBob::ModifyCamera(float DeltaTime, struct FMinimalViewInfo& InOutPOV)
     //FinalViewLocation
     FVector NewViewLocation = InOutPOV.Location + UKismetMathLibrary::TransformLocation(UKismetMathLibrary::MakeTransform(FVector::ZeroVector,ViewRotation,FVector::OneVector),
                                                                     HeadbobLocation);
-    UE_LOG(LogTemp,Error,TEXT("%s"),*InOutPOV.Rotation.ToString());
+    UE_LOG(LogTemp,Error,TEXT("POV Rotation before= %s"),*InOutPOV.Rotation.ToString());
     // InOutPOV.Location = FMath::Lerp(InOutPOV.Location,NewViewLocation,GetTargetAlpha());//FinalViewLocation
     InOutPOV.Location = NewViewLocation;
     //FinalViewRotation
@@ -37,7 +37,8 @@ bool UHeadBob::ModifyCamera(float DeltaTime, struct FMinimalViewInfo& InOutPOV)
 
     // InOutPOV.Rotation = FMath::Lerp(InOutPOV.Rotation,NewViewRotation,GetTargetAlpha());//FinalViewRotation
     InOutPOV.Rotation = NewViewRotation;
-    UE_LOG(LogTemp,Warning,TEXT("%s"),*InOutPOV.Rotation.ToString());
+    UE_LOG(LogTemp,Warning,TEXT("POV Rotation after%s"),*InOutPOV.Rotation.ToString());
+    InOutPOV.FOV = InOutPOV.FOV;
     return false;
 
 }   
@@ -47,15 +48,13 @@ void UHeadBob::HeadBobSpring(float DeltaTime)
     // UE_LOG(LogTemp,Warning,TEXT("Camera Headbob"));
 
     //Velocity Update
-   
-    
     CurrentVelocity = PlayerCharacter->GetCharacterMovement()->GetLastUpdateVelocity() / 100;//dividing by 100 to convert m/s to cm/s
     VelocityChange = CurrentVelocity - PreVelocity;
     PreVelocity = CurrentVelocity; 
 
     //Spring Rotation and position for jumping
     SpringVelocity = ((SpringVelocity - VelocityChange.Z) - (SpringPosition * SpringElasticity)) * SpringDamping;
-    SpringPosition = FMath::Clamp((SpringPosition + SpringVelocity * DeltaTime),-0.32f,0.32f);
+    SpringPosition = FMath::Clamp((SpringPosition + (SpringVelocity * DeltaTime)),-0.32f,0.32f);
 
     //Set Spring position and pitch
     SpringPosZ = SpringPosition * LandingMovement;
@@ -70,7 +69,7 @@ void UHeadBob::HeadBobSpring(float DeltaTime)
     GroundVelocityLength = GroundVelocityCondition ? CurrentVelocity.Size() : 0 ;
 
     //Stride Length
-    StrideLength =  GroundVelocityLength * StrideLengthFactor + 1;
+    StrideLength =  (GroundVelocityLength * StrideLengthFactor) + 1;
 
     //Headbob Cycle
     
@@ -84,6 +83,7 @@ void UHeadBob::HeadBobSpring(float DeltaTime)
     //Headbob Animation
     FVector HeadbobPos = HeadbobCurvePos->GetVectorValue(HeadBobCycle) * HeadbobFade;
     FVector HeadbobRot = HeadbobCurveRot->GetVectorValue(HeadBobCycle) * HeadbobFade;
+    UE_LOG(LogTemp,Warning,TEXT("Headbobpos ---- %s"),*HeadbobRot.ToString());
 
     //FinalHeadbob Location
     HeadbobLocation = FVector(HeadbobPos.X,HeadbobPos.Y,HeadbobPos.Z + SpringPosZ);

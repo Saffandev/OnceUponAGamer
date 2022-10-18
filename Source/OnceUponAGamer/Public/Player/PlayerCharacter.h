@@ -157,6 +157,9 @@ private:
 	void EndSlide();
 	
 	UFUNCTION()
+	void StopSliding();
+	
+	UFUNCTION()
 	void DisablePlayerInput();
 	
 	UFUNCTION(BlueprintCallable)
@@ -365,7 +368,20 @@ private:
 	UPROPERTY(EditAnywhere,Category = "Movement")
 	float SwaySpeed;
 	UPROPERTY(EditAnywhere,Category = "Movement")
+	USoundBase* JumpSound;
+	UPROPERTY(EditAnywhere,Category = "Movement")
+	USoundBase* JumpJetPackSound;
+	UPROPERTY(EditAnywhere,Category = "Movement")
+	USoundBase* WallRunSound;
+	UPROPERTY(EditAnywhere,Category = "Movement")
+	USoundBase* BreathingSound;
+	UPROPERTY(EditAnywhere,Category = "Movement")
 	USoundBase* DeathSound;
+	UPROPERTY(EditAnywhere,Category = "Movement")
+	USoundBase* SlideSound;
+	class UAudioComponent* SlideSoundComp;
+	class UAudioComponent* BreathingSoundComp;
+	class UAudioComponent* WallRunSoundComp;
 	int32 JumpsLeft;
 	UPROPERTY(VisibleAnywhere,BlueprintReadOnly,Category = "Movement",meta = (AllowPrivateAccess = "true"))
 	EMovementType CurrentMovementType;//used for driving animation in anim bp
