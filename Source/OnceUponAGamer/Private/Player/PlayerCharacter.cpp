@@ -1105,6 +1105,7 @@ bool APlayerCharacter::IsADSButtonDown()
 
 void APlayerCharacter::Shoot()
 {
+	bIsShootButtonDown = true;
 	if (CurrentWeapon == nullptr)
 	{
 		// UE_LOG(LogTemp, Warning, TEXT("NO weapon base reference"));
@@ -1115,6 +1116,7 @@ void APlayerCharacter::Shoot()
 
 void APlayerCharacter::StopShooting()
 {
+	bIsShootButtonDown = false;
 	if (CurrentWeapon == nullptr)
 	{
 		// UE_LOG(LogTemp, Warning, TEXT("NO weapon base reference"));

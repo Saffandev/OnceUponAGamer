@@ -23,6 +23,9 @@ public:
 	UFUNCTION(BlueprintCallable)
 	void Activate();
 	void InitOwner();
+	UFUNCTION(BlueprintCallable)
+	void ClearSenses();
+
 protected:
 	virtual void BeginPlay() override;
 	UFUNCTION()

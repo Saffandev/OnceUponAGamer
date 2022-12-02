@@ -19,13 +19,15 @@ public:
 	virtual void StartShooting();
 	virtual void StopShooting();
 	virtual float MeleeAttack();
+	virtual void SetWantedLevelCooldown(bool bIsCooldown);
 	virtual void SetReload(bool bIsReloading);
 	void CanTakeCover(bool bCanTakeCover);
 	UFUNCTION(BlueprintPure)
 	bool GetIsReloading();
 	UFUNCTION(BlueprintPure)
 	USkeletalMeshComponent* GunMesh();
-	
+	void ReleaseCover();
+
 protected:
 	virtual void BeginPlay() override;
 	// virtual void Reload();
@@ -39,6 +41,8 @@ protected:
 	void OnOverlap(UPrimitiveComponent* OverlappedComp,AActor* OtherActor,UPrimitiveComponent* OtherComp,int32 OtherBodyIndex, bool bFromSweep ,const FHitResult &SweepResult);	
 	virtual void DeathRituals(bool bIsExplosionDeath);
 	void HealthVisuals();
+	void Explode();
+	void ExplosionEffect();
 public:
 	TArray<FVector> PatrolPoint;
 	UPROPERTY(EditAnywhere,BlueprintReadOnly,meta = (ExposeOnSpawn = "true"))
@@ -92,7 +96,17 @@ protected:
 	UPROPERTY(EditAnywhere)
 	USoundBase* HitSound;
 	UPROPERTY(EditAnywhere)
+	TSubclassOf<AActor> ExplosionActor;
+	UPROPERTY(EditAnywhere)
 	TSubclassOf<AActor> HealthPickup;
 	UPROPERTY(EditAnywhere)
 	TSubclassOf<AActor> ShieldPickup;
+	UPROPERTY(EditAnywhere,BlueprintReadWrite)
+	bool bIsWantedLevelCooldown = true;
+	UPROPERTY(EditAnywhere)
+	TSubclassOf<UDamageType> ExplosionDamageType;
+	UPROPERTY(EditAnywhere)
+	float ExplosionDamage;
+	UPROPERTY(EditAnywhere)
+	float ExplosionRadius;
 };

@@ -23,9 +23,10 @@ EBTNodeResult::Type UBTT_UpdatePatrolIndex::ExecuteTask(UBehaviorTreeComponent &
     uint32 IndexLength = OwnerController->GetControlledPawn()->PatrolPoint.Num();
     uint32 Direction = OwnerComp.GetAIOwner()->GetBlackboardComponent()->GetValueAsInt(PatrolDirection.SelectedKeyName);
     uint32 Index = OwnerComp.GetAIOwner()->GetBlackboardComponent()->GetValueAsInt(PatrolIndex.SelectedKeyName);
+    uint32 MinIndex = 0;
     if(Direction == 1)
     {
-        Index++;
+        Index = FMath::Clamp(Index + 1, MinIndex, IndexLength - 1);
         if(Index == (IndexLength - 1))
         {
             Direction = -1;
@@ -33,7 +34,7 @@ EBTNodeResult::Type UBTT_UpdatePatrolIndex::ExecuteTask(UBehaviorTreeComponent &
     }
     else if(Direction == -1)
     {
-        Index--;
+        Index = FMath::Clamp(Index - 1, MinIndex, IndexLength - 1);
         if(Index == 0)
         {
             Direction = 1;

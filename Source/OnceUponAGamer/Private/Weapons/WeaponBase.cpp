@@ -12,9 +12,11 @@
 #include "Math/Color.h"
 #include "PhysicalMaterials/PhysicalMaterial.h"
 #include "Particles/ParticleSystemComponent.h"
+#include "HelperFunctions/ViolenceRegistration.h"
+#include "Components/AudioComponent.h"
 AWeaponBase::AWeaponBase()
 {
-	PrimaryActorTick.bCanEverTick = false;
+	PrimaryActorTick.bCanEverTick = true;
 
 	GunMesh = CreateDefaultSubobject<USkeletalMeshComponent>(TEXT("GunMesh"));
 	RootComponent = GunMesh;
@@ -42,11 +44,23 @@ void AWeaponBase::BeginPlay()
 	bCanShoot = true;
 	bIsReloading = false;
 	GunMesh->SetSimulatePhysics(true);
+	SetActorTickEnabled(bCanTick);
+
+	if (GunChargeCurve)
+	{
+		FOnTimelineFloat TimelineCallback;
+		FOnTimelineEventStatic TimelineEndCallback;
+		TimelineCallback.BindUFunction(this, FName("ChargeGun"));
+		TimelineEndCallback.BindUFunction(this, FName("ReleaseCharge"));
+		GunChargeTimeline.AddInterpFloat(GunChargeCurve, TimelineCallback);
+		GunChargeTimeline.SetTimelineFinishedFunc(TimelineEndCallback);
+	}
 }
 
 void AWeaponBase::Tick(float DeltaTime)
 {
 	Super::Tick(DeltaTime);
+	GunChargeTimeline.TickTimeline(DeltaTime);
 }
 
 TSubclassOf<AWeaponBase> AWeaponBase::GetPickupWeapon()
@@ -93,43 +107,140 @@ void AWeaponBase::SetCanShoot(bool bLCanShoot)
 {
 	bCanShoot = bLCanShoot;
 }
+
 void AWeaponBase::Shoot()
 {
-	if (bIsWeaponShootable)
+	if (bIsWeaponShootable && bCanShoot && !bIsReloading)
 	{
-		if(!ShootingTimerHandle.IsValid())
-		GetWorld()->GetTimerManager().SetTimer(ShootingTimerHandle, this, &AWeaponBase::ShootingInAction, FireRate, bIsAuto,0.f);
+		if (CurrentMagAmmo <= 0)
+		{
+			StopShooting();
+			PlayerCharacter->Reload();
+			return;
+		}
+
+		if (!bIsCharged)
+		{
+			ShootingInAction();
+		}
+
+		if (!ShootingTimerHandle.IsValid())
+		{
+			if (bIsAuto)
+			{
+				GetWorld()->GetTimerManager().SetTimer(ShootingTimerHandle, this, &AWeaponBase::ShootingInAction, FireRate, bIsAuto);
+			}
+			else if (bIsCharged)
+			{
+				bIsReversingTheCharge = false;
+				if (ChargingSound)
+				{
+					ChargingSoundComp = UGameplayStatics::SpawnSoundAttached(ChargingSound, GunMesh);
+					ChargingSoundComp->SetVolumeMultiplier(0.f);
+				}
+				GunChargeTimeline.PlayFromStart();
+			}
+		}
+
+		bCanShoot = false;
+	}
+	else
+	{
+	//	UE_LOG(LogTemp, Warning, TEXT("No Shoot"));
 	}
 }
 
 void AWeaponBase::StopShooting()
 {
-	if(GetWorld()->GetTimerManager().IsTimerActive(ShootingCooldownTimerHandle))
+	if (bIsReloading || GetWorld()->GetTimerManager().IsTimerActive(ShootingCooldownTimerHandle))
 	{
 		return;
 	}
-	GetWorld()->GetTimerManager().SetTimer(ShootingCooldownTimerHandle,[&](){
-
-	if (ShootingTimerHandle.IsValid())
+	
+	/*if (ChargingSoundComp )
 	{
-		GetWorld()->GetTimerManager().ClearTimer(ShootingTimerHandle);
-	};
-	},CoolDownTime,false);
+		ChargingSoundComp->Stop();
+	}*/
 
+	if (bIsGunShot)
+	{
+		GetWorld()->GetTimerManager().SetTimer(ShootingCooldownTimerHandle,[&]()
+		{
+			if (ShootingTimerHandle.IsValid())
+			{
+				GetWorld()->GetTimerManager().ClearTimer(ShootingTimerHandle);
+			}; bCanShoot = true;
+		},
+			CoolDownTime,false);
+		if (bIsCharged)
+		{
+			bIsReversingTheCharge = true;
+			GunChargeTimeline.ReverseFromEnd();
+		}
+	}
+	else
+	{
+		bCanShoot = true;
+		if (bIsCharged)
+		{
+			GunChargeTimeline.Stop();
+		}
+	}
+
+	bIsGunShot = false;
+	/*if (bIsCharged)
+	{
+		if (ShootingTimerHandle.IsValid())
+		{
+			GetWorld()->GetTimerManager().ClearTimer(ShootingTimerHandle);
+		}
+		bCanShoot = true;
+	}*/
 	PlayerCharacter->bIsShooting = false;
 
 	SingleShotAlpha = 0.0f;
 }
 
+void AWeaponBase::ChargeGun()
+{
+	float Alpha = GunChargeCurve->GetFloatValue(GunChargeTimeline.GetPlaybackPosition());
+	if (ChargingSoundComp)
+	{
+		ChargingSoundComp->SetVolumeMultiplier(Alpha);
+	}
+	UMaterialInstanceDynamic* GunMaterialInstance = GunMesh->CreateDynamicMaterialInstance(0);
+	if (GunMaterialInstance)
+	{
+		FMaterialParameterInfo MatInfo;
+		MatInfo.Name = FName("EmissiveBrightness");
+		float CurrentEmissiveValue;
+
+		UE_LOG(LogTemp, Warning, TEXT("Alpha : %f"), CurrentEmissiveValue);
+		GunMaterialInstance->GetScalarParameterValue(MatInfo, CurrentEmissiveValue);
+		float NewEmissive = FMath::Lerp(8.f, 300.f,Alpha);
+		GunMaterialInstance->SetScalarParameterValue(FName("EmissiveBrightness"), NewEmissive);
+	}
+}
+
+void AWeaponBase::ReleaseCharge()
+{
+	if (bIsReversingTheCharge)
+	{
+		return;
+	}
+	ShootingInAction();
+}
+
 void AWeaponBase::ShootingInAction()
 {
-	if (bCanShoot && !PlayerCharacter->bIsDoingMeleeAttack)
+	//UE_LOG(LogTemp, Warning, TEXT("Shooooooooooooooot"));
+	if (!PlayerCharacter->bIsDoingMeleeAttack)
 	{
 		if (CurrentMagAmmo > 0)
 		{
 			CurrentMagAmmo--;
 			PlayerCharacter->bIsShooting = true;
-
+			bIsGunShot = true;
 			if (GunShootAnim)
 				GunMesh->PlayAnimation(GunShootAnim, false);
 
@@ -153,7 +264,6 @@ void AWeaponBase::ShootingInAction()
 			UpdateWeaponVarsInPlayer();
 			UpdateWeaponVisuals();
 			UAISense_Hearing::ReportNoiseEvent(this, GetActorLocation(), 1.f, PlayerCharacter, 2000.f);
-
 			for(int i = 0 ; i < PalletCount; i++)
 			{
 				FVector RandomVector = FVector(UKismetMathLibrary::RandomFloatInRange(-TraceOffset,TraceOffset),UKismetMathLibrary::RandomFloatInRange(-TraceOffset,TraceOffset),UKismetMathLibrary::RandomFloatInRange(-TraceOffset,TraceOffset));
@@ -189,10 +299,20 @@ void AWeaponBase::ShootingInAction()
 					{
 						if (HitActor->CanBeDamaged())
 						{
+							// UViolenceRegistration::RegisterViolence(this,GetActorLocation(),PlayerCharacter,EViolenceType::EVT_HittedSomethingDamaging);
 							GiveDamage(GunShotHitResult);
 						}
+						/*else
+						{
+							UViolenceRegistration::RegisterViolence(this,GetActorLocation(),PlayerCharacter,EViolenceType::EVT_HittedSomethingNonDamaging);
+						}*/
 					}
 				}
+
+				/*else
+				{
+					UViolenceRegistration::RegisterViolence(this,GetActorLocation(),PlayerCharacter,EViolenceType::EVT_AirFire);
+				}*/
 			}
 			SingleShotAlpha = 1.f;
 
@@ -301,6 +421,9 @@ FVector AWeaponBase::Recoil()
 	// PlayerCharacter->AddControllerYawInput(RecoilValue);
 	// PlayerCharacter->AddControllerPitchInput(RecoilValue);
 }
+
+
+
 void AWeaponBase::Reload()
 {
 	if (bIsWeaponShootable)
@@ -311,9 +434,14 @@ void AWeaponBase::Reload()
 			if (GunReloadAnim && PlayerReloadMontage)
 			{
 				bIsReloading = true;
+				if (ShootingTimerHandle.IsValid())
+				{
+					GetWorld()->GetTimerManager().ClearTimer(ShootingTimerHandle);
+				}
 				PlayerCharacter->bIsReloading = true;
 				GunMesh->PlayAnimation(GunReloadAnim, false);
-				ReloadTime = PlayerCharacter->GetMesh()->GetAnimInstance()->Montage_Play(PlayerReloadMontage);
+				ReloadTime = PlayerCharacter->GetMesh()->GetAnimInstance()->Montage_Play(PlayerReloadMontage) - 0.1f;
+				UE_LOG(LogTemp, Warning, TEXT("%f"), UKismetSystemLibrary::GetGameTimeInSeconds(this));
 				GetWorld()->GetTimerManager().SetTimer(ReloadTimerHandle, this, &AWeaponBase::ReloadEffect, ReloadTime, false);
 			}
 		}
@@ -333,10 +461,15 @@ void AWeaponBase::ReloadEffect()
 		TotalAmmo = 0;
 	}
 
+	//UE_LOG(LogTemp, Warning, TEXT("%f"), UKismetSystemLibrary::GetGameTimeInSeconds(this));
+
 	bIsReloading = false;
 	PlayerCharacter->bIsReloading = false;
 	bCanShoot = true;
-
+	if (PlayerCharacter->bIsShootButtonDown)
+	{
+		Shoot();
+	}
 	if (PlayerCharacter->IsADSButtonDown())
 	{
 		PlayerCharacter->ADSON();
@@ -356,6 +489,7 @@ void AWeaponBase::UpdateWeaponVisuals()
 	{
 		GunMaterialInstance->SetVectorParameterValue(FName("EmissiveColor"), NewColor);
 	}
+
 	// UMaterialInstanceDynamic* SightMaterialInstance = SightMesh->CreateDynamicMaterialInstance(0);
 	// if(SightMaterialInstance)
 	// {

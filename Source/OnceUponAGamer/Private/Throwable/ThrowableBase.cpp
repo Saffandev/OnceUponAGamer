@@ -7,6 +7,7 @@
 #include "Player/PlayerCharacter.h"
 #include "AI/NPC/Basic/BasicNPCAI.h"
 #include "DrawDebugHelpers.h"
+#include "HelperFunctions/ViolenceRegistration.h"
 
 // Sets default values
 AThrowableBase::AThrowableBase()
@@ -159,13 +160,13 @@ void AThrowableBase::Explode()
 	
 	UClass* SeekClass = nullptr;
 	// DrawDebugSphere(GetWorld(),GetActorLocation(),DamageRadius,12,FColor::Red,true,5.f);
-	UKismetSystemLibrary::SphereOverlapActors(this,
+	/*UKismetSystemLibrary::SphereOverlapActors(this,
 											  GetActorLocation(),
 											  DamageRadius,
 											  OverlapActorObjectType,
 											  SeekClass,
 											  ActorsToIgnore,
-											  OverlappedActors);
+											  OverlappedActors);*/
 	// UE_LOG(LogTemp,Warning,TEXT("%i"),OverlappedActors.Num());
 	// UE_LOG(LogTemp,Warning,TEXT("Overlap object type count %i"),OverlapActorObjectType.Num());
 
@@ -177,15 +178,12 @@ void AThrowableBase::Explode()
 		// UE_LOG(LogTemp,Warning,TEXT("Camera shake value %f"),CameraShakeValue);
 		PlayerCharacter->PlayCameraShake(CameraShake,CameraShakeValue);
 	}
-	for(AActor* HitActor:OverlappedActors)
-	{	
-		if(HitActor)
-		{
+	UViolenceRegistration::RegisterViolence(this,GetActorLocation(),PlayerCharacter,EViolenceType::EVT_Explosion);
+
+	
 			// UE_LOG(LogTemp,Warning,TEXT("%s"),*(HitActor->GetName()));			
 			UGameplayStatics::ApplyRadialDamage(this,Damage,GetActorLocation(),DamageRadius,ExplosionDamageType,ActorsToIgnore);
 			// UE_LOG(LogTemp,Warning,TEXT("Radial Damage applied"));
-		}
-	}
 	Destroy();
 
 }

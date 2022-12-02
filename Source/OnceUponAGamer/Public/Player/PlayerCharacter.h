@@ -437,6 +437,7 @@ public:
 	UPROPERTY(VisibleAnywhere,BlueprintReadOnly,Category = "Weapon")
 	bool bIsReloading;
 	
+	bool bIsShootButtonDown;
 	bool bIsShooting;
 	//======================================== Throwable =========================================//
 	UPROPERTY(VisibleAnywhere,BlueprintReadOnly,Category = "Throwable")

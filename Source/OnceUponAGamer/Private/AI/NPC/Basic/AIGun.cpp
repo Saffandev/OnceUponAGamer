@@ -78,7 +78,7 @@ void AAIGun::ShootingInAction()
 		AActor* HitActor = GunTraceHit.GetActor();
 		if(HitActor)
 		{
-			if(HitActor->CanBeDamaged())
+			if(HitActor->CanBeDamaged() && !HitActor->ActorHasTag(FName("Enemy")))
 			{
 				UGameplayStatics::ApplyPointDamage(HitActor,Damage,GunTraceHit.TraceStart,GunTraceHit,GetOwner()->GetInstigatorController(),GetOwner(),UDamageType::StaticClass());
 				// UE_LOG(LogTemp,Warning,TEXT("Damaged"));

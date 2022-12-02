@@ -15,7 +15,7 @@
 AEncounterSpace::AEncounterSpace()
 {
  	// Set this actor to call Tick() every frame.  You can turn this off to improve performance if you don't need it.
-	PrimaryActorTick.bCanEverTick = false;
+	PrimaryActorTick.bCanEverTick = true;
 	
 	Box = CreateDefaultSubobject<UBoxComponent>(TEXT("Box"));
 	RootComponent = Box;
@@ -29,11 +29,20 @@ void AEncounterSpace::BeginPlay()
 	if(CoverBp)
 	{
 		Box->GetOverlappingActors(OverlappedCovers,CoverBp);
+		UE_LOG(LogTemp,Error,TEXT("%i"),OverlappedCovers.Num());
 	}
 	FTimerHandle TimerHandle;
 	GetWorld()->GetTimerManager().SetTimer(TimerHandle,this,&AEncounterSpace::SetupController,0.1,false);
 }
 
+void AEncounterSpace::Tick(float DeltaTime)
+{
+	Super::Tick(DeltaTime);
+	/*if (OverlappedAIControllers.Num() > 0)
+	{
+		UE_LOG(LogTemp, Warning, TEXT(" Stored Controller %i"), OverlappedAIControllers.Num());
+	}*/
+}
 void AEncounterSpace::SetupController()
 {
 if(AIBp)
@@ -71,11 +80,7 @@ void AEncounterSpace::AddAI(ACharacter* AI)
 }
 
 // Called every frame
-void AEncounterSpace::Tick(float DeltaTime)
-{
-	Super::Tick(DeltaTime);
 
-}
 
 bool AEncounterSpace::IsPlayerVisibleToAnyone()
 {
@@ -214,10 +219,11 @@ void AEncounterSpace::MoveBackToPatrol()
 	// }
 	for(ABasicNPCAIController* TempController : OverlappedAIControllers)
 	{
-		TempController->GetBlackboardComponent()->SetValueAsBool(FName("bCanSeePlayer"),false);
-		TempController->GetBlackboardComponent()->SetValueAsBool(FName("bCanInvestigate"),false);
-		// UE_LOG(LogTemp,Error,TEXT("Move Back To Patrolling Called"));
-		TempController->ToggleSightSense();
+		//TempController->GetBlackboardComponent()->SetValueAsBool(FName("bCanSeePlayer"),false);
+		//TempController->GetBlackboardComponent()->SetValueAsBool(FName("bCanInvestigate"),false);
+		//// UE_LOG(LogTemp,Error,TEXT("Move Back To Patrolling Called"));
+		//TempController->ToggleSightSense();
+		TempController->ClearSenses();
 	}
 
 }
@@ -250,5 +256,30 @@ void AEncounterSpace::ICanSeePlayer()
 		{
 			TempController->GetBlackboardComponent()->SetValueAsBool(FName("bCanSeePlayer"),true);
 		}
+	}
+}
+
+void AEncounterSpace::ClearAllTheAI()
+{
+	UE_LOG(LogTemp, Warning, TEXT("Clear of encounterspace"));	
+
+	if (OverlappedAIControllers.Num() <= 0)
+	{
+		UE_LOG(LogTemp, Warning, TEXT("No Stored Controller"));
+		return ;
+	}
+	for (ABasicNPCAIController* TempController : OverlappedAIControllers)
+	{
+		if (TempController)
+		{
+			UE_LOG(LogTemp, Error, TEXT("Clear of encounterspace---inside loop"));
+
+			TempController->ClearSenses();
+		}
+		else
+		{
+			UE_LOG(LogTemp, Warning, TEXT("No Temp Controller"));
+		}
+
 	}
 }

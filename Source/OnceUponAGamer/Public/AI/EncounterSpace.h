@@ -16,6 +16,7 @@ public:
 	AEncounterSpace();
 	virtual void Tick(float DeltaTime) override;
 	bool IsPlayerVisibleToAnyone();
+	UFUNCTION(BlueprintCallable)
 	void AssingInvestigation(FVector SuspectLocation);
 	void MoveBackToPatrol();
 	void AddAI(class ACharacter* AI);
@@ -28,16 +29,20 @@ public:
 	UFUNCTION(BlueprintImplementableEvent)
 	void SomeoneIsDead();
 	void ICanSeePlayer();
+	UFUNCTION(BlueprintCallable)
+	void ClearAllTheAI();
+	
 protected:
 	// Called when the game starts or when spawned
 	virtual void BeginPlay() override;
-
+	
 private:
 	void SetupController();
 
 public:
 	TArray<AActor*> OverlappedCovers;
 	TArray<AActor*> OverlappedAI;
+	UPROPERTY(VisibleAnywhere,BlueprintReadOnly)
 	TArray<class ABasicNPCAIController*> OverlappedAIControllers;
 	bool bPlayerSpotted;
 

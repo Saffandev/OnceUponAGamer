@@ -5,6 +5,7 @@
 #include "CoreMinimal.h"
 #include "GameFramework/Actor.h"
 #include "Interface/PickupWeaponInterface.h"
+#include "Components/TimelineComponent.h"
 #include "Enum/EnumWeaponName.h"
 #include "WeaponBase.generated.h"
 
@@ -34,7 +35,10 @@ public:
 protected:
 	virtual void BeginPlay() override;
 	virtual FVector Recoil();
-
+	UFUNCTION()
+	virtual void ChargeGun();
+	UFUNCTION()
+	virtual void ReleaseCharge();
 private:
 	UFUNCTION()
 	void ShootingInAction();
@@ -50,6 +54,8 @@ public:
 	USkeletalMeshComponent* GunMesh;
 
 protected:
+	UPROPERTY(EditAnywhere)
+	bool bCanTick = false;
 	UPROPERTY(VisibleAnywhere)
 	USceneComponent* Muzzle;
 
@@ -104,6 +110,19 @@ protected:
 	UPROPERTY(EditAnywhere,Category = "Weapon Vars")
 	bool bIsAuto;
 	
+	UPROPERTY(EditAnywhere, Category = "Weapon Vars")
+	bool bIsCharged;
+
+	UPROPERTY(EditAnywhere, Category = "Weapon Vars")
+	USoundBase* ChargingSound;
+
+	UPROPERTY(EditAnywhere,Category = "Weapon Vars")
+	UCurveFloat* GunChargeCurve;
+
+	bool bIsReversingTheCharge;
+	FTimeline GunChargeTimeline;
+	UAudioComponent* ChargingSoundComp;
+
 	UPROPERTY(EditAnywhere,Category = "Weapon Vars")
 	int32 PalletCount = 1;
 
@@ -120,6 +139,7 @@ protected:
 	bool bIsReloading;
 	float SingleShotAlpha;
 	bool bCanShoot;
+	bool bIsGunShot;
 	class APlayerCharacter* PlayerCharacter;
 	class UCameraComponent* PlayerCamera;
 

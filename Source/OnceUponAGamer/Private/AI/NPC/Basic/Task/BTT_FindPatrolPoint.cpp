@@ -23,7 +23,7 @@ EBTNodeResult::Type UBTT_FindPatrolPoint::ExecuteTask(UBehaviorTreeComponent &Ow
         if(PatrolPointObj->PatrolPointLocation.Num() > 0)
         {
         FVector MoveToLocation = PatrolPointObj->PatrolPointLocation[Index];
-        UE_LOG(LogTemp,Warning,TEXT("Patrol Location %s"),*MoveToLocation.ToString());
+       // UE_LOG(LogTemp,Warning,TEXT("Patrol Location %s"),*MoveToLocation.ToString());
         MoveToLocation = UKismetMathLibrary::TransformLocation(PatrolPointObj->GetActorTransform(),MoveToLocation);
         OwnerComp.GetAIOwner()->GetBlackboardComponent()->SetValueAsVector(PatrolPointLocation.SelectedKeyName, MoveToLocation);
         }

@@ -91,29 +91,19 @@ void ABasicNPCAIController::Activate()
             RunBehaviorTree(BehaviorTree);
             Blackboard = GetBlackboardComponent();
             Blackboard->SetValueAsInt(FName("PatrolDirection"),1);
+            Blackboard->SetValueAsInt(FName("PatrolPointIndex"),0);
+            Blackboard->SetValueAsBool(FName("bIsPlayerInChildSpace"), false);
+            Blackboard->SetValueAsBool(FName("bIsPlayerInParentSpace"), false);
             FTimerHandle VisibilityTimerHandle;
             GetWorld()->GetTimerManager().SetTimer(VisibilityTimerHandle,this,&ABasicNPCAIController::CheckPlayerVisibility,0.5,true);
             if(!OwnerAI->bCanAutoActivate)
             {
-                Blackboard->SetValueAsBool(FName("bCanSeePlayer"),true);
-                Blackboard->SetValueAsVector(FName("PlayerLocation"),PlayerCharacter->GetActorLocation());
-                Blackboard->SetValueAsVector(FName("PlayerLastKnownLocation"),PlayerCharacter->GetActorLocation()); 
+            Blackboard->SetValueAsBool(FName("bCanSeePlayer"),true);
+            Blackboard->SetValueAsVector(FName("PlayerLocation"),PlayerCharacter->GetActorLocation());
+            Blackboard->SetValueAsVector(FName("PlayerLastKnownLocation"),PlayerCharacter->GetActorLocation()); 
             }
         }
-        
-        // else
-        // {
-        //     UE_LOG(LogTemp,Warning,TEXT("No BehaviorTree"));
-        // }
-    
     }
-    // else
-    // {
-    //     UE_LOG(LogTemp,Warning,TEXT("No Owner"));
-    // }
-   
-
-    
 }
 
 ABasicNPCAI* ABasicNPCAIController::GetControlledPawn()
@@ -167,6 +157,8 @@ void ABasicNPCAIController::OnPerceptionUpdated(TArray<AActor*>const& SensedActo
                                 {
                                     Blackboard->SetValueAsBool(FName("bCanSeePlayer"),true);
                                     Blackboard->SetValueAsBool(FName("bIsPlayerVisible"),true);
+                                    Blackboard->SetValueAsBool(FName("bIsPlayerInChildSpace"), true);
+                                    Blackboard->SetValueAsBool(FName("bIsPlayerInParentSpace"), true);
                                     // UE_LOG(LogTemp,Warning,TEXT("PlayerSpotted"));
                                     Blackboard->SetValueAsVector(FName("PlayerLocation"),EnemyTarget->GetActorLocation());
                                     Blackboard->SetValueAsVector(FName("PlayerLastKnownLocation"),EnemyTarget->GetActorLocation());   
@@ -315,6 +307,20 @@ void ABasicNPCAIController::CheckPlayerVisibility()
     }
 }
 
+
+void ABasicNPCAIController::ClearSenses()
+{
+    ToggleSightSense();
+    Blackboard->SetValueAsBool(FName("bCanSeePlayer"),false);
+    Blackboard->SetValueAsBool(FName("bCanInvestigate"),false);
+    Blackboard->SetValueAsBool(FName("bIsPlayerInChildSpace"), false);
+    Blackboard->SetValueAsBool(FName("bIsPlayerInParentSpace"), false);
+   
+    if (OwnerAI)
+    {
+        OwnerAI->ReleaseCover();
+    }
+}
 void ABasicNPCAIController::ToggleSightSense()
 {
     AIPerceptionComponent->SetSenseEnabled(SightSense->GetSenseImplementation(),false);

@@ -14,6 +14,7 @@
 #include "Components/CapsuleComponent.h"
 #include "Weapons/WeaponBase.h"
 #include "BrainComponent.h"
+#include "HelperFunctions/ViolenceRegistration.h"
 // Sets default values
 ABasicNPCAI::ABasicNPCAI()
 {
@@ -148,11 +149,25 @@ void ABasicNPCAI::CanTakeCover(bool bCanTakeCover)
 
 void ABasicNPCAI::TakePointDamage(AActor* DamagedActor,float Damage,AController* InstigatedBy, FVector HitLocation,UPrimitiveComponent* HitComp,FName BoneName,FVector ShotDirection,const UDamageType* DamageType,AActor* DamageCauser)
 {
-	// UE_LOG(LogTemp,Warning,TEXT("Damage Taken %f"),Damage);
 	CurrentHealth -= Damage;
+	UE_LOG(LogTemp,Warning,TEXT("Health --- %f"),CurrentHealth);
 	HealthVisuals();
 	UGameplayStatics::SpawnEmitterAtLocation(GetWorld(),HitParticle,HitLocation);
 	UGameplayStatics::PlaySoundAtLocation(GetWorld(),HitSound,HitLocation);
+	if (CurrentHealth >= 200)
+	{
+		UE_LOG(LogTemp, Warning, TEXT("Explode function"));
+		if (ExplosionActor)
+		{
+			AActor* Ex = GetWorld()->SpawnActor<AActor>(ExplosionActor, GetActorLocation(), GetActorRotation());
+			Ex->AttachToActor(this, FAttachmentTransformRules::SnapToTargetNotIncludingScale);
+		}
+
+		FTimerHandle ExplisionTimerHandle;
+		SetCanBeDamaged(false);
+		GetWorld()->GetTimerManager().SetTimer(ExplisionTimerHandle, this, &ABasicNPCAI::Explode, 0.8f, false);
+		;
+	}
 	if(CurrentHealth <= 0 && bIsDead == false)
 	{
 		//death;
@@ -231,22 +246,73 @@ void ABasicNPCAI::TakeRadialDamage(AActor* DamagedActor,float Damage,const UDama
 	if(CurrentHealth <= 0 && bIsDead == false)
 	{
 		LastHitBoneName = Hit.BoneName;	
+		ExplosionEffect();
 		DeathRituals(true);
 	}
+}
+
+void ABasicNPCAI::ExplosionEffect()
+{
+	GetMesh()->BreakConstraint(FVector(-100, 100, 100), FVector(0, 0, 0), FName("upperarm_l"));
+	GetMesh()->BreakConstraint(FVector(100, -100, 100), FVector(0, 0, 0), FName("upperarm_r"));
+	bool RandomBool = UKismetMathLibrary::RandomBool();
+	FName B1 = RandomBool ? FName("thigh_r") : FName("calf_r");
+	FName B2 = RandomBool ? FName("thigh_l") : FName("calf_l");
+	
+	GetMesh()->BreakConstraint(FVector(-100, -100, 100), FVector(0, 0, 0), B2);
+	GetMesh()->BreakConstraint(FVector(100, 100, 100), FVector(0, 0, 0), B1);
+	DeathRituals(true);
+
+}
+
+void ABasicNPCAI::Explode()
+{
+
+	TArray<TEnumAsByte<EObjectTypeQuery>> OverlapActorObjectType;
+	OverlapActorObjectType.Add(UEngineTypes::ConvertToObjectType(ECollisionChannel::ECC_Pawn));
+	OverlapActorObjectType.Add(UEngineTypes::ConvertToObjectType(ECollisionChannel::ECC_WorldDynamic));
+	OverlapActorObjectType.Add(UEngineTypes::ConvertToObjectType(ECollisionChannel::ECC_PhysicsBody));
+	
+	TArray<AActor*> ActorsToIgnore;
+
+	ActorsToIgnore.Add(this);
+	UGameplayStatics::ApplyRadialDamage(this, ExplosionDamage, GetActorLocation(), ExplosionRadius, ExplosionDamageType, ActorsToIgnore);
+	ExplosionEffect();
+	
+}
+
+void ABasicNPCAI::SetWantedLevelCooldown(bool bIsCooldown)
+{
+	UE_LOG(LogTemp,Warning,TEXT("Cooldown called"));
+	bIsWantedLevelCooldown = bIsCooldown;
 }
 
 void ABasicNPCAI::HealthVisuals()
 {
 	float HelathPercent = CurrentHealth/Health;
 	UMaterialInstanceDynamic* HealthVisMat = GetMesh()->CreateDynamicMaterialInstance(2);
+	UMaterialInstanceDynamic* HealthVisMat2 = GetMesh()->CreateDynamicMaterialInstance(1);
+
 	if(HealthVisMat)
 	{
 		HealthVisMat->SetScalarParameterValue(FName("Health"),HelathPercent);
 	}
+	if (HealthVisMat2)
+	{
+		HealthVisMat2->SetScalarParameterValue(FName("Health"), HelathPercent);
+	}
+	/*if(bIsWantedLevelCooldown)
+	{
+		UViolenceRegistration::RegisterViolence(this,GetActorLocation(),this,EViolenceType::EVT_PoliceKilled);
+		UE_LOG(LogTemp,Warning,TEXT("PolicHitted"));
+		bIsWantedLevelCooldown = false;
+	}*/
+
 }
 void ABasicNPCAI::DeathRituals(bool bIsExplosionDeath)
 {
 	CurrentHealth = 0;
+	UViolenceRegistration::RegisterViolence(this,GetActorLocation(),this,EViolenceType::EVT_PoliceKilled);
 	if(Gun)
 	{
 		Gun->DetachFromActor(FDetachmentTransformRules::KeepRelativeTransform);
@@ -268,6 +334,7 @@ void ABasicNPCAI::DeathRituals(bool bIsExplosionDeath)
 	// 	UE_LOG(LogTemp,Warning,TEXT("No Encounter Space"));
 	if(bIsExplosionDeath)
 	{
+		
 		GetMesh()->SetSimulatePhysics(true);
 	}
 	else
@@ -275,7 +342,10 @@ void ABasicNPCAI::DeathRituals(bool bIsExplosionDeath)
 		GetWorld()->GetTimerManager().SetTimer(DeathTimer,[&](){GetMesh()->SetSimulatePhysics(true);},0.01,false,1.f);
 	}
 	GetCharacterMovement()->StopMovementImmediately();
-	AIController->GetBrainComponent()->StopLogic(FString("Dead"));
+	if(AIController->GetBrainComponent())
+	{
+		AIController->GetBrainComponent()->StopLogic(FString("Dead"));
+	}
 	AIController->UnPossess();
 	if(ActiveCover)
 	{
@@ -316,4 +386,13 @@ USkeletalMeshComponent* ABasicNPCAI::GunMesh()
 	}
 	return nullptr;
 	
+}
+
+void ABasicNPCAI::ReleaseCover()
+{
+	if (ActiveCover)
+	{
+		ActiveCover->bIsAcquired = false;
+		ActiveCover = nullptr;
+	}
 }
