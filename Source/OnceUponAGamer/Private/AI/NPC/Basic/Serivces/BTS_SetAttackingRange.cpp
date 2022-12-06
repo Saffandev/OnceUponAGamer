@@ -2,7 +2,7 @@
 
 
 #include "AI/NPC/Basic/Serivces/BTS_SetAttackingRange.h"
-#include "AI/NPC/Basic/BasicNPCAIController.h"
+//#include "AI/NPC/Basic/BasicNPCAIController.h"
 #include "Kismet/GameplayStatics.h"
 #include "Kismet/KismetMathLibrary.h"
 #include "BehaviorTree/BlackboardComponent.h"
@@ -15,7 +15,7 @@ UBTS_SetAttackingRange::UBTS_SetAttackingRange()
 
 void UBTS_SetAttackingRange::TickNode(UBehaviorTreeComponent &OwnerComp,uint8* NodeMemory,float DeltaTime)
 {
-    ABasicNPCAIController* OwnerController = Cast<ABasicNPCAIController>(OwnerComp.GetOwner());
+   // ABasicNPCAIController* OwnerController = Cast<ABasicNPCAIController>(OwnerComp.GetOwner());
     float Distance = OwnerComp.GetAIOwner()->GetPawn()->GetDistanceTo(UGameplayStatics::GetPlayerPawn(this,0));
     float Angle = AngleBetweenActors::AngleBetween(OwnerComp.GetAIOwner()->GetPawn(),UGameplayStatics::GetPlayerPawn(this,0));
 

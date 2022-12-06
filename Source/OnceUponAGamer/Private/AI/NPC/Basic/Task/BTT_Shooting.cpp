@@ -39,6 +39,7 @@ EBTNodeResult::Type UBTT_Shooting::ExecuteTask(UBehaviorTreeComponent &OwnerComp
         {
             OwnerComp.GetAIOwner()->ClearFocus(EAIFocusPriority::Gameplay);
             ActionInterface->StopShooting();
+            UE_LOG(LogTemp, Warning, TEXT("Stop shooting"));
         }
     }
     else 

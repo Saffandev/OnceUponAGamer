@@ -95,7 +95,7 @@ void ABasicNPCAIController::Activate()
             Blackboard->SetValueAsBool(FName("bIsPlayerInChildSpace"), false);
             Blackboard->SetValueAsBool(FName("bIsPlayerInParentSpace"), false);
             FTimerHandle VisibilityTimerHandle;
-            GetWorld()->GetTimerManager().SetTimer(VisibilityTimerHandle,this,&ABasicNPCAIController::CheckPlayerVisibility,0.5,true);
+            GetWorld()->GetTimerManager().SetTimer(VisibilityTimerHandle,this,&ABasicNPCAIController::CheckPlayerVisibility,0.1,true);
             if(!OwnerAI->bCanAutoActivate)
             {
             Blackboard->SetValueAsBool(FName("bCanSeePlayer"),true);
@@ -181,6 +181,8 @@ void ABasicNPCAIController::OnPerceptionUpdated(TArray<AActor*>const& SensedActo
                                         MyEncounterSpace->AssingInvestigation(AIStimulus.StimulusLocation);
                                         Blackboard->SetValueAsVector(FName("PlayerLastKnownLocation"),AIStimulus.StimulusLocation);
                                     }
+                                    SetFocalPoint(AIStimulus.StimulusLocation);
+
                                 }
 
                                 else
@@ -289,11 +291,11 @@ void ABasicNPCAIController::CheckPlayerVisibility()
     {
         float Angle = AngleBetweenActors::AngleBetween(OwnerAI,PlayerCharacter,true);
         bool bIsPlayerInLineOfSight = LineOfSightTo(PlayerCharacter);
-        bool bIsPlayerVisible = Angle <= 100 && Angle >= 0 && bIsPlayerInLineOfSight;
+        bool bIsPlayerVisible = Angle <= 120 && Angle >= 0 && bIsPlayerInLineOfSight;
 
         // DrawDebugLine(GetWorld(),OwnerAI->GetActorLocation(),PlayerCharacter->GetActorLocation(),FColor::Red,false,0.1);
         // DrawDebugLine(GetWorld(),OwnerAI->GetActorLocation(),OwnerAI->GetActorForwardVector() * 200 + OwnerAI->GetActorLocation() ,FColor::Green,false,0.1);
-        // UE_LOG(LogTemp,Warning,TEXT("%f   %i"),Angle,bIsPlayerInLineOfSight);
+         UE_LOG(LogTemp,Warning,TEXT("  %i"), bIsPlayerVisible);
         Blackboard->SetValueAsBool(FName("bIsPlayerVisible"),bIsPlayerVisible);
         if(bIsPlayerVisible)
         {
