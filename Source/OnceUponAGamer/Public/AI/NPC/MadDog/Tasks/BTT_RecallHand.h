@@ -21,5 +21,7 @@ public:
 private:
 	UPROPERTY(EditAnywhere)
 	UAnimMontage* HandMontage;
+	UPROPERTY(EditAnywhere)
+	FBlackboardKeySelector BB_IsHandRecalling;
 	class AMadDogNPCAI* OwnerPawn;
 };

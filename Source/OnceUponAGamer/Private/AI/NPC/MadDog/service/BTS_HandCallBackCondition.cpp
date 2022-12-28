@@ -15,7 +15,8 @@ void UBTS_HandCallBackCondition::TickNode(UBehaviorTreeComponent &OwnerComp, uin
     float Distance = OwnerComp.GetAIOwner()->GetPawn()->GetDistanceTo(UGameplayStatics::GetPlayerPawn(OwnerComp.GetAIOwner(),0));
     bool bIsHoldingHand = OwnerComp.GetBlackboardComponent()->GetValueAsBool(BB_bIsHoldingHand.SelectedKeyName);
     bool bCanCallHand = OwnerComp.GetBlackboardComponent()->GetValueAsBool(BB_bCanCallBackHand.SelectedKeyName);
-    if(!bIsHoldingHand)
+    bool bIsHandRecalling = OwnerComp.GetBlackboardComponent()->GetValueAsBool(BB_bIsRecallingHand.SelectedKeyName);
+    if(!bIsHoldingHand && !bIsHandRecalling)
     {
         if(Distance > 300 && !bCanCallHand)
         {

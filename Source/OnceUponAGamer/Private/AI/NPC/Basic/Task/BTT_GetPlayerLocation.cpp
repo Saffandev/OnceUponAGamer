@@ -14,8 +14,6 @@ UBTT_GetPlayerLocation::UBTT_GetPlayerLocation()
 EBTNodeResult::Type UBTT_GetPlayerLocation::ExecuteTask(UBehaviorTreeComponent &OwnerComp, uint8* NodeMemory)
 {
     FVector PlayerLocation = UGameplayStatics::GetPlayerPawn(this,0)->GetActorLocation();
-    //ABasicNPCAIController* OwnerController = Cast<ABasicNPCAIController>(OwnerComp.GetOwner());
-    // OwnerController->GetBlackboardComponent()->SetValueAsVector(BB_PlayerLocation.SelectedKeyName,PlayerLocation);
     OwnerComp.GetBlackboardComponent()->SetValueAsVector(BB_PlayerLocation.SelectedKeyName,PlayerLocation);
     return EBTNodeResult::Succeeded;
 }

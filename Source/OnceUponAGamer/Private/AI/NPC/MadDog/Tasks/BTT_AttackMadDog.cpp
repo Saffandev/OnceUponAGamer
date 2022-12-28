@@ -5,6 +5,7 @@
 #include "AI/NPC/MadDog/MadDogNPCAI.h"
 #include "Kismet/KismetMathLibrary.h"
 #include "BrainComponent.h"
+#include "GameFramework/CharacterMovementComponent.h"
 #include "Kismet/GameplayStatics.h"
 #include "BehaviorTree/BlackboardComponent.h"
 
@@ -15,41 +16,17 @@ UBTT_AttackMadDog::UBTT_AttackMadDog()
 EBTNodeResult::Type UBTT_AttackMadDog::ExecuteTask(UBehaviorTreeComponent &OwnerComp,uint8 *NodeMemory)
 {
     OwnerPawn = Cast<AMadDogNPCAI>(OwnerComp.GetAIOwner()->GetPawn());
-    OwnerComp.GetAIOwner()->StopMovement();
-    OwnerComp.GetAIOwner()->SetFocus(UGameplayStatics::GetPlayerPawn(OwnerPawn,0)); 
+    OwnerComp.GetAIOwner()->SetFocus(UGameplayStatics::GetPlayerPawn(OwnerPawn,0));
+    OwnerPawn->GetCharacterMovement()->StopMovementImmediately();
     OwnerPawn->bCanThrowHand = bIsThisThrowHandTask;
-    // if(bIsThisThrowHandTask)
-    // {
-    //     // UE_LOG(LogTemp,Error,TEXT("------------------------------Throw hand task"));
-    // }
-    OwnerComp.GetBlackboardComponent()->SetValueAsBool(BB_bIsHoldingHand.SelectedKeyName,!bIsThisThrowHandTask);
-
+    OwnerComp.GetBlackboardComponent()->SetValueAsBool(BB_bIsHoldingHand.SelectedKeyName, !bIsThisThrowHandTask);
+   
+    UE_LOG(LogTemp, Warning, TEXT("attacking"));
     if(OwnerPawn)
     {
-        uint32 rNumber = UKismetMathLibrary::RandomIntegerInRange(1,5);
-        switch (rNumber)
-        {
-            case 1:
-            MontagePlay(AttackMontage1);
-            break;
-
-            case 2:
-            MontagePlay(AttackMontage2);
-            break;
-
-            case 3:
-            MontagePlay(AttackMontage3);
-            break;
-
-            case 4:
-            MontagePlay(AttackMontage4);
-            break;
-
-            case 5:
-            MontagePlay(AttackMontage5);
-            break;
-
-        }
+        uint32 length = AttackMontage.Num();
+        uint32 rNumber = UKismetMathLibrary::RandomIntegerInRange(0, length-1);
+        MontagePlay(AttackMontage[rNumber]);
     }
     return EBTNodeResult::InProgress;
 }
@@ -59,12 +36,9 @@ void UBTT_AttackMadDog::TickTask(UBehaviorTreeComponent &OwnerComp,uint8 *NodeMe
     if(!GetWorld()->GetTimerManager().TimerExists(EndHandle))
     {
         UBehaviorTreeComponent &Tree = OwnerComp;
-        // FTimerDelegate AttackDelegate;
-        // AttackDelegate.BindUFunction(this,FName("AttackEnded"),Tree);
-        // UE_LOG(LogTemp,Error,TEXT("Attack Time %f"),AttackTime);
         if(!GetWorld()->GetTimerManager().TimerExists(EndHandle))
         {
-        GetWorld()->GetTimerManager().SetTimer(EndHandle,[&](){OwnerComp.GetBlackboardComponent()->SetValueAsBool(BB_bCanThrowHand.SelectedKeyName,!bIsThisThrowHandTask);
+            GetWorld()->GetTimerManager().SetTimer(EndHandle,[&](){OwnerComp.GetBlackboardComponent()->SetValueAsBool(BB_bCanThrowHand.SelectedKeyName,!bIsThisThrowHandTask);
             OwnerComp.GetAIOwner()->ClearFocus(EAIFocusPriority::Gameplay);
             FinishLatentTask(OwnerComp,EBTNodeResult::Succeeded);}, 0.1f, false, AttackTime);
         }
@@ -77,25 +51,12 @@ void UBTT_AttackMadDog::MontagePlay(UAnimMontage* Montage)
 {
     if(Montage)
     {
-        AttackTime = OwnerPawn->GetMesh()->GetAnimInstance()->Montage_Play(Montage);
+        AttackTime = OwnerPawn->GetMesh()->GetAnimInstance()->Montage_Play(Montage) + 0.5f;
         bNotifyTick = true;
         AttackFinished = false;
-        // if(OwnerPawn)
-        // {
-        //     OwnerPawn->bCanHandDamage = true;
-            
-        // }
+       
         return;
     }
     AttackTime = 0;
     return;
-}
-
-void UBTT_AttackMadDog::AttackEnded(UBehaviorTreeComponent &OwnerComp)
-{
-    if(OwnerPawn)
-        {
-            // OwnerPawn->bCanHandDamage = false;
-            
-        }
 }

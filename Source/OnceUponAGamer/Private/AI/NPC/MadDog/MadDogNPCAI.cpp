@@ -58,8 +58,18 @@ void AMadDogNPCAI::BeginPlay()
 		TimelineCallback.BindUFunction(this,FName("ShieldHitEffect"));
 		ShieldHitTimeline.AddInterpFloat(ShieldHitCurve,TimelineCallback);
 	}
-	
+
+	if (HandRecallingCurve)
+	{
+		FOnTimelineFloat TimelineFloatTrack;
+		FOnTimelineEventStatic TimelineFinishedTrack;
+		TimelineFloatTrack.BindUFunction(this, FName("HandRecalling"));
+		TimelineFinishedTrack.BindUFunction(this, FName("HandRecallDone"));
+		HandCallingTimeline.AddInterpFloat(HandRecallingCurve, TimelineFloatTrack);
+		HandCallingTimeline.SetTimelineFinishedFunc(TimelineFinishedTrack);
+	}
 }
+
 
 // Called every frame
 void AMadDogNPCAI::Tick(float DeltaTime)
@@ -72,6 +82,7 @@ void AMadDogNPCAI::Tick(float DeltaTime)
 	ThrowArrow->SetWorldRotation(ArrowNewRot);
 
 	ShieldHitTimeline.TickTimeline(DeltaTime);
+	HandCallingTimeline.TickTimeline(DeltaTime);
 
 }
 
@@ -123,15 +134,15 @@ void AMadDogNPCAI::ThrowHand()
 	if(HandToThrowBP)
 	{
 		// HandToThrow = GetWorld()->SpawnActor<AMadDogHand>(HandToThrowBP,GetMesh()->GetSocketLocation(FName("MeleeWeapon")),GetMesh()->GetSocketRotation(FName("MeleeWeapon")));
-		FTransform	HandTransform;
-		HandTransform.SetLocation(GetMesh()->GetSocketLocation(FName("MeleeWeapon")));
-		HandTransform.SetRotation(FRotator(GetMesh()->GetSocketRotation(FName("MeleeWeapon"))).Quaternion());
-		HandTransform.SetScale3D(FVector(1,1,1));
+		FTransform	HandToThrowTransform;
+		HandToThrowTransform.SetLocation(GetMesh()->GetSocketLocation(FName("MeleeWeapon")));
+		HandToThrowTransform.SetRotation(FRotator(GetMesh()->GetSocketRotation(FName("MeleeWeapon"))).Quaternion());
+		HandToThrowTransform.SetScale3D(FVector(1,1,1));
 		//this spawn is used to set the dinamic variables(setting variables before spawning the actor)
-		HandToThrow = GetWorld()->SpawnActorDeferred<AMadDogHand>(HandToThrowBP,HandTransform,this);
+		HandToThrow = GetWorld()->SpawnActorDeferred<AMadDogHand>(HandToThrowBP, HandToThrowTransform,this);
 		HandToThrow->ThrowForce = ThrowForceCalc();
 		HandToThrow->SetOwner(this);
-		HandToThrow->FinishSpawning(HandTransform);
+		HandToThrow->FinishSpawning(HandToThrowTransform);
 		HandMesh->SetVisibility(false);
 	}
 }
@@ -160,16 +171,46 @@ void AMadDogNPCAI::RecallHand()
 	if(HandToThrow)
 	{	
 		bIsRecallingHand = true;
-		HandToThrow->HandRecallInAction();
+	//	HandToThrow->HandRecallInAction();
+		HandTransform = HandToThrow->GetActorTransform();
+		HandCallingTimeline.PlayFromStart();
 	}
 }
 
+void AMadDogNPCAI::HandRecalling()
+{
+	FTransform WeaponSocketTransform = GetMesh()->GetSocketTransform(FName("MeleeWeapon"));
+	float Alpha = HandRecallingCurve->GetFloatValue(HandCallingTimeline.GetPlaybackPosition());
+	UE_LOG(LogTemp, Warning, TEXT("%f"), Alpha);
+	FTransform NewHandTransform = UKismetMathLibrary::TLerp(HandTransform, WeaponSocketTransform, Alpha);
+	HandToThrow->SetActorTransform(NewHandTransform);
+}
+
+void AMadDogNPCAI::CancleHandRecalling()
+{
+	HandCallingTimeline.Stop();
+}
 void AMadDogNPCAI::HandRecallDone()
 {
-	bIsRecallingHand = false;
-	AIController->GetBlackboardComponent()->SetValueAsBool("bIsHoldingHand",true);
+	
+	UE_LOG(LogTemp, Warning, TEXT("HandReallDone"));
 	HandMesh->SetVisibility(true);
+	float AnimTime = 0.1f;
+	if (HandReceivingMontage)
+	{
+		AnimTime = GetMesh()->GetAnimInstance()->Montage_Play(HandReceivingMontage);
+	}
+	FTimerHandle HandRecallCompleteTimerHandle;
+	GetWorld()->GetTimerManager().SetTimer(HandRecallCompleteTimerHandle, this, &AMadDogNPCAI::HandRecallCompletedAfterEffects, AnimTime, false);
+	HandToThrow->Destroy();
 
+}
+
+void AMadDogNPCAI::HandRecallCompletedAfterEffects()
+{
+	bIsRecallingHand = false;
+	AIController->GetBlackboardComponent()->SetValueAsBool("bIsHoldingHand", true);
+	AIController->GetBlackboardComponent()->SetValueAsBool("bIsHandRecalling", false);
 }
 
 void AMadDogNPCAI::TakePointDamage(AActor* DamagedActor,float Damage,AController* InstigatedBy, FVector HitLocation,UPrimitiveComponent* HitComp,FName BoneName,FVector ShotDirection,const UDamageType* DamageType,AActor* DamageCauser)

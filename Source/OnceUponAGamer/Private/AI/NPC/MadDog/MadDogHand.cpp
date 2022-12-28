@@ -26,7 +26,7 @@ AMadDogHand::AMadDogHand()
 void AMadDogHand::BeginPlay()
 {
 	Super::BeginPlay();
-	SetActorTickEnabled(false);
+//	SetActorTickEnabled(false);
 	OwnerAI = Cast<AMadDogNPCAI>(GetOwner());
 	HandMesh->AddImpulse(ThrowForce,FName(NAME_None),true);
 	HandMesh->OnComponentBeginOverlap.AddDynamic(this,&AMadDogHand::BeginOverlap);
@@ -38,23 +38,23 @@ void AMadDogHand::BeginPlay()
 void AMadDogHand::Tick(float DeltaTime)
 {
 	Super::Tick(DeltaTime);
-	if(OwnerAI)
-	{
-		// UE_LOG(LogTemp,Warning,TEXT("Inside the tick of the hand"));
-		FTransform WeaponSocketTransform = OwnerAI->GetMesh()->GetSocketTransform(FName("MeleeWeapon"));
-		SetActorTransform(UKismetMathLibrary::TInterpTo(GetActorTransform(),WeaponSocketTransform,DeltaTime,10));
-		if(WeaponSocketTransform.GetLocation().Equals(GetActorLocation(),20))
-		{
-			SetActorTransform(WeaponSocketTransform);
-			OwnerAI->HandRecallDone();
-			Destroy();
-		}
-	}
+	//if(OwnerAI)
+	//{
+	//	// UE_LOG(LogTemp,Warning,TEXT("Inside the tick of the hand"));
+	//	FTransform WeaponSocketTransform = OwnerAI->GetMesh()->GetSocketTransform(FName("MeleeWeapon"));
+	//	SetActorTransform(UKismetMathLibrary::TInterpTo(GetActorTransform(),WeaponSocketTransform,DeltaTime,10));
+	//	if(WeaponSocketTransform.GetLocation().Equals(GetActorLocation(),20))
+	//	{
+	//		SetActorTransform(WeaponSocketTransform);
+	//		OwnerAI->HandRecallDone();
+	//		Destroy();
+	//	}
+	//}
 
-	else
-	{
-		// UE_LOG(LogTemp,Warning,TEXT("no owner"));
-	}
+	//else
+	//{
+	//	// UE_LOG(LogTemp,Warning,TEXT("no owner"));
+	//}
 }
 
 void AMadDogHand::BeginOverlap(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult &SweepResult)

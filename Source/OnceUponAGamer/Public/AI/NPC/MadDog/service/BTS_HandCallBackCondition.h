@@ -25,6 +25,8 @@ private:
 	FBlackboardKeySelector BB_bIsHoldingHand;
 	UPROPERTY(EditAnywhere)
 	FBlackboardKeySelector BB_bCanCallBackHand;
+	UPROPERTY(EditAnywhere)
+	FBlackboardKeySelector BB_bIsRecallingHand;
 	FTimerHandle CallBackTimerHandle;
 
 	

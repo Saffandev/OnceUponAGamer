@@ -81,6 +81,7 @@ void ABasicNPCAIController::InitOwner()
         Blackboard->SetValueAsObject(FName("PatrolObject"),OwnerAI->PatrolPointObj);
     }
 }
+
 void ABasicNPCAIController::Activate()
 {
     // UE_LOG(LogTemp,Warning,TEXT("Activated"));
@@ -114,6 +115,7 @@ ABasicNPCAI* ABasicNPCAIController::GetControlledPawn()
     }
     return nullptr;
 }
+
 void ABasicNPCAIController::OnPerceptionUpdated(TArray<AActor*>const& SensedActors)
 {
     if(!OwnerAI)
@@ -277,10 +279,12 @@ void ABasicNPCAIController::CoverRequest()
     }
     return;
 }
+
 void ABasicNPCAIController::CoverRequestEntry()
 {
     Blackboard->SetValueAsBool(FName("bCanDoAnotherCoverRequest"),true);
 }
+
 void ABasicNPCAIController::CheckPlayerVisibility()
 {
     if(!PlayerCharacter || !OwnerAI)
@@ -309,10 +313,10 @@ void ABasicNPCAIController::CheckPlayerVisibility()
     }
 }
 
-
 void ABasicNPCAIController::ClearSenses()
 {
-    ToggleSightSense();
+   // ToggleSightSense();
+    PerceptionComponent->ForgetActor(PlayerCharacter);
     Blackboard->SetValueAsBool(FName("bCanSeePlayer"),false);
     Blackboard->SetValueAsBool(FName("bCanInvestigate"),false);
     Blackboard->SetValueAsBool(FName("bIsPlayerInChildSpace"), false);
@@ -323,7 +327,8 @@ void ABasicNPCAIController::ClearSenses()
         OwnerAI->ReleaseCover();
     }
 }
-void ABasicNPCAIController::ToggleSightSense()
+
+void ABasicNPCAIController::ToggleSightSense()//depricated 
 {
     AIPerceptionComponent->SetSenseEnabled(SightSense->GetSenseImplementation(),false);
     AIPerceptionComponent->SetSenseEnabled(SightSense->GetSenseImplementation(),true);

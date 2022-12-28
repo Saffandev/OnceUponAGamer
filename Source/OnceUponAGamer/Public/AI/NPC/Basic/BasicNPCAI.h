@@ -16,7 +16,7 @@ class ONCEUPONAGAMER_API ABasicNPCAI : public ACharacter,public INPCAI_Action,pu
 public:
 	ABasicNPCAI();
 	virtual void Tick(float DeltaTime) override;
-	virtual void StartShooting();
+	virtual void StartShooting() override ;
 	virtual void StopShooting();
 	virtual float MeleeAttack();
 	virtual void SetWantedLevelCooldown(bool bIsCooldown);

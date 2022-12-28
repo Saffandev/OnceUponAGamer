@@ -18,22 +18,11 @@ public:
 	UBTT_AttackMadDog();
 	virtual EBTNodeResult::Type ExecuteTask(UBehaviorTreeComponent &OwnerComp, uint8 *NodeMemory) override;
 	virtual void TickTask(UBehaviorTreeComponent &OwnerComp,uint8 *NodeMemory, float DeltaTime) override;
-	void End();
 	void MontagePlay(UAnimMontage* Montage);
 
 private:
-	void AttackEnded(UBehaviorTreeComponent &OwnerComp);
-private:
 	UPROPERTY(EditAnywhere)
-	UAnimMontage* AttackMontage1;
-	UPROPERTY(EditAnywhere)
-	UAnimMontage* AttackMontage2;
-	UPROPERTY(EditAnywhere)
-	UAnimMontage* AttackMontage3;
-	UPROPERTY(EditAnywhere)
-	UAnimMontage* AttackMontage4;
-	UPROPERTY(EditAnywhere)
-	UAnimMontage* AttackMontage5;
+	TArray<UAnimMontage*> AttackMontage;
 	UPROPERTY(EditAnywhere)
 	FBlackboardKeySelector BB_bIsHoldingHand;
 	UPROPERTY(EditAnywhere)

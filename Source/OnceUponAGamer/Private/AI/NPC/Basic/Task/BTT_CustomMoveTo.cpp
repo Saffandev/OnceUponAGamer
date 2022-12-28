@@ -1,4 +1,4 @@
- // Fill out your copyright notice in the Description page of Project Settings.
+// Fill out your copyright notice in the Description page of Project Settings.
 
 
 #include "AI/NPC/Basic/Task/BTT_CustomMoveTo.h"
@@ -20,21 +20,21 @@ UBTT_CustomMoveTo::UBTT_CustomMoveTo()
     bNotifyTick = true;
 }
 
-EBTNodeResult::Type UBTT_CustomMoveTo::ExecuteTask(UBehaviorTreeComponent &OwnerComp,uint8* NodeMemory)
+EBTNodeResult::Type UBTT_CustomMoveTo::ExecuteTask(UBehaviorTreeComponent& OwnerComp, uint8* NodeMemory)
 {
-    Super::ExecuteTask(OwnerComp,NodeMemory);
+    Super::ExecuteTask(OwnerComp, NodeMemory);
     OwnerController = Cast<ABasicNPCAIController>(OwnerComp.GetOwner());
-    // OwnerController->ReceiveMoveCompleted.RemoveDynamic(this,&UBTT_CustomMoveTo::OnMoveCompleted);
-    // OwnerController->ReceiveMoveCompleted.AddDynamic(this,&UBTT_CustomMoveTo::OnMoveCompleted);
-
     MoveLocation = OwnerComp.GetBlackboardComponent()->GetValueAsVector(BB_MoveLocation.SelectedKeyName);
     FNavLocation NavLocation;
-    if(!UNavigationSystemV1::GetCurrent(GetWorld())->ProjectPointToNavigation(MoveLocation,NavLocation))
+
+    if (!UNavigationSystemV1::GetCurrent(GetWorld())->ProjectPointToNavigation(MoveLocation, NavLocation))
     {
-        // UE_LOG(LogTemp,Warning,TEXT("MOveToFailed"));
-        return EBTNodeResult::Succeeded;
+        return EBTNodeResult::Aborted;
     }
-    
+    if (OwnerComp.GetBlackboardComponent()->GetValueAsBool(BB_bIsPlayerTooClose.SelectedKeyName))
+    {
+        return EBTNodeResult::Aborted;
+    }
     if(bCanSimpleMoveTo)
     {
         UAIBlueprintHelperLibrary::SimpleMoveToLocation(OwnerComp.GetAIOwner(),NavLocation.Location);
@@ -42,18 +42,9 @@ EBTNodeResult::Type UBTT_CustomMoveTo::ExecuteTask(UBehaviorTreeComponent &Owner
     }
     else
     {
-        
-        // MoveToTask = UAITask_MoveTo::AIMoveTo(OwnerComp.GetAIOwner(),
-        //                                      NavLocation.Location,
-        //                                       nullptr,
-        //                                       AcceptanceRadius
-        //                                       );
-        // MoveToTask->ConditionalPerformMove();
         if(OwnerController)
         MoveToResult = OwnerController->MoveToLocation(MoveLocation,AcceptanceRadius);
     }
-    // if(bCanDrawDebugSphere)
-        // DrawDebugSphere(GetWorld(),OwnerController->GetBlackboardComponent()->GetValueAsVector(BB_MoveLocation.SelectedKeyName),30,20,FColor::Green,false,20);
 
     return EBTNodeResult::InProgress;
 }

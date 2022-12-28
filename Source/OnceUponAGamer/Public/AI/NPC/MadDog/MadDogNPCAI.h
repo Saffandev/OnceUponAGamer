@@ -5,6 +5,7 @@
 #include "CoreMinimal.h"
 #include "GameFramework/Character.h"
 #include "Components/TimelineComponent.h"
+#include "Components/TimelineComponent.h"
 #include "MadDogNPCAI.generated.h"
 
 UCLASS()
@@ -26,7 +27,11 @@ private:
 	void ShieldDamageTaken(float Damage,FVector HitLocation);
 	UFUNCTION()
 	void ShieldHitEffect();
-
+	UFUNCTION()
+	void HandRecalling();
+	UFUNCTION()
+	void HandRecallDone();
+	void HandRecallCompletedAfterEffects();
 public:
 	// Sets default values for this character's properties
 	AMadDogNPCAI();
@@ -35,8 +40,8 @@ public:
 	UFUNCTION(BlueprintCallable)
 	void ThrowHand();
 	void RecallHand();
-	void HandRecallDone();
-
+	UFUNCTION(BlueprintCallable)
+	void CancleHandRecalling();
 protected:
 	// Called when the game starts or when spawned
 	virtual void BeginPlay() override;
@@ -75,13 +80,18 @@ private:
 	UCurveLinearColor* ShieldHitColorCurve;
 	bool bIsShieldActive = true;
 	class AEncounterSpace* MyEncounterSpace;
+	FTimeline HandCallingTimeline;
+	FTransform HandTransform;
 
 public:
 	UPROPERTY(EditAnywhere,BlueprintReadWrite)
 	bool bCanHandDamage;
-	UPROPERTY(VisibleAnywhere,BlueprintReadOnly,meta = (AllowPrivateAccess = "true"))
+	UPROPERTY(VisibleAnywhere,BlueprintReadWrite,meta = (AllowPrivateAccess = "true"))
 	bool bCanThrowHand;
 	UPROPERTY(VisibleAnywhere,BlueprintReadOnly)
 	bool bIsRecallingHand;
-	
+	UPROPERTY(EditAnywhere)
+	UCurveFloat* HandRecallingCurve;
+	UPROPERTY(EditAnywhere)
+	UAnimMontage* HandReceivingMontage;
 };

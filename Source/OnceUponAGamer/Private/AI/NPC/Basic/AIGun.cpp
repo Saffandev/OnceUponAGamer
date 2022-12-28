@@ -34,6 +34,7 @@ void AAIGun::Tick(float DeltaTime)
 
 void AAIGun::StartShooting()
 {
+	ShootingInAction();
 	GetWorld()->GetTimerManager().SetTimer(ShootingTimerHandle,this,&AAIGun::ShootingInAction,FireRate,true,0);
 }
 

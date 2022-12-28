@@ -2,6 +2,7 @@
 
 
 #include "AI/NPC/MadDog/Tasks/BTT_RecallHand.h"
+#include "BehaviorTree/BlackboardComponent.h"
 #include "AI/NPC/MadDog/MadDogNPCAI.h"
 
 UBTT_RecallHand::UBTT_RecallHand()
@@ -18,5 +19,7 @@ EBTNodeResult::Type UBTT_RecallHand::ExecuteTask(UBehaviorTreeComponent &OwnerCo
         OwnerPawn->GetMesh()->GetAnimInstance()->Montage_Play(HandMontage);
     }
     OwnerPawn->RecallHand();
+    UE_LOG(LogTemp, Warning, TEXT("Hand Recall task"));
+    OwnerComp.GetBlackboardComponent()->SetValueAsBool(BB_IsHandRecalling.SelectedKeyName, true);
     return EBTNodeResult::Succeeded;
 }
