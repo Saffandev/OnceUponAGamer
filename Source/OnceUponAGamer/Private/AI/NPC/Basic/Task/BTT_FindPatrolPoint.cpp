@@ -5,6 +5,7 @@
 #include "AI/PatrolPoint.h"
 #include "BehaviorTree/BlackboardComponent.h"
 #include "Kismet/KismetMathLibrary.h"
+#include "DrawDebugHelpers.h"
 
 UBTT_FindPatrolPoint::UBTT_FindPatrolPoint()
 {
@@ -25,8 +26,13 @@ EBTNodeResult::Type UBTT_FindPatrolPoint::ExecuteTask(UBehaviorTreeComponent &Ow
         FVector MoveToLocation = PatrolPointObj->PatrolPointLocation[Index];
        // UE_LOG(LogTemp,Warning,TEXT("Patrol Location %s"),*MoveToLocation.ToString());
         MoveToLocation = UKismetMathLibrary::TransformLocation(PatrolPointObj->GetActorTransform(),MoveToLocation);
+        DrawDebugSphere(GetWorld(), MoveToLocation, 20.f, 10, FColor::Red, false, 5.f);
         OwnerComp.GetAIOwner()->GetBlackboardComponent()->SetValueAsVector(PatrolPointLocation.SelectedKeyName, MoveToLocation);
         }
+    }
+    else
+    {
+        UE_LOG(LogTemp, Warning, TEXT("No patrol point object in find patrol point"));
     }
     // if(PatrolPointObj == nullptr)
     // {

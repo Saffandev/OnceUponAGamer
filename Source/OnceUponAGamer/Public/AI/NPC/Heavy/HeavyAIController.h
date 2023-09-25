@@ -3,14 +3,14 @@
 #pragma once
 
 #include "CoreMinimal.h"
-#include "AI/NPC/Basic/BasicNPCAIController.h"
+#include "AI/NPC/BaseAIController.h"
 #include "HeavyAIController.generated.h"
 
 /**
  * 
  */
 UCLASS()
-class ONCEUPONAGAMER_API AHeavyAIController : public ABasicNPCAIController
+class ONCEUPONAGAMER_API AHeavyAIController : public ABaseAIController
 {
 	GENERATED_BODY()
 	

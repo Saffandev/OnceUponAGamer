@@ -31,10 +31,10 @@ EBTNodeResult::Type UBTT_CustomMoveTo::ExecuteTask(UBehaviorTreeComponent& Owner
     {
         return EBTNodeResult::Aborted;
     }
-    if (OwnerComp.GetBlackboardComponent()->GetValueAsBool(BB_bIsPlayerTooClose.SelectedKeyName))
+  /*  if (OwnerComp.GetBlackboardComponent()->GetValueAsBool(BB_bIsPlayerTooClose.SelectedKeyName))
     {
         return EBTNodeResult::Aborted;
-    }
+    }*/
     if(bCanSimpleMoveTo)
     {
         UAIBlueprintHelperLibrary::SimpleMoveToLocation(OwnerComp.GetAIOwner(),NavLocation.Location);

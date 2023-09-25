@@ -32,6 +32,7 @@ protected:
 	virtual void Reload();
 	void ReloadAfterEffect();
 	
+protected:
 	UPROPERTY(VisibleAnywhere)
 	USceneComponent* Muzzel;
 	UPROPERTY(EditAnywhere)
@@ -51,7 +52,8 @@ protected:
 	uint32 CurrentAmmo;
 	bool bIsReloading;
 	FTimerHandle ShootingTimerHandle;
-
+	UPROPERTY(EditAnywhere)
+		bool bIsHealGun;
 public:
 	USkeletalMeshComponent* OwnerMesh;
 	UPROPERTY(VisibleAnywhere,BlueprintReadOnly)

@@ -1112,6 +1112,7 @@ void APlayerCharacter::Shoot()
 		return;
 	}
 	CurrentWeapon->Shoot();
+
 }
 
 void APlayerCharacter::StopShooting()

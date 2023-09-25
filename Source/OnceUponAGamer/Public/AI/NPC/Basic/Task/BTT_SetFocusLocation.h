@@ -23,5 +23,5 @@ private:
 	UPROPERTY(EditAnywhere)
 	bool bCanFocus;
 	UPROPERTY(EditAnywhere)
-	FBlackboardKeySelector BB_FocusLocation;
+	FBlackboardKeySelector BB_FocusPoint;
 };

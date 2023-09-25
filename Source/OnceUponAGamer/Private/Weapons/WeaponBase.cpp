@@ -14,6 +14,8 @@
 #include "Particles/ParticleSystemComponent.h"
 #include "HelperFunctions/ViolenceRegistration.h"
 #include "Components/AudioComponent.h"
+#include "HelperFunctions/HitEffectFunctionLibrary.h"
+
 AWeaponBase::AWeaponBase()
 {
 	PrimaryActorTick.bCanEverTick = true;
@@ -281,7 +283,16 @@ void AWeaponBase::ShootingInAction()
 																	EDrawDebugTrace::None,
 																	GunShotHitResult,
 																	true);
-				
+
+
+				/*FCollisionShape CollisionShape = FCollisionShape::MakeSphere(200);
+				bIsHit = GetWorld()->SweepSingleByChannel(GunShotHitResult, 
+														  PlayerCamera->GetComponentLocation(), 
+														  EndTrace, 
+														  FQuat::Identity,
+														  ECollisionChannel::ECC_Visibility,
+														  CollisionShape);*/
+
 				if(TrailsFX)
 				{
 					UParticleSystemComponent* TrailsFXComp = UGameplayStatics::SpawnEmitterAtLocation(GetWorld(),TrailsFX,Muzzle->GetComponentLocation());
@@ -293,26 +304,21 @@ void AWeaponBase::ShootingInAction()
 				}
 				if(bIsHit)
 				{
-					HitEffect(GunShotHitResult);
+					//HitEffect(GunShotHitResult);
+
+					UHitEffectFunctionLibrary::PlayHitEffect(this,GunShotHitResult);
 					AActor *HitActor = GunShotHitResult.GetActor();
 					if (HitActor)
 					{
+						UE_LOG(LogTemp, Warning, TEXT("Hit Actor : %s"), *HitActor->GetName());
 						if (HitActor->CanBeDamaged())
 						{
-							// UViolenceRegistration::RegisterViolence(this,GetActorLocation(),PlayerCharacter,EViolenceType::EVT_HittedSomethingDamaging);
 							GiveDamage(GunShotHitResult);
 						}
-						/*else
-						{
-							UViolenceRegistration::RegisterViolence(this,GetActorLocation(),PlayerCharacter,EViolenceType::EVT_HittedSomethingNonDamaging);
-						}*/
 					}
 				}
 
-				/*else
-				{
-					UViolenceRegistration::RegisterViolence(this,GetActorLocation(),PlayerCharacter,EViolenceType::EVT_AirFire);
-				}*/
+			
 			}
 			SingleShotAlpha = 1.f;
 

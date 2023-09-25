@@ -117,7 +117,7 @@ void AActionAgainstViolence::SpawnPolice(int SpawnNumber)
 		INPCAI_Action* AIAction = Cast<INPCAI_Action>(SpawnedActor);
 		if(AIAction)
 		{
-			AIAction->SetWantedLevelCooldown(false);
+		//	AIAction->SetWantedLevelCooldown(false);
 		}
 		//call the cooldown function on spawned actors
 	}

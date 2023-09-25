@@ -35,7 +35,7 @@ void AAIGun::Tick(float DeltaTime)
 void AAIGun::StartShooting()
 {
 	ShootingInAction();
-	GetWorld()->GetTimerManager().SetTimer(ShootingTimerHandle,this,&AAIGun::ShootingInAction,FireRate,true,0);
+	GetWorld()->GetTimerManager().SetTimer(ShootingTimerHandle,this,&AAIGun::ShootingInAction,FireRate,true);
 }
 
 void AAIGun::ShootingInAction()
@@ -58,7 +58,7 @@ void AAIGun::ShootingInAction()
 											UEngineTypes::ConvertToTraceType(ECollisionChannel::ECC_Visibility),
 											false,
 											ActorsToIgnore,
-											EDrawDebugTrace::None,
+											EDrawDebugTrace::ForDuration,
 											GunTraceHit,
 											true);
 		if(TracerRound)
@@ -79,7 +79,7 @@ void AAIGun::ShootingInAction()
 		AActor* HitActor = GunTraceHit.GetActor();
 		if(HitActor)
 		{
-			if(HitActor->CanBeDamaged() && !HitActor->ActorHasTag(FName("Enemy")))
+			if(HitActor->CanBeDamaged() && (bIsHealGun || !HitActor->ActorHasTag(FName("Enemy"))))
 			{
 				UGameplayStatics::ApplyPointDamage(HitActor,Damage,GunTraceHit.TraceStart,GunTraceHit,GetOwner()->GetInstigatorController(),GetOwner(),UDamageType::StaticClass());
 				// UE_LOG(LogTemp,Warning,TEXT("Damaged"));

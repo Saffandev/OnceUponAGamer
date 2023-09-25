@@ -22,7 +22,7 @@ EBTNodeResult::Type UBTT_Shooting::ExecuteTask(UBehaviorTreeComponent &OwnerComp
         if(bCanShoot)
         {
             ActionInterface->StartShooting();
-            OwnerComp.GetAIOwner()->SetFocus(UGameplayStatics::GetPlayerPawn(this,0));
+       //     OwnerComp.GetAIOwner()->SetFocus(UGameplayStatics::GetPlayerPawn(this,0));
         }
         else if(bCanMeleeAttack)
         {

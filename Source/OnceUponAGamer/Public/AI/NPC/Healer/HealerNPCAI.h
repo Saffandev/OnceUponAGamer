@@ -3,11 +3,11 @@
 #pragma once
 
 #include "CoreMinimal.h"
-#include "AI/NPC/Basic/BasicNPCAI.h"
+#include "AI/NPC/BaseAI.h"
 #include "HealerNPCAI.generated.h"
 
 UCLASS()
-class ONCEUPONAGAMER_API AHealerNPCAI : public ABasicNPCAI
+class ONCEUPONAGAMER_API AHealerNPCAI : public ABaseAI
 {
 	GENERATED_BODY()
 

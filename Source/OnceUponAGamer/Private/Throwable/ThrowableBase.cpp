@@ -178,7 +178,7 @@ void AThrowableBase::Explode()
 		// UE_LOG(LogTemp,Warning,TEXT("Camera shake value %f"),CameraShakeValue);
 		PlayerCharacter->PlayCameraShake(CameraShake,CameraShakeValue);
 	}
-	UViolenceRegistration::RegisterViolence(this,GetActorLocation(),PlayerCharacter,EViolenceType::EVT_Explosion);
+	//UViolenceRegistration::RegisterViolence(this,GetActorLocation(),PlayerCharacter,EViolenceType::EVT_Explosion);
 
 	
 			// UE_LOG(LogTemp,Warning,TEXT("%s"),*(HitActor->GetName()));			

@@ -31,7 +31,10 @@ public:
 	void ICanSeePlayer();
 	UFUNCTION(BlueprintCallable)
 	void ClearAllTheAI();
-	
+	UFUNCTION(BlueprintCallable)
+	class ABaseAI* GetClosestDamagedAI(AActor* Requester);
+	void AddDamagedAI(class ABaseAI* DamagedAI);
+	void RemoveDamagedAI(class ABaseAI* RecoveredAI);
 protected:
 	// Called when the game starts or when spawned
 	virtual void BeginPlay() override;
@@ -43,7 +46,8 @@ public:
 	TArray<AActor*> OverlappedCovers;
 	TArray<AActor*> OverlappedAI;
 	UPROPERTY(VisibleAnywhere,BlueprintReadOnly)
-	TArray<class ABasicNPCAIController*> OverlappedAIControllers;
+	TArray<class ABaseAIController*> OverlappedAIControllers;
+
 	bool bPlayerSpotted;
 
 private:
@@ -52,7 +56,9 @@ private:
 	UPROPERTY(EditAnywhere)
 	TSubclassOf<class ACover> CoverBp;
 	UPROPERTY(EditAnywhere)
-	TSubclassOf<class ABasicNPCAI> AIBp;
+	TSubclassOf<class ABaseAI> AIBp;
 	UPROPERTY(VisibleAnywhere,BlueprintReadOnly,meta = (AllowPrivateAccess = "true"))
 	int32 NoOfAiAlive;
+	UPROPERTY(VisibleAnywhere,BlueprintReadOnly,meta = (AllowPrivateAccess = "trues"))
+	TSet<class ABaseAI*> DamagedAIs;
 };

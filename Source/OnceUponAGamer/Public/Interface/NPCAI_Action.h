@@ -22,5 +22,5 @@ public:
 	virtual void StartShooting() = 0;
 	virtual void StopShooting() = 0;
 	virtual float MeleeAttack() = 0;
-	virtual void SetWantedLevelCooldown(bool bIsCooldown) = 0;
+	virtual float GetRemainingHealth() = 0;
 };
